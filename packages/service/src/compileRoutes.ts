@@ -7,7 +7,11 @@ import {
 } from '@sinclair/typebox/value'
 import { compilePaths } from 'pathic'
 import { mapValues } from 'radashi'
-import { type CompiledRoute, compileRoute } from './compileRoute.js'
+import {
+  type CompiledRoute,
+  compileRoute,
+  CompileRouteOptions,
+} from './compileRoute.js'
 import {
   allowOriginAndCredentials,
   compilePreflightHandler,
@@ -23,7 +27,7 @@ enum RequestStep {
   Respond = 2,
 }
 
-export interface CompileRoutesConfig {
+export interface CompileRoutesOptions extends CompileRouteOptions {
   /**
    * Requests must begin with this prefix to be matched. The prefix should
    * start and end with a slash.
@@ -34,15 +38,15 @@ export interface CompileRoutesConfig {
 
 export function compileRoutes(
   rawRoutes: readonly Route[],
-  config: CompileRoutesConfig = {}
+  options: CompileRoutesOptions = {}
 ) {
-  const routesByMethod = prepareRoutes(rawRoutes)
+  const routesByMethod = prepareRoutes(rawRoutes, options)
 
   // Browsers send an OPTIONS request as a preflight request for a CORS
   // request. This handler will respond with Access-Control-Allow headers
   // if matching routes are found.
   const handlePreflightRequest = compilePreflightHandler(
-    config.cors || {},
+    options.cors || {},
     ({ url }) => {
       const allowedMethods = new Set<string>()
       for (const matchRoute of Object.values(routesByMethod)) {
@@ -58,11 +62,11 @@ export function compileRoutes(
   return async (ctx: RequestContext): Promise<Response | undefined> => {
     const { url, request } = ctx
 
-    if (config.prefix) {
-      if (!url.pathname.startsWith(config.prefix)) {
+    if (options.prefix) {
+      if (!url.pathname.startsWith(options.prefix)) {
         return
       }
-      url.pathname = url.pathname.slice(config.prefix.length - 1)
+      url.pathname = url.pathname.slice(options.prefix.length - 1)
     }
 
     if (request.method === 'OPTIONS') {
@@ -74,7 +78,7 @@ export function compileRoutes(
       return
     }
 
-    const corsHeaders = await allowOriginAndCredentials(ctx, config.cors ?? {})
+    const corsHeaders = await allowOriginAndCredentials(ctx, options.cors ?? {})
     if (
       corsHeaders['Access-Control-Allow-Origin'] !==
       (ctx.request.headers.get('Origin') || '')
@@ -149,12 +153,15 @@ export function compileRoutes(
   }
 }
 
-function prepareRoutes(rawRoutes: readonly Route[]) {
+function prepareRoutes(
+  rawRoutes: readonly Route[],
+  options: CompileRouteOptions
+) {
   const groupedRoutes: Record<RouteMethod, CompiledRoute[]> =
     Object.create(null)
 
   for (const rawRoute of rawRoutes) {
-    const route = compileRoute(rawRoute)
+    const route = compileRoute(rawRoute, options)
     groupedRoutes[route.method] ??= []
     groupedRoutes[route.method].push(route)
     if (route.method === 'GET') {

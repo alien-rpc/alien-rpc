@@ -1,9 +1,10 @@
 import { bodylessMethods } from '@alien-rpc/route'
 import { RequestContext } from '@hattip/compose'
 import * as jsonQS from '@json-qs/json-qs'
-import { KindGuard, Type } from '@sinclair/typebox'
+import { KindGuard, TSchema, Type } from '@sinclair/typebox'
 import { TypeCompiler } from '@sinclair/typebox/compiler'
 import {
+  Decode,
   TransformDecodeCheckError,
   ValueErrorType,
 } from '@sinclair/typebox/value'
@@ -12,9 +13,16 @@ import { Route, RouteHandler } from './types.js'
 
 export type CompiledRoute = ReturnType<typeof compileRoute>
 
-export function compileRoute(route: Route) {
-  const decodePathData = compilePathSchema(route)
-  const decodeRequestData = compileRequestSchema(route)
+export type CompileRouteOptions = {
+  /**
+   * Whether to skip TypeBox type compilation.
+   */
+  noTypeCompiler?: boolean
+}
+
+export function compileRoute(route: Route, options: CompileRouteOptions = {}) {
+  const decodePathData = compilePathSchema(route, options)
+  const decodeRequestData = compileRequestSchema(route, options)
   const responder = supportedResponders[route.format](route)
 
   async function getHandlerArgs(
@@ -67,26 +75,40 @@ export function compileRoute(route: Route) {
   }
 }
 
+function compileSchema<Schema extends TSchema, Output>(
+  schema: Schema,
+  options: CompileRouteOptions
+) {
+  if (options.noTypeCompiler) {
+    return (input: unknown): Output => Decode(schema, input)
+  }
+  const compiled = TypeCompiler.Compile(schema)
+  return (input: unknown): Output => compiled.Decode(input)
+}
+
 function compilePathSchema(
-  route: Route
+  route: Route,
+  options: CompileRouteOptions
 ): <TParams extends {}>(params: TParams) => TParams {
   if (route.pathSchema) {
-    const pathSchema = TypeCompiler.Compile(route.pathSchema)
-    return params => pathSchema.Decode(params)
+    return compileSchema(route.pathSchema, options)
   }
   return params => params
 }
 
-function compileRequestSchema(route: Route): (ctx: RequestContext) => unknown {
+function compileRequestSchema(
+  route: Route,
+  options: CompileRouteOptions
+): (ctx: RequestContext) => unknown {
   if (!route.requestSchema) {
     return () => null
   }
 
-  const requestSchema = TypeCompiler.Compile(route.requestSchema)
+  const decode = compileSchema(route.requestSchema, options)
 
   if (!bodylessMethods.has(route.method)) {
     return async ({ request }) =>
-      requestSchema.Decode(
+      decode(
         request.headers.get('Content-Type') === 'application/json'
           ? await request.json()
           : {}
@@ -96,8 +118,7 @@ function compileRequestSchema(route: Route): (ctx: RequestContext) => unknown {
   // The only supported record type is Record<string, never> which doesn't
   // need special handling.
   if (KindGuard.IsRecord(route.requestSchema)) {
-    return ({ url }) =>
-      requestSchema.Decode(Object.fromEntries(url.searchParams))
+    return ({ url }) => decode(Object.fromEntries(url.searchParams))
   }
 
   return ({ url }) => {
@@ -114,6 +135,6 @@ function compileRequestSchema(route: Route): (ctx: RequestContext) => unknown {
         value: url.search,
       })
     }
-    return requestSchema.Decode(data)
+    return decode(data)
   }
 }
