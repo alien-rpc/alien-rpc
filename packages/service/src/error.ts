@@ -1,23 +1,33 @@
+import { ShallowOptions } from 'option-types'
 import { isError } from 'radashi'
 
-const kHttpError = Symbol.for('HttpError')
+const kHTTPException = Symbol.for('HTTPException')
 
-export abstract class HttpError {
-  readonly [kHttpError] = true
+export class HTTPException {
+  readonly [kHTTPException] = true
+  message: string | undefined
+  headers: HTTPException.Headers | undefined
+  res: Response | undefined
 
-  abstract status: number
-  message: string | undefined = undefined
-  constructor(readonly headers?: HttpError.Headers) {}
+  constructor(
+    readonly status: number,
+    options?: HTTPException.ResponseOptions | HTTPException.ResponseOverride
+  ) {
+    this.status = status
+    this.message = (options as HTTPException.ResponseOptions)?.message
+    this.headers = (options as HTTPException.ResponseOptions)?.headers
+    this.res = (options as HTTPException.ResponseOverride)?.res
+  }
 
-  static isHttpError(error: unknown): error is HttpError {
-    return isError(error) && error.hasOwnProperty(kHttpError)
+  static isHTTPException(error: unknown): error is HTTPException {
+    return isError(error) && error.hasOwnProperty(kHTTPException)
   }
 }
 
 /**
  * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/307
  */
-export class TemporaryRedirectError extends HttpError {
+export class TemporaryRedirectError extends HTTPException {
   name = 'TemporaryRedirectError'
   status = 307
 }
@@ -25,7 +35,7 @@ export class TemporaryRedirectError extends HttpError {
 /**
  * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/308
  */
-export class PermanentRedirectError extends HttpError {
+export class PermanentRedirectError extends HTTPException {
   name = 'PermanentRedirectError'
   status = 308
 }
@@ -33,35 +43,31 @@ export class PermanentRedirectError extends HttpError {
 /**
  * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400
  */
-export class BadRequestError extends HttpError {
+export class BadRequestError extends HTTPException {
   name = 'BadRequestError'
-  status = 400
   constructor(
-    readonly message: string,
-    headers?: HttpError.Headers
+    options?: HTTPException.ResponseOptions | HTTPException.ResponseOverride
   ) {
-    super(headers)
+    super(400, options)
   }
 }
 
 /**
  * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/401
  */
-export class UnauthorizedError extends HttpError {
+export class UnauthorizedError extends HTTPException {
   name = 'UnauthorizedError'
-  status = 401
   constructor(
-    readonly message: string,
-    headers?: HttpError.Headers
+    options?: HTTPException.ResponseOptions | HTTPException.ResponseOverride
   ) {
-    super(headers)
+    super(401, options)
   }
 }
 
 /**
  * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403
  */
-export class ForbiddenError extends HttpError {
+export class ForbiddenError extends HTTPException {
   name = 'ForbiddenError'
   status = 403
 }
@@ -69,7 +75,7 @@ export class ForbiddenError extends HttpError {
 /**
  * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/409
  */
-export class ConflictError extends HttpError {
+export class ConflictError extends HTTPException {
   name = 'ConflictError'
   status = 409
 }
@@ -77,7 +83,7 @@ export class ConflictError extends HttpError {
 /**
  * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/410
  */
-export class GoneError extends HttpError {
+export class GoneError extends HTTPException {
   name = 'GoneError'
   status = 410
 }
@@ -85,7 +91,7 @@ export class GoneError extends HttpError {
 /**
  * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/411
  */
-export class LengthRequiredError extends HttpError {
+export class LengthRequiredError extends HTTPException {
   name = 'LengthRequiredError'
   status = 411
 }
@@ -93,7 +99,7 @@ export class LengthRequiredError extends HttpError {
 /**
  * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/412
  */
-export class PreconditionFailedError extends HttpError {
+export class PreconditionFailedError extends HTTPException {
   name = 'PreconditionFailedError'
   status = 412
 }
@@ -101,7 +107,7 @@ export class PreconditionFailedError extends HttpError {
 /**
  * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/413
  */
-export class PayloadTooLargeError extends HttpError {
+export class PayloadTooLargeError extends HTTPException {
   name = 'PayloadTooLargeError'
   status = 413
 }
@@ -109,7 +115,7 @@ export class PayloadTooLargeError extends HttpError {
 /**
  * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/415
  */
-export class UnsupportedMediaTypeError extends HttpError {
+export class UnsupportedMediaTypeError extends HTTPException {
   name = 'UnsupportedMediaTypeError'
   status = 415
 }
@@ -117,7 +123,7 @@ export class UnsupportedMediaTypeError extends HttpError {
 /**
  * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/416
  */
-export class RangeNotSatisfiableError extends HttpError {
+export class RangeNotSatisfiableError extends HTTPException {
   name = 'RangeNotSatisfiableError'
   status = 416
 }
@@ -125,7 +131,7 @@ export class RangeNotSatisfiableError extends HttpError {
 /**
  * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/417
  */
-export class ExpectationFailedError extends HttpError {
+export class ExpectationFailedError extends HTTPException {
   name = 'ExpectationFailedError'
   status = 417
 }
@@ -133,7 +139,7 @@ export class ExpectationFailedError extends HttpError {
 /**
  * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/421
  */
-export class MisdirectedRequestError extends HttpError {
+export class MisdirectedRequestError extends HTTPException {
   name = 'MisdirectedRequestError'
   status = 421
 }
@@ -141,7 +147,7 @@ export class MisdirectedRequestError extends HttpError {
 /**
  * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/422
  */
-export class UnprocessableContentError extends HttpError {
+export class UnprocessableContentError extends HTTPException {
   name = 'UnprocessableContentError'
   status = 422
 }
@@ -149,7 +155,7 @@ export class UnprocessableContentError extends HttpError {
 /**
  * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/428
  */
-export class PreconditionRequiredError extends HttpError {
+export class PreconditionRequiredError extends HTTPException {
   name = 'PreconditionRequiredError'
   status = 428
 }
@@ -157,7 +163,7 @@ export class PreconditionRequiredError extends HttpError {
 /**
  * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/429
  */
-export class TooManyRequestsError extends HttpError {
+export class TooManyRequestsError extends HTTPException {
   name = 'TooManyRequestsError'
   status = 429
 }
@@ -165,15 +171,15 @@ export class TooManyRequestsError extends HttpError {
 /**
  * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/451
  */
-export class UnavailableForLegalReasonsError extends HttpError {
+export class UnavailableForLegalReasonsError extends HTTPException {
   name = 'UnavailableForLegalReasonsError'
   status = 451
 }
 
-export declare namespace HttpError {
-  type Headers = Record<string, string> & CommonHeaders
+export declare namespace HTTPException {
+  export type Headers = Record<string, string> & CommonHeaders
 
-  interface CommonHeaders {
+  export type CommonHeaders = ShallowOptions<{
     /**
      * Indicates how long the client should wait before making a follow-up
      * request. Common with 429 (Too Many Requests)
@@ -215,5 +221,14 @@ export declare namespace HttpError {
      * (Unavailable For Legal Reasons) to indicate related resources
      */
     Link?: string
-  }
+  }>
+
+  export type ResponseOptions = ShallowOptions<{
+    message?: string
+    headers?: Headers
+  }>
+
+  export type ResponseOverride = ShallowOptions<{
+    res?: Response
+  }>
 }

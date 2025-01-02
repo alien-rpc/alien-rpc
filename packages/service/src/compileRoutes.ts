@@ -13,7 +13,7 @@ import {
   compilePreflightHandler,
   type CorsConfig,
 } from './cors.js'
-import { HttpError } from './error.js'
+import { HTTPException } from './error.js'
 import type { Route } from './types'
 
 enum RequestStep {
@@ -106,7 +106,7 @@ export function compileRoutes(
       if (step === RequestStep.Respond) {
         // An HttpError is thrown by the application code to indicate a
         // failed request, as opposed to an unexpected error.
-        if (HttpError.isHttpError(error)) {
+        if (HTTPException.isHTTPException(error)) {
           if (error.message !== undefined) {
             return new Response(JSON.stringify({ message: error.message }), {
               status: error.status,
