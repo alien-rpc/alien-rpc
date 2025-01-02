@@ -1,11 +1,15 @@
 import { Headers } from './headers.js'
+import { JSONCodable } from './internal/types.js'
 
 /**
  * Stringify the `body` argument with `JSON.stringify` and set the
  * `Content-Type` header to `application/json`.
  */
 export class JsonResponse extends Response {
-  constructor(body: any, options?: { status?: number; headers?: Headers }) {
+  constructor(
+    body: JSONCodable,
+    options?: { status?: number; headers?: Headers }
+  ) {
     super(JSON.stringify(body), {
       ...options,
       headers: {
@@ -23,7 +27,7 @@ export class JsonResponse extends Response {
  */
 export class InternalServerError extends JsonResponse {
   constructor(
-    error: { message: string } & Record<string, unknown>,
+    error: { message: string } & Record<string, JSONCodable>,
     headers?: Headers
   ) {
     super(error, { status: 500, headers })
@@ -37,7 +41,7 @@ export class InternalServerError extends JsonResponse {
  */
 export class BadRequestError extends JsonResponse {
   constructor(
-    error: { message: string } & Record<string, unknown>,
+    error: { message: string } & Record<string, JSONCodable>,
     headers?: Headers
   ) {
     super(error, { status: 400, headers })
