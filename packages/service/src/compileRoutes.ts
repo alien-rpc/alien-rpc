@@ -13,6 +13,7 @@ import {
   compilePreflightHandler,
   type CorsConfig,
 } from './cors.js'
+import { JSONCodable } from './internal/types.js'
 import { BadRequestError, InternalServerError } from './response.js'
 import type { Route } from './types.js'
 
@@ -129,7 +130,11 @@ export function compileRoutes(
       if (step === RequestStep.Validate) {
         const checkError = isDecodeError(error) ? error.error : error
         if (isDecodeCheckError(checkError)) {
-          const { message, path, value } = firstLeafError(checkError.error)
+          const { message, path, value } = firstLeafError(
+            checkError.error
+          ) as ValueError & {
+            value: JSONCodable
+          }
           return new BadRequestError({ message, path, value })
         }
       }
