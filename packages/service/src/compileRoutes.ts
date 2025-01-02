@@ -13,8 +13,8 @@ import {
   compilePreflightHandler,
   type CorsConfig,
 } from './cors.js'
-import { HttpError } from './error.js'
-import type { Route } from './types'
+import { BadRequestError, InternalServerError } from './response.js'
+import type { Route } from './types.js'
 
 enum RequestStep {
   Match = 0,
@@ -106,17 +106,8 @@ export function compileRoutes(
       if (step === RequestStep.Respond) {
         // An HttpError is thrown by the application code to indicate a
         // failed request, as opposed to an unexpected error.
-        if (HttpError.isHttpError(error)) {
-          if (error.message !== undefined) {
-            return new Response(JSON.stringify({ message: error.message }), {
-              status: error.status,
-              headers: new Headers({
-                ...error.headers,
-                'Content-Type': 'application/json',
-              }),
-            })
-          }
-          return new Response(null, error)
+        if (error instanceof Response) {
+          return error
         }
         if (!process.env.TEST) {
           console.error(error)
@@ -124,7 +115,7 @@ export function compileRoutes(
         if (process.env.NODE_ENV === 'production') {
           return new Response(null, { status: 500 })
         }
-        return new ErrorResponse(500, {
+        return new InternalServerError({
           ...error,
           message: error.message ?? 'Internal server error',
           stack: error.stack,
@@ -139,13 +130,12 @@ export function compileRoutes(
         const checkError = isDecodeError(error) ? error.error : error
         if (isDecodeCheckError(checkError)) {
           const { message, path, value } = firstLeafError(checkError.error)
-          return new ErrorResponse(400, { message, path, value })
+          return new BadRequestError({ message, path, value })
         }
       }
 
       // Otherwise, it's a malformed request.
-      return new ErrorResponse(
-        400,
+      return new BadRequestError(
         process.env.NODE_ENV === 'production'
           ? { message: error.message }
           : error
@@ -179,18 +169,6 @@ function prepareRoutes(rawRoutes: readonly Route[]) {
         return handler(routes[index], params)
       })
   })
-}
-
-class ErrorResponse extends Response {
-  constructor(
-    status: number,
-    error: { message: string } & Record<string, unknown>
-  ) {
-    super(JSON.stringify(error), {
-      status,
-      headers: { 'Content-Type': 'application/json' },
-    })
-  }
 }
 
 function isDecodeError(error: any): error is TransformDecodeError {

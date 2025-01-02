@@ -1,8 +1,8 @@
 export { compileRoute } from './compileRoute.js'
 export { compileRoutes } from './compileRoutes.js'
 export * as t from './constraint.js'
-export * from './error.js'
 export { paginate, type PaginationLinks } from './pagination.js'
+export * from './response.js'
 export { route, type RouteFactory } from './route.js'
 
 export type {
