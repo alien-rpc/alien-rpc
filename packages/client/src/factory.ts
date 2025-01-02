@@ -3,7 +3,7 @@ import { ClientOptions, ErrorMode, Route } from './types.js'
 
 export function defineClientFactory<
   API extends Record<string, Route>,
-  TDefaultErrorMode extends ErrorMode = ErrorMode,
+  TDefaultErrorMode extends ErrorMode = 'reject',
 >(routes: API, options: ClientOptions<TDefaultErrorMode> = {}) {
   const client = defineClient(routes, options)
 
