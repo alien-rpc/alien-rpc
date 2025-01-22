@@ -6,6 +6,8 @@ settings:
 
 overrides:
   '@sinclair/typebox': ^0.33.17
+  '@ts-morph/bootstrap': link:./packages/ts-morph/packages/bootstrap
+  '@ts-morph/common': link:./packages/ts-morph/packages/common
 
 importers:
 
@@ -43,8 +45,8 @@ importers:
         specifier: ^0.0.49
         version: 0.0.49
       '@ts-morph/common':
-        specifier: ^0.25.0
-        version: 0.25.0
+        specifier: link:packages/ts-morph/packages/common
+        version: link:packages/ts-morph/packages/common
       '@types/node':
         specifier: ^22.7.4
         version: 22.10.1
@@ -138,11 +140,11 @@ importers:
         specifier: workspace:^
         version: link:../route
       '@ts-morph/bootstrap':
-        specifier: ^0.25.0
-        version: 0.25.0
+        specifier: link:../ts-morph/packages/bootstrap
+        version: link:../ts-morph/packages/bootstrap
       '@ts-morph/common':
-        specifier: ^0.25.0
-        version: 0.25.0
+        specifier: link:../ts-morph/packages/common
+        version: link:../ts-morph/packages/common
       '@types/debug':
         specifier: ^4.1.12
         version: 4.1.12
@@ -179,6 +181,12 @@ importers:
         specifier: workspace:^
         version: link:../pathic
 
+  packages/ts-morph:
+    devDependencies:
+      dprint:
+        specifier: ^0.46.3
+        version: 0.46.3
+
 packages:
 
   '@aleclarson/watchlist@0.3.3':
@@ -192,6 +200,41 @@ packages:
 
   '@alloc/prettier-config@1.0.0':
     resolution: {integrity: sha512-xm50V1qxSdTh1O1fKA+gqcU605YSnxfq6HwtYSFU3fRsKMFnUSuSOxqSAPI7y2sRxqPed2EIuGmNn107LVQM6g==}
+
+  '@dprint/darwin-arm64@0.46.3':
+    resolution: {integrity: sha512-1ycDpGvclGHF3UG5V6peymPDg6ouNTqM6BjhVELQ6zwr+X98AMhq/1slgO8hwHtPcaS5qhTAS+PkzOmBJRegow==}
+    cpu: [arm64]
+    os: [darwin]
+
+  '@dprint/darwin-x64@0.46.3':
+    resolution: {integrity: sha512-v5IpLmrY836Q5hJAxZuX097ZNQvoZgO6JKO4bK4l6XDhhHAw2XTIUr41+FM5r36ENxyASMk0NpHjhcHtih3o0g==}
+    cpu: [x64]
+    os: [darwin]
+
+  '@dprint/linux-arm64-glibc@0.46.3':
+    resolution: {integrity: sha512-9P13g1vgV8RfQH2qBGa8YAfaOeWA42RIhj7lmWRpkDFtwau96reMKwnBBn8bHUnc5e6bSsbPUOMb/X1KMUKz/g==}
+    cpu: [arm64]
+    os: [linux]
+
+  '@dprint/linux-arm64-musl@0.46.3':
+    resolution: {integrity: sha512-AAcdcMSZ6DEIoY9E0xQHjkZP+THP7EWsQge4TWzglSIjzn31YltglHAGYFcLB4CTJYpF0NsFDNFktzgkO+s0og==}
+    cpu: [arm64]
+    os: [linux]
+
+  '@dprint/linux-x64-glibc@0.46.3':
+    resolution: {integrity: sha512-c5cQ3G1rC64nBZ8Pd2LGWwzkEk4D7Ax9NrBbwYmNPvs6mFbGlJPC1+RD95x2WwIrIlMIciLG+Kxmt25PzBphmg==}
+    cpu: [x64]
+    os: [linux]
+
+  '@dprint/linux-x64-musl@0.46.3':
+    resolution: {integrity: sha512-ONtk2QtLcV0TqWOCOqzUFQixgk3JC+vnJLB5L6tQwT7BX5LzeircfE/1f4dg459iqejNC9MBXZkHnXqabvWSow==}
+    cpu: [x64]
+    os: [linux]
+
+  '@dprint/win32-x64@0.46.3':
+    resolution: {integrity: sha512-xvj4DSEilf0gGdT7CqnwNEgfWNuWqT6eIBxHDEUbmcn1vZ7IwirtqRq/nm3lmYtQaJ4EbtMQZvACHZwxC7G96w==}
+    cpu: [x64]
+    os: [win32]
 
   '@esbuild/aix-ppc64@0.21.5':
     resolution: {integrity: sha512-1SDgH6ZSPTlggy1yI6+Dbkiz8xzpHJEVAlF/AM1tHPLsf5STom9rwtjE4hKAF20FfXXNTFqEYXyJNWh1GiZedQ==}
@@ -606,12 +649,6 @@ packages:
   '@sinclair/typebox@0.33.22':
     resolution: {integrity: sha512-auUj4k+f4pyrIVf4GW5UKquSZFHJWri06QgARy9C0t9ZTjJLIuNIrr1yl9bWcJWJ1Gz1vOvYN1D+QPaIlNMVkQ==}
 
-  '@ts-morph/bootstrap@0.25.0':
-    resolution: {integrity: sha512-aAmcZg+ZJ77xAOH39sHdb36ms0/YOYMoDKjEACGAmKA7zHBeGnyUkVFonT67YgasZC2nvV2hE5TKruG4dXO0aQ==}
-
-  '@ts-morph/common@0.25.0':
-    resolution: {integrity: sha512-kMnZz+vGGHi4GoHnLmMhGNjm44kGtKUXGnOvrKmMwAuvNjM/PgKVGfUnL7IDvK7Jb2QQ82jq3Zmp04Gy+r3Dkg==}
-
   '@types/debug@4.1.12':
     resolution: {integrity: sha512-vIChWdVG3LG1SMxEvI/AK+FWJthlrqlTu7fbrlywTkkaONwk/UAGaULXRlf8vkzFBLVm0zkMdCquhL5aOjhXPQ==}
 
@@ -760,6 +797,10 @@ packages:
     resolution: {integrity: sha512-h5k/5U50IJJFpzfL6nO9jaaumfjO/f2NjK/oYB2Djzm4p9L+3T9qWpZqZ2hAbLPuuYq9wrU08WQyBTL5GbPk5Q==}
     engines: {node: '>=6'}
 
+  dprint@0.46.3:
+    resolution: {integrity: sha512-ACEd7B7sO/uvPvV/nsHbtkIeMqeD2a8XGO1DokROtKDUmI5WbuflGZOwyjFCYwy4rkX6FXoYBzGdEQ6um7BjCA==}
+    hasBin: true
+
   eastasianwidth@0.2.0:
     resolution: {integrity: sha512-I88TYZWc9XiYHRQ4/3c5rjjfgkjhLyW2luGIheGERbNQ6OY7yTybanSpDXZa8y7VUP9YmDcYa+eyq4ca7iLqWA==}
 
@@ -902,9 +943,6 @@ packages:
 
   package-json-from-dist@1.0.1:
     resolution: {integrity: sha512-UEZIS3/by4OC8vL3P2dTXRETpebLI2NiI5vIrjaD/5UtrkFX/tNbwjTSRAGC/+7CAo2pIcBaRgWmcBBHcsaCIw==}
-
-  path-browserify@1.0.1:
-    resolution: {integrity: sha512-b7uo2UCUOYZcnF/3ID0lulOJi/bafxa1xPe7ZPsammBSpjSWQkjNxlt635YGS2MiR9GjvuXCtz2emr3jbsz98g==}
 
   path-key@3.1.1:
     resolution: {integrity: sha512-ojmeN0qd+y0jszEtoY48r0Peq5dwMEkIlCOu6Q5f41lfkswXuKtYrhgoTpLnyIcHm24Uhqx+5Tqm2InSwLhE6Q==}
@@ -1215,6 +1253,27 @@ snapshots:
 
   '@alloc/prettier-config@1.0.0': {}
 
+  '@dprint/darwin-arm64@0.46.3':
+    optional: true
+
+  '@dprint/darwin-x64@0.46.3':
+    optional: true
+
+  '@dprint/linux-arm64-glibc@0.46.3':
+    optional: true
+
+  '@dprint/linux-arm64-musl@0.46.3':
+    optional: true
+
+  '@dprint/linux-x64-glibc@0.46.3':
+    optional: true
+
+  '@dprint/linux-x64-musl@0.46.3':
+    optional: true
+
+  '@dprint/win32-x64@0.46.3':
+    optional: true
+
   '@esbuild/aix-ppc64@0.21.5':
     optional: true
 
@@ -1458,16 +1517,6 @@ snapshots:
 
   '@sinclair/typebox@0.33.22': {}
 
-  '@ts-morph/bootstrap@0.25.0':
-    dependencies:
-      '@ts-morph/common': 0.25.0
-
-  '@ts-morph/common@0.25.0':
-    dependencies:
-      minimatch: 9.0.5
-      path-browserify: 1.0.1
-      tinyglobby: 0.2.10
-
   '@types/debug@4.1.12':
     dependencies:
       '@types/ms': 0.7.34
@@ -1604,6 +1653,16 @@ snapshots:
       ms: 2.1.3
 
   deep-eql@5.0.2: {}
+
+  dprint@0.46.3:
+    optionalDependencies:
+      '@dprint/darwin-arm64': 0.46.3
+      '@dprint/darwin-x64': 0.46.3
+      '@dprint/linux-arm64-glibc': 0.46.3
+      '@dprint/linux-arm64-musl': 0.46.3
+      '@dprint/linux-x64-glibc': 0.46.3
+      '@dprint/linux-x64-musl': 0.46.3
+      '@dprint/win32-x64': 0.46.3
 
   eastasianwidth@0.2.0: {}
 
@@ -1766,8 +1825,6 @@ snapshots:
   option-types@1.1.0: {}
 
   package-json-from-dist@1.0.1: {}
-
-  path-browserify@1.0.1: {}
 
   path-key@3.1.1: {}
 

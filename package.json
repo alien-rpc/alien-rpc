@@ -38,7 +38,9 @@
   },
   "pnpm": {
     "overrides": {
-      "@sinclair/typebox": "$@sinclair/typebox"
+      "@sinclair/typebox": "$@sinclair/typebox",
+      "@ts-morph/bootstrap": "link:./packages/ts-morph/packages/bootstrap",
+      "@ts-morph/common": "link:./packages/ts-morph/packages/common"
     }
   }
 }
