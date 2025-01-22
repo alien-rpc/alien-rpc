@@ -20,6 +20,14 @@ export function route<TPath extends string>(path: TPath): RouteFactory<TPath> {
   })
 }
 
+type Mutable<T> = T extends object
+  ? T extends Promise<infer TAwaited>
+    ? Promise<Mutable<TAwaited>>
+    : T extends ReadonlyArray<infer TElement>
+      ? Mutable<TElement>[]
+      : { -readonly [K in keyof T]: Mutable<T[K]> }
+  : T
+
 export type RouteFactory<TPath extends string> = {
   [TMethod in
     | RouteMethod
@@ -31,7 +39,7 @@ export type RouteFactory<TPath extends string> = {
         > = InferParamsArray<TPath, string>,
         TData extends object = any,
         TPlatform = unknown,
-        TResult extends RouteResult = any,
+        const TResult extends RouteResult = any,
       >(
         handler: MultiParamRouteHandler<
           TPath,
@@ -45,7 +53,7 @@ export type RouteFactory<TPath extends string> = {
         Parameters<
           MultiParamRouteHandler<TPath, TPathParams, TData, TPlatform, TResult>
         >,
-        TResult,
+        Mutable<TResult>,
         Uppercase<TMethod>
       >
     : TPath extends SingleParamRoutePath
@@ -53,7 +61,7 @@ export type RouteFactory<TPath extends string> = {
           TPathParam extends PathParam = string,
           TData extends object = any,
           TPlatform = unknown,
-          TResult extends RouteResult = any,
+          const TResult extends RouteResult = any,
         >(
           handler: SingleParamRouteHandler<
             TPath,
@@ -73,19 +81,19 @@ export type RouteFactory<TPath extends string> = {
               TResult
             >
           >,
-          TResult,
+          Mutable<TResult>,
           Uppercase<TMethod>
         >
       : <
           TData extends object = any,
           TPlatform = unknown,
-          TResult extends RouteResult = any,
+          const TResult extends RouteResult = any,
         >(
           handler: FixedRouteHandler<TPath, TData, TPlatform, TResult>
         ) => RouteDefinition<
           TPath,
           Parameters<FixedRouteHandler<TPath, TData, TPlatform, TResult>>,
-          TResult,
+          Mutable<TResult>,
           Uppercase<TMethod>
         >
 }
