@@ -1,6 +1,6 @@
 {
   "extends": "../../tsconfig.json",
-  "include": ["src"],
+  "include": ["src", "constraint.ts"],
   "compilerOptions": {
     "types": ["node"]
   }

@@ -19,7 +19,7 @@ function defineBuild(importer: string, overrides?: Options) {
     dts: !!process.env.PROD && pkg.dts,
     entry: pkg.entry,
     outDir: pkg.outDir,
-    external: pkg.dependencies,
+    external: [...pkg.dependencies, ...(overrides?.external || [])],
     plugins: sift([
       overrides?.plugins,
       deleteOldFiles(pkg),
