@@ -4,7 +4,8 @@
   "description": "Service library for alien-rpc",
   "type": "module",
   "files": [
-    "dist"
+    "dist",
+    "constraint.d.ts"
   ],
   "exports": {
     ".": {
