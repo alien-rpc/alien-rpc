@@ -436,7 +436,10 @@ export default (rawOptions: Options) =>
       const content = sift([
         `import type { ${[...clientTypeImports].sort().join(', ')} } from "${store.clientModuleId}"` +
           imports,
-        clientTypeAliases,
+        clientTypeAliases.replace(
+          new RegExp(`\\s*&\\s*(${typeConstraints.join('|')})\\<.+?\\>`, 'g'),
+          ''
+        ),
         ...clientDefinitions,
       ]).join('\n\n')
 
