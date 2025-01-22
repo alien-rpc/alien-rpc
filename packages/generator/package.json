@@ -21,11 +21,11 @@
     "directory": "packages/generator"
   },
   "dependencies": {
-    "@ts-morph/bootstrap": "^0.25.0",
-    "@ts-morph/common": "^0.25.0",
     "debug": "^4.3.7",
     "esm-resolve": "^1.0.11",
-    "jumpgen": "^0.2.0"
+    "minimatch": "^9.0.4",
+    "jumpgen": "^0.2.0",
+    "tinyglobby": "^0.2.9"
   },
   "peerDependencies": {
     "@sinclair/typebox": "*",
@@ -33,6 +33,8 @@
   },
   "devDependencies": {
     "@alien-rpc/route": "workspace:^",
+    "@ts-morph/bootstrap": "^0.25.0",
+    "@ts-morph/common": "^0.25.0",
     "@types/debug": "^4.1.12",
     "pathic": "workspace:^",
     "radashi": "^12.3.0"
