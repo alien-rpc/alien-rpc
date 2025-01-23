@@ -3,7 +3,7 @@ import { bodylessMethods } from '@alien-rpc/route'
 import * as jsonQS from '@json-qs/json-qs'
 import ky, { HTTPError } from 'ky'
 import { buildPath } from 'pathic'
-import { isFunction, isPromise, isString } from 'radashi'
+import { isFunction, isPromise, isString, omit } from 'radashi'
 import jsonFormat from './formats/json.js'
 import responseFormat from './formats/response.js'
 import {
@@ -179,8 +179,8 @@ function createRouteFunction(
       if (route.method === 'GET' && resultCache.has(path)) {
         return format.mapCachedResult(resultCache.get(path), client)
       }
-    } else {
-      body = params
+    } else if (params) {
+      body = omit(params, route.pathParams)
     }
 
     const promisedResponse = request(path, {
