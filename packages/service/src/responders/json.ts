@@ -18,9 +18,7 @@ const responder: RouteResponder =
       result = Value.Encode(route.responseSchema, result)
       result = JSON.stringify(result)
 
-      if (result === undefined) {
-        response.headers.set('Content-Length', '0')
-      } else {
+      if (result !== undefined) {
         response.headers.set('Content-Type', 'application/json')
       }
     }

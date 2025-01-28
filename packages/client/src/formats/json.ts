@@ -7,10 +7,9 @@ export default {
   mapCachedResult: Promise.resolve,
   async parseResponse(promisedResponse) {
     const response = await promisedResponse
-    const contentLength = response.headers.get('Content-Length')
 
-    // Empty response equals undefined
-    if (contentLength && contentLength !== '0') {
+    // Empty response has no content type.
+    if (response.headers.get('Content-Type') === 'application/json') {
       return response.json() as Promise<JSON>
     }
   },
