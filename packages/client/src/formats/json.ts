@@ -7,9 +7,10 @@ export default {
   mapCachedResult: Promise.resolve,
   async parseResponse(promisedResponse) {
     const response = await promisedResponse
+    const contentLength = response.headers.get('Content-Length')
 
     // Empty response equals undefined
-    if (response.headers.get('Content-Length') !== '0') {
+    if (contentLength && contentLength !== '0') {
       return response.json() as Promise<JSON>
     }
   },
