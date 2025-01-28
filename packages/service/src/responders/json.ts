@@ -7,7 +7,7 @@ const responder: RouteResponder =
   async (args, { request, response }) => {
     const routeDef = await route.import()
 
-    let result: Promisable<JSON> = await routeDef.handler.apply<any, any, any>(
+    let result: Promisable<JSON | undefined> = await routeDef.handler.apply(
       routeDef,
       args
     )

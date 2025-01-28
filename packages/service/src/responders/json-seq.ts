@@ -9,7 +9,7 @@ const responder: RouteResponder =
   async (args, { url, response }) => {
     const routeDef = await route.import()
 
-    let result = await routeDef.handler.apply<any, any, any>(routeDef, args)
+    let result = await routeDef.handler.apply(routeDef, args)
     result = Value.Encode(route.responseSchema, result)
 
     const stream = ReadableStream.from(

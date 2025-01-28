@@ -12,10 +12,7 @@ export const supportedResponders: Record<RouteResultFormat, RouteResponder> = {
     async (args, { request }) => {
       const routeDef = await route.import()
 
-      const response: Response = await routeDef.handler.apply<any, any, any>(
-        routeDef,
-        args
-      )
+      const response: Response = await routeDef.handler.apply(routeDef, args)
 
       if (request.method === 'HEAD' && route.method === 'GET') {
         return new Response(null, response)
