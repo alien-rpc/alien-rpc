@@ -14,6 +14,11 @@ export type ResultFormatter<
   TCachedResult = Awaited<TResult>,
 > = {
   mapCachedResult: (value: TCachedResult, client: Client) => TResult
+  /**
+   * This must return a promise for `errorMode: 'return'` to work as
+   * expected. Notably, the json-seq response parser doesn't return a
+   * promise, and so it doesn't respect the `errorMode` setting.
+   */
   parseResponse(promisedResponse: Promise<Response>, client: Client): TResult
 }
 
