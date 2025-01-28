@@ -16,12 +16,12 @@ const responder: RouteResponder =
       result = null
     } else {
       result = Value.Encode(route.responseSchema, result)
+      result = JSON.stringify(result)
 
       if (result === undefined) {
         response.headers.set('Content-Length', '0')
       } else {
         response.headers.set('Content-Type', 'application/json')
-        result = JSON.stringify(result)
       }
     }
 
