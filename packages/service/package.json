@@ -1,6 +1,6 @@
 {
   "name": "@alien-rpc/service",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "Service library for alien-rpc",
   "type": "module",
   "files": [
