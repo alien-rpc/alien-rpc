@@ -60,3 +60,27 @@ This function loads a tsconfig.json file, maintains a `ts.DocumentRegistry`, and
   - `getLanguageService`: A function to get the TypeScript language service.
   - `getModuleResolutionHost`: A function to get the module resolution host.
   - `formatDiagnosticsWithColorAndContext`: A function to format diagnostics with color and context.
+
+### createProjectFactory
+
+This function wraps the `createProject` function to add additional functionality to the project.
+
+```ts
+import { createProjectFactory } from 'tsc-extra'
+
+const createProject = createProjectFactory(project => ({
+  // Getters are copied over as getters.
+  get nodeModulesDir() {
+    return path.join(project.rootDir, 'node_modules')
+  },
+  // Anything you can define is allowed.
+  anyThingYouWant() {
+    // ...
+  },
+}))
+
+const project = await createProject(process.cwd())
+
+project.nodeModulesDir // => string
+project.anyThingYouWant()
+```

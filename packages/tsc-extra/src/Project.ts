@@ -407,6 +407,24 @@ export async function createProject(
   }
 }
 
+/**
+ * Wrap the `createProject` function to add additional functionality to the
+ * project.
+ */
+export const createProjectFactory =
+  <Extension extends object>(extension: (project: Project) => Extension) =>
+  async (
+    rootDir: string,
+    options?: ProjectOptions
+  ): Promise<Project & Extension> => {
+    const project = await createProject(rootDir, options)
+    const newProperties = extension(project)
+    return Object.defineProperties(
+      project as any,
+      Object.getOwnPropertyDescriptors(newProperties)
+    )
+  }
+
 function getLanguageServiceHost(
   ts: Compiler,
   compilerOptions: ts.CompilerOptions,
