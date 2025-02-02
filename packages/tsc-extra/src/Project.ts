@@ -7,11 +7,17 @@ import { FileNotFoundError } from './errors.js'
 import { createTsConfigLoader } from './TsConfigLoader.js'
 
 export interface ProjectOptions {
-  /** Path to the tsconfig.json file. */
+  /**
+   * Path to the tsconfig.json file.
+   * @default 'tsconfig.json'
+   */
   tsConfigFilePath?: string
-  /** Compiler options */
+  /** Compiler options that override the options in the tsconfig.json file. */
   compilerOptions?: ts.CompilerOptions
-  /** Whether to skip adding source files from the specified tsconfig.json. @default false */
+  /**
+   * Whether to skip adding source files from the specified tsconfig.json.
+   * @default false
+   */
   skipAddingFilesFromTsConfig?: boolean
 }
 
@@ -25,7 +31,7 @@ export async function createProject(
 
   const loadTsConfig = createTsConfigLoader(ts)
   const tsConfig = loadTsConfig(
-    options.tsConfigFilePath ?? path.join(rootDir, 'tsconfig.json')
+    path.resolve(rootDir, options.tsConfigFilePath ?? 'tsconfig.json')
   )
   const compilerOptions = {
     ...tsConfig.options,
