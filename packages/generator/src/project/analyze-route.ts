@@ -1,20 +1,15 @@
 import type { RouteMethod, RouteResultFormat } from '@alien-rpc/route'
-import type { ts } from '@ts-morph/common'
 import { parsePathParams } from 'pathic'
-import { debug } from './debug.js'
-import {
-  printTypeLiteralToString,
-  ReferencedTypes,
-} from './typescript/print-type-literal.js'
-import { SupportingTypes } from './typescript/supporting-types.js'
+import type ts from 'typescript'
+import { debug } from '../debug.js'
+import { Project } from '../project.js'
+import { SupportingTypes } from './supporting-types.js'
+import { ReferencedTypes } from './type-references.js'
 import {
   getArrayElementType,
   getTupleElements,
-  isAnyType,
   isAssignableTo,
-  isAsyncGeneratorType,
-} from './typescript/utils.js'
-import { CompilerAPI } from './typescript/wrap.js'
+} from './utils.js'
 
 export type AnalyzedRoute = {
   fileName: string
@@ -29,15 +24,17 @@ export type AnalyzedRoute = {
 }
 
 export function analyzeRoute(
-  ts: CompilerAPI,
+  project: Project,
   fileName: string,
   routeName: string,
   declaration: ts.VariableDeclaration,
-  typeChecker: ts.TypeChecker,
   types: SupportingTypes,
   referencedTypes: ReferencedTypes
 ): AnalyzedRoute | null {
   debug(`Analyzing route "${routeName}"`)
+
+  const typeChecker = project.getTypeChecker()
+  const ts = project.utils
 
   const declarationType = typeChecker.getTypeAtLocation(declaration)
   if (!isAssignableTo(typeChecker, declarationType, types.RouteDefinition)) {
@@ -99,10 +96,8 @@ export function analyzeRoute(
     throw new Error('Route handler has an unknown return type')
   }
 
-  const resolvedMethod = printTypeLiteralToString(
-    ts,
-    typeChecker.getTypeOfSymbol(method),
-    typeChecker
+  const resolvedMethod = project.printTypeLiteralToString(
+    typeChecker.getTypeOfSymbol(method)
   )
 
   let parsedMethod: RouteMethod
@@ -114,10 +109,8 @@ export function analyzeRoute(
     )
   }
 
-  let resolvedPathname = printTypeLiteralToString(
-    ts,
-    typeChecker.getTypeOfSymbol(path),
-    typeChecker
+  let resolvedPathname = project.printTypeLiteralToString(
+    typeChecker.getTypeOfSymbol(path)
   )
 
   try {
@@ -142,16 +135,14 @@ export function analyzeRoute(
 
     // The request context is excluded from the resolved arguments.
     if (
-      !isAnyType(argumentType) &&
+      !ts.isAnyType(argumentType) &&
       isAssignableTo(typeChecker, argumentType, types.RequestContext)
     ) {
       continue
     }
 
-    const argumentTypeLiteral = printTypeLiteralToString(
-      ts,
+    const argumentTypeLiteral = project.printTypeLiteralToString(
       argumentType,
-      typeChecker,
       referencedTypes
     )
 
@@ -167,14 +158,12 @@ export function analyzeRoute(
             const propType =
               propSymbol && typeChecker.getTypeOfSymbol(propSymbol)
 
-            return `${prop}: ${propType ? printTypeLiteralToString(ts, propType, typeChecker, referencedTypes) : 'unknown'}`
+            return `${prop}: ${propType ? project.printTypeLiteralToString(propType, referencedTypes) : 'unknown'}`
           })
           .join(', ')} }`
       } else if (typeChecker.isArrayType(argumentType)) {
-        const elementType = printTypeLiteralToString(
-          ts,
+        const elementType = project.printTypeLiteralToString(
           getArrayElementType(argumentType),
-          typeChecker,
           referencedTypes
         )
         resolvedPathParams = `{ ${pathParams
@@ -187,24 +176,18 @@ export function analyzeRoute(
   }
 
   const resolvedResult = resolveResultType(
-    ts,
+    project,
     handlerResultType,
-    typeChecker,
     types,
     referencedTypes
   )
 
-  const resolvedFormat = resolveResultFormat(
-    ts,
-    handlerResultType,
-    typeChecker,
-    types
-  )
+  const resolvedFormat = resolveResultFormat(project, handlerResultType, types)
 
   return {
     fileName,
     exportedName: routeName,
-    description: extractDescription(ts, declaration),
+    description: extractDescription(project, declaration),
     resolvedPathParams,
     resolvedFormat,
     resolvedMethod: parsedMethod,
@@ -215,9 +198,10 @@ export function analyzeRoute(
 }
 
 function extractDescription(
-  ts: CompilerAPI,
+  project: Project,
   declaration: ts.VariableDeclaration
 ) {
+  const ts = project.utils
   const docs = ts.getJSDocCommentsAndTags(declaration)
   if (docs.length > 0) {
     return docs
@@ -249,12 +233,14 @@ function extractDescription(
 }
 
 function resolveResultType(
-  ts: CompilerAPI,
+  project: Project,
   type: ts.Type,
-  typeChecker: ts.TypeChecker,
   types: SupportingTypes,
   referencedTypes?: Map<ts.Symbol, string>
 ) {
+  const typeChecker = project.getTypeChecker()
+  const ts = project.utils
+
   // Prevent mapping of `Response` to literal type
   if (isAssignableTo(typeChecker, type, types.Response)) {
     return 'Response'
@@ -267,17 +253,15 @@ function resolveResultType(
 
   // Async generators are coerced to `AsyncIterableIterator` since
   // typebox-codegen has no Type.AsyncGenerator validator
-  if (isAsyncGeneratorType(type) && hasTypeArguments(type)) {
-    const yieldType = printTypeLiteralToString(
-      ts,
+  if (ts.isAsyncGeneratorType(type) && hasTypeArguments(type)) {
+    const yieldType = project.printTypeLiteralToString(
       type.typeArguments[0],
-      typeChecker,
       referencedTypes
     )
     return `AsyncIterableIterator<${yieldType}>`
   }
 
-  return printTypeLiteralToString(ts, type, typeChecker, referencedTypes)
+  return project.printTypeLiteralToString(type, referencedTypes)
 }
 
 interface TypeArguments {
@@ -289,12 +273,14 @@ function hasTypeArguments(type: ts.Type): type is ts.Type & TypeArguments {
 }
 
 function resolveResultFormat(
-  ts: CompilerAPI,
+  project: Project,
   type: ts.Type,
-  typeChecker: ts.TypeChecker,
   types: SupportingTypes
 ) {
-  if (type.flags & ts.TypeFlags.Any) {
+  const typeChecker = project.getTypeChecker()
+  const ts = project.utils
+
+  if (ts.isAnyType(type)) {
     throw new InvalidResponseTypeError('Your route is not type-safe.')
   }
   if (isAssignableTo(typeChecker, type, types.Response)) {
@@ -316,7 +302,7 @@ function resolveResultFormat(
   if (!isAssignableTo(typeChecker, type, types.RouteResult)) {
     throw new InvalidResponseTypeError(
       'Your route returns an unsupported type: ' +
-        printTypeLiteralToString(ts, type, typeChecker)
+        project.printTypeLiteralToString(type)
     )
   }
   return 'json'

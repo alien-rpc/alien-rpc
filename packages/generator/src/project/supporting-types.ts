@@ -1,6 +1,6 @@
-import type { Project, ts } from '@ts-morph/bootstrap'
 import path from 'node:path'
-import { CompilerAPI } from './wrap.js'
+import type ts from 'typescript'
+import { Project } from '../project.js'
 
 export type SupportingTypes = ReturnType<typeof createSupportingTypes>
 
@@ -10,11 +10,12 @@ export type SupportingTypes = ReturnType<typeof createSupportingTypes>
  * unsupported types.
  */
 export function createSupportingTypes(
-  ts: CompilerAPI,
   project: Project,
-  rootDir: string,
   serviceModuleId: string
 ) {
+  const rootDir = path.dirname(project.tsConfigFilePath)
+  const ts = project.utils
+
   const typeDeclarations = {
     AnyNonNull: '{}',
     Response: 'globalThis.Response',

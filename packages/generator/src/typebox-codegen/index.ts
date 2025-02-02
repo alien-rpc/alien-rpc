@@ -1,6 +1,6 @@
-import type { ts } from '@ts-morph/common'
 import { camel } from 'radashi'
-import { CompilerAPI } from '../typescript/wrap.js'
+import type ts from 'typescript'
+import { CompilerAPI } from '../project.js'
 
 export type { Options as TypeScriptToTypeBoxOptions }
 

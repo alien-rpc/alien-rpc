@@ -1,29 +1,25 @@
-import type { ts } from '@ts-morph/common'
+import type ts from 'typescript'
+import { debug } from '../debug.js'
+import { Project } from '../project.js'
 import { AnalyzedRoute, analyzeRoute } from './analyze-route.js'
-import { debug } from './debug.js'
-import { ReferencedTypes } from './typescript/print-type-literal.js'
-import { SupportingTypes } from './typescript/supporting-types.js'
-import { CompilerAPI } from './typescript/wrap.js'
+import { SupportingTypes } from './supporting-types.js'
+import { ReferencedTypes } from './type-references.js'
 
 export type AnalyzedFile = ReturnType<typeof analyzeFile>
 
 export function analyzeFile(
-  ts: CompilerAPI,
+  project: Project,
   sourceFile: ts.SourceFile,
-  typeChecker: ts.TypeChecker,
   types: SupportingTypes
 ) {
   const routes: AnalyzedRoute[] = []
   const referencedTypes: ReferencedTypes = new Map()
 
+  const typeChecker = project.getTypeChecker()
+  const ts = project.utils
+
   ts.forEachChild(sourceFile, node => {
-    if (
-      !ts.isVariableStatement(node) ||
-      !node.modifiers ||
-      node.modifiers.every(
-        modifier => modifier.kind !== ts.SyntaxKind.ExportKeyword
-      )
-    ) {
+    if (!ts.isVariableStatement(node) || !ts.isExportedNode(node)) {
       return
     }
 
@@ -41,11 +37,10 @@ export function analyzeFile(
     const routeName = symbol.getName()
     try {
       const route = analyzeRoute(
-        ts,
+        project,
         sourceFile.fileName,
         routeName,
         declaration,
-        typeChecker,
         types,
         referencedTypes
       )

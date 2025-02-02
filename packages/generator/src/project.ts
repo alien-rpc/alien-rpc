@@ -1,25 +1,37 @@
-import { Project } from '@ts-morph/bootstrap'
-import { FileUtils, type ts } from '@ts-morph/common'
 import { JumpgenFS } from 'jumpgen'
 import path from 'node:path'
+import type * as tscExtra from 'tsc-extra'
+import { createProjectFactory } from 'tsc-extra'
+import type ts from 'typescript'
 import {
   Directory,
   ResolvedModuleWithFailedLookupLocations,
   Store,
-} from '../generator-types.js'
-import { typeConstraints } from '../type-constraints.js'
-import * as TypeBoxCodegen from '../typebox-codegen/index.js'
+} from './generator-types.js'
+import { createTypePrinter } from './project/type-printer.js'
+import { createUtils } from './project/utils.js'
+import { typeConstraints } from './type-constraints.js'
+import * as TypeBoxCodegen from './typebox-codegen/index.js'
 
-export type CompilerAPI = typeof import('@ts-morph/common').ts
+export type Project = Awaited<ReturnType<typeof createProject>>
 
-export type TypeScriptWrap = ReturnType<typeof wrapTypeScriptModule>
-
-export function wrapTypeScriptModule(
-  ts: CompilerAPI,
-  fs: JumpgenFS,
-  store: Store,
+export type ProjectOptions = tscExtra.ProjectOptions & {
+  fs: JumpgenFS
+  store: Store
   isWatchMode: boolean
+}
+
+export const createProject = createProjectFactory(function (
+  project: tscExtra.Project,
+  { fs, store, isWatchMode }: ProjectOptions,
+  compiler: unknown
 ) {
+  // FIXME: The tsc-extra package *should* be using the same `typescript`
+  // package, but (for some reason) the type checker is complaining.
+  const ts = compiler as typeof import('typescript')
+  const utils = createUtils(ts)
+  const printTypeLiteralToString = createTypePrinter(project, utils)
+
   function watchMissingImport(
     sourceFile: ts.SourceFile,
     specifier: string,
@@ -56,7 +68,6 @@ export function wrapTypeScriptModule(
     sourceFile: ts.SourceFile,
     compilerOptions: ts.CompilerOptions,
     moduleResolutionHost: ts.ModuleResolutionHost,
-    project: Project,
     onResolve: (
       resolvedModule: ts.ResolvedModuleFull | undefined,
       affectingLocations: string[] | undefined,
@@ -64,10 +75,7 @@ export function wrapTypeScriptModule(
     ) => void,
     onDirectory: (directory: Directory) => void
   ): void {
-    const directoryPath = FileUtils.getStandardizedAbsolutePath(
-      project.fileSystem,
-      path.dirname(sourceFile.fileName)
-    )
+    const directoryPath = path.dirname(sourceFile.fileName)
 
     let directory: Directory | undefined
 
@@ -117,7 +125,7 @@ export function wrapTypeScriptModule(
         resolution = ts.resolveModuleName(
           specifier.text,
           sourceFile.fileName,
-          directory.tsConfig?.compilerOptions ?? compilerOptions,
+          directory.tsConfig?.options ?? compilerOptions,
           moduleResolutionHost
         ) as ResolvedModuleWithFailedLookupLocations
 
@@ -144,8 +152,7 @@ export function wrapTypeScriptModule(
   function collectDependencies(
     rootSourceFile: ts.SourceFile,
     compilerOptions: ts.CompilerOptions,
-    moduleResolutionHost: ts.ModuleResolutionHost,
-    project: Project
+    moduleResolutionHost: ts.ModuleResolutionHost
   ): void {
     const seen = new Set<ts.SourceFile>()
     descend(rootSourceFile)
@@ -162,7 +169,6 @@ export function wrapTypeScriptModule(
         sourceFile,
         compilerOptions,
         moduleResolutionHost,
-        project,
         (resolvedModule, affectingLocations) => {
           // Any files we find are watched, but their changes must be
           // attributed to the `rootSourceFile` so the route-containing
@@ -194,7 +200,7 @@ export function wrapTypeScriptModule(
 
           if (resolvedModule) {
             descend(
-              project.addSourceFileAtPathSync(resolvedModule.resolvedFileName)
+              project.addSourceFileAtPath(resolvedModule.resolvedFileName)
             )
           }
         },
@@ -211,39 +217,11 @@ export function wrapTypeScriptModule(
     }
   }
 
-  function parseTypeLiteral(type: string) {
-    const sourceFile = ts.createSourceFile(
-      'temp.ts',
-      `type Temp = ${type}`,
-      ts.ScriptTarget.Latest
-    )
-    return (sourceFile.statements[0] as ts.TypeAliasDeclaration).type
-  }
-
-  /**
-   * Check if every property in an object literal type is optional.
-   */
-  function arePropertiesOptional(objectLiteralType: string): boolean {
-    if (objectLiteralType === 'Record<string, never>') {
-      return true
-    }
-    const typeNode = parseTypeLiteral(objectLiteralType)
-    if (ts.isTypeLiteralNode(typeNode)) {
-      return typeNode.members.every(member => {
-        if (ts.isPropertySignature(member)) {
-          return member.questionToken !== undefined
-        }
-        return false
-      })
-    }
-    return false
-  }
-
   /**
    * Check if a route's path parameters need a runtime validator.
    */
   function needsPathSchema(type: string) {
-    const typeNode = parseTypeLiteral(type)
+    const typeNode = utils.parseTypeLiteral(type)
     if (!ts.isTypeLiteralNode(typeNode)) {
       throw new Error('Expected a type literal')
     }
@@ -306,12 +284,12 @@ export function wrapTypeScriptModule(
   }
 
   return {
-    ...ts,
+    printTypeLiteralToString,
     watchMissingImport,
     collectDependencies,
-    arePropertiesOptional,
     needsPathSchema,
     generateRuntimeValidator,
     generateServerTypeAliases,
+    utils,
   }
-}
+})

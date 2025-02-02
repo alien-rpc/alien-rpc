@@ -1,16 +1,10 @@
-import type { Project } from '@ts-morph/bootstrap'
-import type { StandardizedFilePath, ts } from '@ts-morph/common'
 import type { JumpgenFS } from 'jumpgen'
 import path from 'node:path'
+import { TsConfig } from 'tsc-extra'
+import { Project } from '../project.js'
 
-export type TsConfigResolution = {
+export type TsConfigResolution = TsConfig & {
   readonly fileName: string
-  readonly compilerOptions: ts.CompilerOptions
-  readonly paths: {
-    filePaths: StandardizedFilePath[]
-    directoryPaths: StandardizedFilePath[]
-  }
-  readonly errors: ts.Diagnostic[]
 }
 
 export type TsConfigCache = ReturnType<typeof createTsConfigCache>
@@ -18,7 +12,7 @@ export type TsConfigCache = ReturnType<typeof createTsConfigCache>
 export function createTsConfigCache(fs: JumpgenFS, project: Project) {
   const resolveTsConfig = (configFilePath: string): TsConfigResolution => {
     return {
-      ...project.resolveTsConfig(configFilePath),
+      ...project.loadTsConfig(configFilePath),
       fileName: configFilePath,
     }
   }
@@ -26,7 +20,7 @@ export function createTsConfigCache(fs: JumpgenFS, project: Project) {
   const configFileMap = new Map<string, TsConfigResolution>()
 
   return {
-    findUp(fromDirectory: StandardizedFilePath) {
+    findUp(fromDirectory: string) {
       let cwd: string = fromDirectory
       let config: TsConfigResolution | undefined
       while (true) {
@@ -43,7 +37,7 @@ export function createTsConfigCache(fs: JumpgenFS, project: Project) {
           config = resolveTsConfig(configFilePath)
           configFileMap.set(configFilePath, config)
         }
-        if (config.paths.directoryPaths.includes(fromDirectory)) {
+        if (config.directories.includes(fromDirectory)) {
           return config
         }
         cwd = path.resolve(configFilePath, '../..')

@@ -22,10 +22,12 @@
   },
   "dependencies": {
     "debug": "^4.3.7",
-    "esm-resolve": "^1.0.11",
-    "minimatch": "^9.0.4",
+    "import-meta-resolve": "^4.1.0",
     "jumpgen": "^0.2.0",
-    "tinyglobby": "^0.2.9"
+    "minimatch": "^9.0.4",
+    "pathic": "workspace:^",
+    "tinyglobby": "^0.2.9",
+    "tsc-extra": "^0.0.3"
   },
   "peerDependencies": {
     "@sinclair/typebox": "*",
@@ -33,10 +35,7 @@
   },
   "devDependencies": {
     "@alien-rpc/route": "workspace:^",
-    "@ts-morph/bootstrap": "^0.25.0",
-    "@ts-morph/common": "^0.25.0",
     "@types/debug": "^4.1.12",
-    "pathic": "workspace:^",
     "radashi": "^12.3.0"
   },
   "scripts": {

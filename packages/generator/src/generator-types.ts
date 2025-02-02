@@ -1,13 +1,9 @@
-import type { Project } from '@ts-morph/bootstrap'
-import type { ts } from '@ts-morph/common'
-import type { AnalyzedFile } from './analyze-file.js'
-import type { AnalyzedRoute } from './analyze-route.js'
-import type { SupportingTypes } from './typescript/supporting-types.js'
-import type {
-  TsConfigCache,
-  TsConfigResolution,
-} from './typescript/tsconfig.js'
-import type { TypeScriptWrap } from './typescript/wrap.js'
+import type ts from 'typescript'
+import type { Project } from './project.js'
+import type { AnalyzedFile } from './project/analyze-file.js'
+import type { AnalyzedRoute } from './project/analyze-route.js'
+import type { SupportingTypes } from './project/supporting-types.js'
+import type { TsConfigCache, TsConfigResolution } from './project/tsconfig.js'
 
 export type Options = {
   /**
@@ -54,9 +50,7 @@ export type Options = {
 }
 
 export interface Store {
-  tsConfigFilePath: string
   tsConfigCache: TsConfigCache
-  ts: TypeScriptWrap
   project: Project
   types: SupportingTypes
   serviceModuleId: string

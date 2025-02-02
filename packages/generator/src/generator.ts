@@ -1,19 +1,17 @@
 import { bodylessMethods } from '@alien-rpc/route'
-import { createProject } from '@ts-morph/bootstrap'
-import { FileUtils, injectTypeScriptModule } from '@ts-morph/common'
-import createResolver from 'esm-resolve'
+import { resolve } from 'import-meta-resolve'
 import { FileChange, jumpgen } from 'jumpgen'
 import path from 'path'
 import { parsePathParams } from 'pathic'
 import { camel, guard, pascal, sift } from 'radashi'
-import { analyzeFile } from './analyze-file.js'
-import { reportDiagnostics } from './diagnostics.js'
 import type { Event, Options, Store } from './generator-types.js'
+import { createProject } from './project.js'
+import { analyzeFile } from './project/analyze-file.js'
+import { reportDiagnostics } from './project/diagnostics.js'
+import { createSupportingTypes } from './project/supporting-types.js'
+import { createTsConfigCache } from './project/tsconfig.js'
+import { ReferencedTypes } from './project/type-references.js'
 import { typeConstraints } from './type-constraints.js'
-import { ReferencedTypes } from './typescript/print-type-literal.js'
-import { createSupportingTypes } from './typescript/supporting-types.js'
-import { createTsConfigCache } from './typescript/tsconfig.js'
-import { wrapTypeScriptModule } from './typescript/wrap.js'
 
 export default (rawOptions: Options) =>
   jumpgen<Store, Event, void>('alien-rpc', async context => {
@@ -41,28 +39,20 @@ export default (rawOptions: Options) =>
     options.clientOutFile = path.resolve(options.outDir, options.clientOutFile)
 
     if (isProjectInvalidated(store, changes)) {
-      const tsConfigFilePath = (store.tsConfigFilePath ??= path.resolve(
-        root,
-        options.tsConfigFile ?? 'tsconfig.json'
-      ))
-
-      // Find the "typescript" package installed in the project.
-      const compilerPath = resolveModule('path', tsConfigFilePath, [
-        'typescript',
-      ])
-
-      const ts = await import(compilerPath)
-      store.ts = wrapTypeScriptModule(ts, fs, store, !!context.watcher)
-      injectTypeScriptModule(ts)
+      store.project = await createProject(root, {
+        fs,
+        store,
+        isWatchMode: !!context.watcher,
+        tsConfigFilePath: options.tsConfigFile,
+      })
 
       emit({
         type: 'info',
-        message: ['Loaded typescript@%s from', ts.version, compilerPath],
-      })
-
-      store.project = await createProject({
-        tsConfigFilePath,
-        skipFileDependencyResolution: true,
+        message: [
+          'Using typescript@%s from',
+          store.project.compilerVersion,
+          store.project.compilerPath,
+        ],
       })
 
       store.serviceModuleId = resolveModule('id', options.serverOutFile, [
@@ -74,13 +64,7 @@ export default (rawOptions: Options) =>
         '@alien-rpc/client',
       ])
 
-      store.types = createSupportingTypes(
-        store.ts,
-        store.project,
-        path.dirname(tsConfigFilePath),
-        store.serviceModuleId
-      )
-
+      store.types = createSupportingTypes(store.project, store.serviceModuleId)
       store.tsConfigCache = createTsConfigCache(fs, store.project)
 
       store.deletedFiles = new Set()
@@ -138,23 +122,19 @@ export default (rawOptions: Options) =>
       }
     }
 
-    const { ts, project, types, analyzedFiles, includedFiles } = store
+    const { project, types, analyzedFiles, includedFiles } = store
+    const { utils } = project
 
     project.resolveSourceFileDependencies()
 
-    const program = project.createProgram()
-    const typeChecker = program.getTypeChecker()
-    const compilerOptions = program.getCompilerOptions()
-    const moduleResolutionHost = project.getModuleResolutionHost()
     const referencedTypes: ReferencedTypes = new Map()
 
-    const routes = project
-      .getSourceFiles()
+    const routes = Array.from(project.getSourceFiles())
       .filter(sourceFile => entryFilePaths.includes(sourceFile.fileName))
       .flatMap(sourceFile => {
         let metadata = analyzedFiles.get(sourceFile)
         if (!metadata) {
-          metadata = analyzeFile(ts, sourceFile, typeChecker, types)
+          metadata = analyzeFile(project, sourceFile, types)
           analyzedFiles.set(sourceFile, metadata)
 
           // Prepend the API version to all route pathnames.
@@ -168,11 +148,10 @@ export default (rawOptions: Options) =>
             emit({ type: 'route', route })
           }
         }
-        ts.collectDependencies(
+        project.collectDependencies(
           sourceFile,
-          compilerOptions,
-          moduleResolutionHost,
-          project
+          project.compilerOptions,
+          project.getModuleResolutionHost()
         )
         for (const [symbol, type] of metadata.referencedTypes) {
           referencedTypes.set(symbol, type)
@@ -194,16 +173,16 @@ export default (rawOptions: Options) =>
       throw new Error('No routes were exported by the included files')
     }
 
-    reportDiagnostics(ts, program, {
+    reportDiagnostics(project, {
       verbose: options.verbose,
       ignoreFile: file => !includedFiles.has(file),
       onModuleNotFound: (specifier, importer) =>
         context.watcher &&
-        ts.watchMissingImport(
+        project.watchMissingImport(
           importer,
           specifier,
-          compilerOptions,
-          moduleResolutionHost
+          project.compilerOptions,
+          project.getModuleResolutionHost()
         ),
     })
 
@@ -216,11 +195,8 @@ export default (rawOptions: Options) =>
     const serverCheckedStringFormats = new Set<string>()
 
     const serverTsConfig = store.tsConfigCache.findUp(
-      FileUtils.getStandardizedAbsolutePath(
-        project.fileSystem,
-        path.dirname(options.serverOutFile)
-      )
-    )!
+      path.dirname(options.serverOutFile)
+    )
 
     for (const route of routes) {
       let pathSchemaDecl = ''
@@ -228,10 +204,10 @@ export default (rawOptions: Options) =>
 
       if (
         route.resolvedPathParams &&
-        ts.needsPathSchema(route.resolvedPathParams)
+        project.needsPathSchema(route.resolvedPathParams)
       ) {
         pathSchemaDecl = (
-          await ts.generateRuntimeValidator(
+          await project.generateRuntimeValidator(
             `type Path = ${route.resolvedPathParams}`
           )
         ).replace(/\bType\.(Number|Array)\(/g, (match, type) => {
@@ -251,7 +227,7 @@ export default (rawOptions: Options) =>
         route.resolvedArguments[route.resolvedPathParams ? 1 : 0]
 
       if (dataArgument && dataArgument !== 'any') {
-        requestSchemaDecl = await ts.generateRuntimeValidator(
+        requestSchemaDecl = await project.generateRuntimeValidator(
           `type Request = ${dataArgument}`
         )
 
@@ -273,7 +249,7 @@ export default (rawOptions: Options) =>
       const responseSchemaDecl =
         route.resolvedFormat === 'response'
           ? `Type.Any()`
-          : await ts.generateRuntimeValidator(
+          : await project.generateRuntimeValidator(
               `type Response = ${route.resolvedResult}`
             )
 
@@ -288,7 +264,7 @@ export default (rawOptions: Options) =>
       const handlerPath = resolveImportPath(
         options.serverOutFile,
         route.fileName,
-        serverTsConfig.compilerOptions.allowImportingTsExtensions
+        serverTsConfig?.options.allowImportingTsExtensions
       )
 
       const pathParams = parsePathParams(route.resolvedPathname)
@@ -330,8 +306,8 @@ export default (rawOptions: Options) =>
 
       const clientParamsAreOptional =
         !clientParamsExist ||
-        (ts.arePropertiesOptional(resolvedPathParams) &&
-          ts.arePropertiesOptional(resolvedRequestData))
+        (utils.arePropertiesOptional(resolvedPathParams) &&
+          utils.arePropertiesOptional(resolvedRequestData))
 
       const clientArgs: string[] = ['requestOptions?: RequestOptions']
       if (clientParamsExist) {
@@ -386,7 +362,10 @@ export default (rawOptions: Options) =>
 
     const serverTypeAliases =
       clientTypeAliases &&
-      (await ts.generateServerTypeAliases(clientTypeAliases, typeConstraints))
+      (await project.generateServerTypeAliases(
+        clientTypeAliases,
+        typeConstraints
+      ))
 
     const writeServerDefinitions = (outFile: string) => {
       let imports = ''
@@ -452,8 +431,8 @@ export default (rawOptions: Options) =>
 
 function isProjectInvalidated(store: Store, changes: FileChange[]) {
   return (
-    !store.tsConfigFilePath ||
-    changes.some(change => change.file === store.tsConfigFilePath)
+    !store.project ||
+    changes.some(change => change.file === store.project.tsConfigFilePath)
   )
 }
 
@@ -486,9 +465,10 @@ function resolveModule(
   importer: string,
   candidateIds: string[]
 ) {
-  const resolve = createResolver(importer, { resolveToAbsolute: true })
   for (const id of candidateIds) {
-    const resolvedId = guard(() => resolve(id))
+    const resolvedId = guard(
+      () => new URL(resolve(id, 'file://' + importer)).pathname
+    )
     if (resolvedId) {
       return returnKind === 'path' ? resolvedId : id
     }

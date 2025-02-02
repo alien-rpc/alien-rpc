@@ -1,5 +1,5 @@
-import type { ts } from '@ts-morph/common'
-import { CompilerAPI } from './typescript/wrap.js'
+import type ts from 'typescript'
+import { Project } from './project.js'
 
 const reportDiagnostic = process.env.TEST
   ? (message: string): void => {
@@ -10,8 +10,7 @@ const reportDiagnostic = process.env.TEST
   : console.warn
 
 export function reportDiagnostics(
-  ts: CompilerAPI,
-  program: ts.Program,
+  project: Project,
   {
     verbose,
     ignoreFile,
@@ -22,20 +21,19 @@ export function reportDiagnostics(
     onModuleNotFound: (specifier: string, importer: ts.SourceFile) => void
   }
 ) {
+  const program = project.getProgram()
+  if (!program) {
+    return
+  }
+  const { flattenDiagnosticMessageText } = project.utils
   program.getGlobalDiagnostics().forEach(diagnostic => {
-    reportDiagnostic(
-      ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n')
-    )
+    reportDiagnostic(flattenDiagnosticMessageText(diagnostic.messageText, '\n'))
   })
   program.getOptionsDiagnostics().forEach(diagnostic => {
-    reportDiagnostic(
-      ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n')
-    )
+    reportDiagnostic(flattenDiagnosticMessageText(diagnostic.messageText, '\n'))
   })
   program.getConfigFileParsingDiagnostics().forEach(diagnostic => {
-    reportDiagnostic(
-      ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n')
-    )
+    reportDiagnostic(flattenDiagnosticMessageText(diagnostic.messageText, '\n'))
   })
   for (const sourceFile of program.getSourceFiles()) {
     if (sourceFile.fileName.includes('/typescript/lib/')) {
@@ -48,10 +46,7 @@ export function reportDiagnostics(
       continue
     }
     program.getSemanticDiagnostics(sourceFile).forEach(diagnostic => {
-      const message = ts.flattenDiagnosticMessageText(
-        diagnostic.messageText,
-        '\n'
-      )
+      const message = flattenDiagnosticMessageText(diagnostic.messageText, '\n')
       if (diagnostic.file) {
         const { line, character } =
           diagnostic.file.getLineAndCharacterOfPosition(diagnostic.start!)
