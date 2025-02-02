@@ -25,7 +25,7 @@ const languageService = project.getLanguageService()
 
 ### Purpose
 
-This package exists for static analysis of TypeScript code as well as type-checking.
+This package exists for static analysis of TypeScript code as well as type-checking. Importantly, it imports the `typescript` package from the project's `node_modules` folder, ensuring what you see in your IDE is what you get when using this package.
 
 It doesn't aim to help with code generation or manipulation. For that, I recommend using [ts-morph](https://ts-morph.com/), which this package pulled much of its implementation from.
 
