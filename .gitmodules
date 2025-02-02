@@ -1,3 +1,0 @@
-[submodule "packages/ts-morph"]
-	path = packages/ts-morph
-	url = https://github.com/alien-rpc/ts-morph.git
