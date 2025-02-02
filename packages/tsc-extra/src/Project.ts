@@ -4,7 +4,9 @@ import type ts from 'typescript'
 import { Compiler, getCompiler } from './Compiler.js'
 import { createDocumentRegistry, DocumentRegistry } from './DocumentRegistry.js'
 import { FileNotFoundError } from './errors.js'
-import { createTsConfigLoader } from './TsConfigLoader.js'
+import { createTsConfigLoader, TsConfig } from './TsConfigLoader.js'
+
+const compilerCache = new WeakMap<TsConfig, Compiler>()
 
 export interface ProjectOptions {
   /**
@@ -37,6 +39,8 @@ export async function createProject(
     ...tsConfig.options,
     ...options.compilerOptions,
   }
+
+  compilerCache.set(tsConfig, ts)
 
   let projectVersion = 0
   let program: ts.Program | undefined
@@ -413,11 +417,15 @@ export async function createProject(
  */
 export const createProjectFactory =
   <Extension extends object, Options extends ProjectOptions>(
-    extension: (project: Project, options: Options) => Extension
+    extension: (project: Project, options: Options, ts: Compiler) => Extension
   ) =>
   async (rootDir: string, options?: Options): Promise<Project & Extension> => {
     const project = await createProject(rootDir, options)
-    const newProperties = extension(project, (options ?? {}) as Options)
+    const newProperties = extension(
+      project,
+      (options ?? {}) as Options,
+      compilerCache.get(project.tsConfig)!
+    )
     return Object.defineProperties(
       project as any,
       Object.getOwnPropertyDescriptors(newProperties)
