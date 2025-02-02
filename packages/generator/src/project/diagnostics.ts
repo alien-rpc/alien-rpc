@@ -1,5 +1,5 @@
 import type ts from 'typescript'
-import { Project } from './project.js'
+import { Project } from '../project.js'
 
 const reportDiagnostic = process.env.TEST
   ? (message: string): void => {
