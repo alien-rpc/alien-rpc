@@ -1,9 +1,9 @@
 import type { RouteMethod, RouteResultFormat } from '@alien-rpc/route'
 import type { RequestContext } from '@hattip/compose'
 import type { TObject, TSchema } from '@sinclair/typebox'
-import { InferParamNames, InferParamsArray } from 'pathic'
+import type { InferParamNames, InferParamsArray } from 'pathic'
 import type { JSON, JSONCodable, Promisable } from './internal/types'
-import { PaginationLinks } from './pagination.js'
+import type { PaginationLinks } from './pagination.js'
 
 declare module '@hattip/compose' {
   interface RequestContextExtensions {

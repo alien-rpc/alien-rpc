@@ -1,5 +1,5 @@
-import { RouteMethod } from '@alien-rpc/route'
-import { InferParamsArray } from 'pathic'
+import type { RouteMethod } from '@alien-rpc/route'
+import type { InferParamsArray } from 'pathic'
 import {
   FixedRouteHandler,
   MultiParamRouteHandler,

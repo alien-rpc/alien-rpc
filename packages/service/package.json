@@ -34,15 +34,15 @@
   },
   "dependencies": {
     "@json-qs/json-qs": "^1.2.0",
-    "option-types": "^1.1.0"
+    "option-types": "^1.1.0",
+    "pathic": "workspace:^"
   },
   "peerDependencies": {
     "@hattip/compose": "*",
     "@sinclair/typebox": "*"
   },
   "devDependencies": {
-    "@alien-rpc/route": "workspace:^",
-    "pathic": "workspace:^"
+    "@alien-rpc/route": "workspace:^"
   },
   "scripts": {
     "dev": "watchlist src -- pnpm build:dev",
