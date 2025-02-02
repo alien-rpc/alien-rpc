@@ -364,6 +364,8 @@ export async function createProject(
 
   return {
     rootDir,
+    compilerPath: ts.resolvedCompilerPath,
+    compilerVersion: ts.version,
     compilerOptions,
 
     // TypeScript configuration

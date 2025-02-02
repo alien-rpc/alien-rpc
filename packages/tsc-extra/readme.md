@@ -43,6 +43,8 @@ This function loads a tsconfig.json file, maintains a `ts.DocumentRegistry`, and
     - `skipAddingFilesFromTsConfig`: Whether to skip adding source files from the specified tsconfig.json.
 - **Returns**: A `Project` instance.
   - `rootDir`: The root directory of the project.
+  - `compilerPath`: The path to the TypeScript compiler.
+  - `compilerVersion`: The version of the TypeScript compiler.
   - `compilerOptions`: The compiler options used for the project.
   - `tsConfig`: The parsed tsconfig.json file.
   - `loadTsConfig`: A function to load a tsconfig.json file.

@@ -9,16 +9,17 @@ export async function getCompiler(
     sys?: Partial<ts.System>
   } = {}
 ) {
-  const importPath = resolve(
+  const resolvedCompilerPath = resolve(
     'typescript',
     new URL(rootDir, 'file://').toString()
   )
 
-  const ts = (await import(importPath)) as typeof import('typescript')
+  const ts = (await import(resolvedCompilerPath)) as typeof import('typescript')
   const sys = { ...ts.sys, ...overrides.sys }
 
   return {
     ...ts,
+    resolvedCompilerPath,
     getNormalizedAbsolutePath: (
       fileName: string,
       currentDirectory = sys.getCurrentDirectory()
