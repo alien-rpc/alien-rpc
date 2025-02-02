@@ -1,0 +1,41 @@
+{
+  "name": "tsc-extra",
+  "version": "0.0.0",
+  "description": "A minimal wrapper around TypeScript's compiler API",
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "author": "Alec Larson",
+  "license": "MIT",
+  "homepage": "https://github.com/alloc/alien-rpc/tree/master/packages/tsc-extra#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/alloc/alien-rpc.git",
+    "directory": "packages/tsc-extra"
+  },
+  "scripts": {
+    "dev": "watchlist src -- pnpm build:dev",
+    "build": "pnpm clean && PROD=1 tsup --treeshake=smallest",
+    "build:dev": "tsup --sourcemap --no-treeshake",
+    "clean": "rimraf dist",
+    "lint": "tsc -p . --outDir node_modules/.tmp",
+    "prepublishOnly": "pnpm lint && pnpm build"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.0"
+  },
+  "dependencies": {
+    "import-meta-resolve": "^4.1.0",
+    "ts-expose-internals": "^5.6.3"
+  }
+}
