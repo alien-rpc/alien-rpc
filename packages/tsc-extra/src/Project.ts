@@ -425,14 +425,14 @@ export async function createProject(
  */
 export const createProjectFactory =
   <Extension extends object, Options extends ProjectOptions>(
-    extension: (project: Project, options: Options, ts: Compiler) => Extension
+    extension: (project: Project, options: Options, ts: any) => Extension
   ) =>
   async (rootDir: string, options?: Options): Promise<Project & Extension> => {
     const project = await createProject(rootDir, options)
     const newProperties = extension(
       project,
       (options ?? {}) as Options,
-      compilerCache.get(project.tsConfig)!
+      compilerCache.get(project.tsConfig)
     )
     return Object.defineProperties(
       project as any,

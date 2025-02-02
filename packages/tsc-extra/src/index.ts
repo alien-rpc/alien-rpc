@@ -1,4 +1,4 @@
 /// <reference types="ts-expose-internals" />
 
 export * from './Project.js'
-export * from './TsConfigLoader.js'
+export type { TsConfig } from './TsConfigLoader.js'
