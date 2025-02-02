@@ -131,8 +131,8 @@ importers:
         specifier: ^0.2.9
         version: 0.2.10
       tsc-extra:
-        specifier: ^0.0.3
-        version: 0.0.3(typescript@5.7.3)
+        specifier: ^0.0.4
+        version: 0.0.4(typescript@5.7.3)
       typescript:
         specifier: '*'
         version: 5.7.3
@@ -1098,8 +1098,8 @@ packages:
   ts-interface-checker@0.1.13:
     resolution: {integrity: sha512-Y/arvbn+rrz3JCKl9C4kVNfTfSm2/mEp5FSz5EsZSANGPSlQrpRI5M4PKF+mJnE52jOO90PnPSc3Ur3bTQw0gA==}
 
-  tsc-extra@0.0.3:
-    resolution: {integrity: sha512-VHrQRyPIyjzerWHW5Ei3U+dsYQMCnA1mcJZA6m3goULesps4lLenje3UhrPRzlZrmaewlmWdLv/L72+6aGGUpw==}
+  tsc-extra@0.0.4:
+    resolution: {integrity: sha512-yUmp2O5HmOSKj7zYlNivIxhh16BaFUMyzfElq60O2dnJbJXH0zqXrZlxaSiI40fgwNyZbNw2UkYo+cWC3VqK1g==}
     peerDependencies:
       typescript: ^5
 
@@ -1939,7 +1939,7 @@ snapshots:
 
   ts-interface-checker@0.1.13: {}
 
-  tsc-extra@0.0.3(typescript@5.7.3):
+  tsc-extra@0.0.4(typescript@5.7.3):
     dependencies:
       import-meta-resolve: 4.1.0
       ts-expose-internals: 5.6.3
