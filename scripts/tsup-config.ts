@@ -16,7 +16,7 @@ function defineBuild(importer: string, overrides?: Options) {
     format: ['esm'],
     splitting: pkg.entry.length > 1,
     ...overrides,
-    dts: !!process.env.PROD && pkg.dts,
+    dts: !!process.env.PROD && pkg.dts && { resolve: true },
     entry: pkg.entry,
     outDir: pkg.outDir,
     external: [...pkg.dependencies, ...(overrides?.external || [])],
