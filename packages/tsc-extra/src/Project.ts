@@ -387,8 +387,11 @@ export async function createProject(
     updateSourceFile,
 
     // Type checking
+    getTypeChecker() {
+      return (program || createProgram()).getTypeChecker()
+    },
     getProgram() {
-      return program
+      return program || createProgram()
     },
     createProgram,
 
