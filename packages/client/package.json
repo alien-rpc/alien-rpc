@@ -26,11 +26,11 @@
   },
   "dependencies": {
     "@json-qs/json-qs": "^1.2.0",
-    "ky": "^1.2.2"
+    "ky": "^1.2.2",
+    "pathic": "workspace:^"
   },
   "devDependencies": {
-    "@alien-rpc/route": "workspace:^",
-    "pathic": "workspace:^"
+    "@alien-rpc/route": "workspace:^"
   },
   "scripts": {
     "dev": "watchlist src -- pnpm build:dev",

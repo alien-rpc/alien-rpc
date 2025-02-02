@@ -99,13 +99,13 @@ importers:
       ky:
         specifier: ^1.2.2
         version: 1.7.4
+      pathic:
+        specifier: workspace:^
+        version: link:../pathic
     devDependencies:
       '@alien-rpc/route':
         specifier: workspace:^
         version: link:../route
-      pathic:
-        specifier: workspace:^
-        version: link:../pathic
 
   packages/generator:
     dependencies:
