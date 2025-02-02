@@ -66,9 +66,13 @@ This function loads a tsconfig.json file, maintains a `ts.DocumentRegistry`, and
 This function wraps the `createProject` function to add additional functionality to the project.
 
 ```ts
-import { createProjectFactory } from 'tsc-extra'
+import { createProjectFactory, ProjectOptions } from 'tsc-extra'
 
-const createProject = createProjectFactory(project => ({
+type Options = ProjectOptions & {
+  // Add any additional options here.
+}
+
+const createProject = createProjectFactory((project, options: Options) => ({
   // Getters are copied over as getters.
   get nodeModulesDir() {
     return path.join(project.rootDir, 'node_modules')
