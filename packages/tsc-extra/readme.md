@@ -47,6 +47,7 @@ This function loads a tsconfig.json file, maintains a `ts.DocumentRegistry`, and
   - `compilerVersion`: The version of the TypeScript compiler.
   - `compilerOptions`: The compiler options used for the project.
   - `tsConfig`: The parsed tsconfig.json file.
+  - `tsConfigFilePath`: The path to the tsconfig.json file.
   - `loadTsConfig`: A function to load a tsconfig.json file.
   - `addSourceFileAtPath`: A function to add a source file to the project by its file path, throwing an error if it doesn't exist.
   - `addSourceFileAtPathIfExists`: A function to add a source file to the project by its file path if it exists.

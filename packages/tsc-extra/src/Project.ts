@@ -32,9 +32,11 @@ export async function createProject(
   const ts = await getCompiler(rootDir)
 
   const loadTsConfig = createTsConfigLoader(ts)
-  const tsConfig = loadTsConfig(
-    path.resolve(rootDir, options.tsConfigFilePath ?? 'tsconfig.json')
+  const tsConfigFilePath = path.resolve(
+    rootDir,
+    options.tsConfigFilePath ?? 'tsconfig.json'
   )
+  const tsConfig = loadTsConfig(tsConfigFilePath)
   const compilerOptions = {
     ...tsConfig.options,
     ...options.compilerOptions,
@@ -370,6 +372,7 @@ export async function createProject(
 
     // TypeScript configuration
     tsConfig,
+    tsConfigFilePath,
     loadTsConfig,
 
     // Source file management
