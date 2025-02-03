@@ -192,7 +192,15 @@ export default (rawOptions: Options) =>
 
     const serverDefinitions: string[] = []
     const serverImports = new Set<string>()
+
     const serverCheckedStringFormats = new Set<string>()
+    const collectValidatedStringFormats = (content: string) => {
+      for (const match of content.matchAll(
+        /Type\.String\(.*?format:\s*['"](\w+)['"].*?\)/g
+      )) {
+        serverCheckedStringFormats.add(match[1])
+      }
+    }
 
     const serverTsConfig = store.tsConfigCache.findUp(
       path.dirname(options.serverOutFile)
@@ -253,13 +261,9 @@ export default (rawOptions: Options) =>
               `type Response = ${route.resolvedResult}`
             )
 
-      for (const match of (
-        pathSchemaDecl +
-        requestSchemaDecl +
-        responseSchemaDecl
-      ).matchAll(/Type\.String\(.*?format:\s*['"](\w+)['"].*?\)/g)) {
-        serverCheckedStringFormats.add(match[1])
-      }
+      collectValidatedStringFormats(
+        pathSchemaDecl + requestSchemaDecl + responseSchemaDecl
+      )
 
       const handlerPath = resolveImportPath(
         options.serverOutFile,
@@ -366,6 +370,10 @@ export default (rawOptions: Options) =>
         clientTypeAliases,
         typeConstraints
       ))
+
+    if (serverTypeAliases) {
+      collectValidatedStringFormats(serverTypeAliases)
+    }
 
     const writeServerDefinitions = (outFile: string) => {
       let imports = ''
