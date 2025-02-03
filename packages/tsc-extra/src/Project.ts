@@ -87,7 +87,13 @@ export async function createProject(
     },
     // getSourceFileByPath: (...) => {}, // not providing these will force it to use the file name as the file path
     // getDefaultLibLocation: (...) => {},
-    getDefaultLibFileName: ts.getDefaultLibFileName,
+    getDefaultLibFileName(options) {
+      return path.join(
+        ts.resolvedCompilerPath,
+        '..',
+        ts.getDefaultLibFileName(options)
+      )
+    },
     writeFile() {
       throw new Error('Not implemented')
     },

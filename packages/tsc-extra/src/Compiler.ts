@@ -9,10 +9,9 @@ export async function getCompiler(
     sys?: Partial<ts.System>
   } = {}
 ) {
-  const resolvedCompilerPath = resolve(
-    'typescript',
-    new URL(rootDir, 'file://').toString()
-  )
+  const resolvedCompilerPath = new URL(
+    resolve('typescript', 'file://' + rootDir)
+  ).pathname
 
   const ts = (await import(resolvedCompilerPath)) as typeof import('typescript')
   const sys = { ...ts.sys, ...overrides.sys }
