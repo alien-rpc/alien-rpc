@@ -27,7 +27,7 @@
     "minimatch": "^9.0.4",
     "pathic": "workspace:^",
     "tinyglobby": "^0.2.9",
-    "tsc-extra": "^0.0.5"
+    "tsc-extra": "^0.0.6"
   },
   "peerDependencies": {
     "@sinclair/typebox": "*",
