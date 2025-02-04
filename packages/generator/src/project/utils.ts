@@ -10,6 +10,8 @@ export function createUtils(ts: typeof import('typescript')) {
     'getJSDocCommentsAndTags',
     'getTextOfJSDocComment',
     'SyntaxKind',
+    'NodeFlags',
+    'TypeFlags',
     'TypeFormatFlags',
   ] as const
 
