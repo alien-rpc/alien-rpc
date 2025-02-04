@@ -18,24 +18,33 @@ import {
   RouteResultCache,
 } from './types.js'
 
-interface ClientPrototype<API extends Record<string, Route>> {
+interface ClientPrototype<
+  API extends Record<string, Route>,
+  TErrorMode extends ErrorMode = ErrorMode,
+> {
   readonly request: typeof ky
-  readonly options: Readonly<ClientOptions>
-  extend(defaults: ClientOptions): Client<API>
+  readonly options: Readonly<ClientOptions<TErrorMode>>
+
+  extend<TNewErrorMode extends ErrorMode = TErrorMode>(
+    defaults: ClientOptions<TNewErrorMode>
+  ): Client<API, TNewErrorMode>
+
   getCachedResponse<P extends RoutePathname<API>>(
     path: P
   ): CachedRouteResult<Awaited<RouteResponseByPath<API, P>>> | undefined
+
   setCachedResponse<P extends RoutePathname<API>>(
     path: P,
     response: CachedRouteResult<Awaited<RouteResponseByPath<API, P>>>
   ): void
+
   unsetCachedResponse<P extends RoutePathname<API>>(path: P): void
 }
 
 export type Client<
   API extends Record<string, Route> = Record<string, Route>,
   TErrorMode extends ErrorMode = ErrorMode,
-> = ClientPrototype<API> & {
+> = ClientPrototype<API, TErrorMode> & {
   [TKey in keyof API]: Extract<API[TKey], Route>['callee'] extends (
     ...args: infer TArgs
   ) => infer TResult

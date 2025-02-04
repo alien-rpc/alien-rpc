@@ -15,8 +15,10 @@ export function defineClientFactory<
 
   function factory<TErrorMode extends ErrorMode = TDefaultErrorMode>(
     options?: ClientOptions<TErrorMode>
-  ): Client<API> {
-    return options ? client.extend(options) : client
+  ): Client<API, TErrorMode> {
+    return options
+      ? client.extend(options)
+      : (client as Client<API, TErrorMode>)
   }
 
   return factory
