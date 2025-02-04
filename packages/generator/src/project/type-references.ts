@@ -56,13 +56,29 @@ export function collectReferencedTypes(
         let typeString = `export type ${symbol.name} = `
         if (ts.isInterfaceType(symbol)) {
           typeString += '{\n'
-          for (const propertySymbol of typeChecker.getPropertiesOfType(type)) {
+          for (const propertySymbol of (
+            type as ts.InterfaceType
+          ).getProperties()) {
+            // Prefer using a type node if available, as it could have an
+            // aliasSymbol attached, which must be collected as a type
+            // reference.
+            const propertyTypeNode =
+              propertySymbol.valueDeclaration &&
+              ts.isPropertySignature(propertySymbol.valueDeclaration)
+                ? propertySymbol.valueDeclaration
+                : undefined
+
+            const propertyType = propertyTypeNode?.type
+              ? typeChecker.getTypeFromTypeNode(propertyTypeNode.type)
+              : typeChecker.getTypeOfSymbol(propertySymbol)
+
             typeString +=
               '  ' +
               propertySymbol.name +
+              (propertyTypeNode?.questionToken ? '?' : '') +
               ': ' +
               project.printTypeLiteralToString(
-                typeChecker.getTypeOfSymbol(propertySymbol),
+                propertyType,
                 referencedTypes,
                 symbolStack
               ) +
