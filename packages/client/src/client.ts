@@ -17,6 +17,7 @@ import {
   RouteResponseByPath,
   RouteResultCache,
 } from './types.js'
+import { mergeOptions } from './utils/mergeOptions.js'
 
 interface ClientPrototype<
   API extends Record<string, Route>,
@@ -66,19 +67,13 @@ export function defineClient<
   options: ClientOptions<TErrorMode> = {},
   parent?: Client<any> | undefined
 ): Client<API, TErrorMode> {
-  const {
-    errorMode = parent?.options.errorMode ?? 'reject',
-    resultCache = parent?.options.resultCache ?? new Map(),
-  } = options
+  const mergedOptions = mergeOptions(parent?.options, options)
+  const { resultCache } = mergedOptions
 
   let request: typeof ky | undefined
 
   const client: Client<API, TErrorMode> = createClientProxy(routes, {
-    options: {
-      ...options,
-      errorMode,
-      resultCache,
-    },
+    options: mergedOptions,
     get request() {
       return (request ??= createRequest(client))
     },
