@@ -2,7 +2,7 @@
 import { bodylessMethods } from '@alien-rpc/route'
 import * as jsonQS from '@json-qs/json-qs'
 import ky, { HTTPError } from 'ky'
-import { buildPath } from 'pathic'
+import { buildPath, InferParams } from 'pathic'
 import { isFunction, isPromise, isString, omit } from 'radashi'
 import jsonFormat from './formats/json.js'
 import responseFormat from './formats/response.js'
@@ -25,6 +25,13 @@ interface ClientPrototype<
 > {
   readonly request: typeof ky
   readonly options: Readonly<ClientOptions<TErrorMode>>
+  readonly paths: {
+    [TKey in keyof API]: InferParams<API[TKey]['path']> extends infer TParams
+      ? Record<string, never> extends TParams
+        ? string
+        : (params: TParams) => string
+      : never
+  }
 
   extend<TNewErrorMode extends ErrorMode = TErrorMode>(
     defaults: ClientOptions<TNewErrorMode>
@@ -76,6 +83,9 @@ export function defineClient<
     options: mergedOptions,
     get request() {
       return (request ??= createRequest(client))
+    },
+    get paths() {
+      return createPathsProxy(routes, client.options) as any
     },
     extend(options) {
       return defineClient(routes, options, client)
@@ -234,4 +244,22 @@ function resolveResultFormat(format: Route['format']): ResultFormatter {
 
 function isObject(arg: unknown) {
   return Object.getPrototypeOf(arg) === Object.prototype
+}
+
+function createPathsProxy(
+  routes: Record<string, Route>,
+  options: ClientOptions
+) {
+  return new Proxy(routes, {
+    get(routes: Record<string, Route>, key: string) {
+      const route = routes[key as keyof typeof routes]
+      if (route) {
+        if (route.pathParams.length) {
+          return (params: {}) =>
+            options.prefixUrl + buildPath(route.path, params)
+        }
+        return options.prefixUrl + route.path
+      }
+    },
+  })
 }
