@@ -23,11 +23,13 @@ export function route<TPath extends string>(path: TPath): RouteFactory<TPath> {
 type Mutable<T> = T extends object
   ? T extends Promise<infer TAwaited>
     ? Promise<Mutable<TAwaited>>
-    : T extends Response
-      ? Response
-      : T extends ReadonlyArray<infer TElement>
-        ? Mutable<TElement>[]
-        : { -readonly [K in keyof T]: Mutable<T[K]> }
+    : T extends AsyncGenerator
+      ? T
+      : T extends Response
+        ? Response
+        : T extends ReadonlyArray<infer TElement>
+          ? Mutable<TElement>[]
+          : { -readonly [K in keyof T]: Mutable<T[K]> }
   : T
 
 export type RouteFactory<TPath extends string> = {
