@@ -14,6 +14,7 @@ const alias = {
 
 export default defineConfig({
   test: {
+    include: ['test/**/*.test.ts'],
     globals: true,
     pool: 'threads',
     poolOptions: {
