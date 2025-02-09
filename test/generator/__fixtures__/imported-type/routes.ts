@@ -1,7 +1,7 @@
 import { route } from '@alien-rpc/service'
 import type { Post } from './post'
 
-export const getPost = route.get('/posts/:id', async (id): Promise<Post> => {
+export const getPost = route('/posts/:id').get(async (id): Promise<Post> => {
   return {
     id,
     title: 'Hello World',

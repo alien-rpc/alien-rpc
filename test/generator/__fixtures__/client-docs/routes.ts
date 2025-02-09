@@ -6,6 +6,6 @@ import { route } from '@alien-rpc/service'
  * @returns "foo"
  * @see https://en.wikipedia.org/wiki/Foo_(disambiguation)
  */
-export const foo = route.get('/foo', () => {
+export const foo = route('/foo').get(() => {
   return 'foo'
 })

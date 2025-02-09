@@ -1,6 +1,6 @@
 import { route } from '@alien-rpc/service'
 
-export const funFact = route.get('/fun-fact', () => {
+export const funFact = route('/fun-fact').get(() => {
   const funFacts = [
     "Bananas are berries, but strawberries aren't!",
     "A group of flamingos is called a 'flamboyance'.",

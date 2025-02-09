@@ -1,7 +1,6 @@
 import { route, t } from '@alien-rpc/service'
 
-export const testConstraints = route.get(
-  '/constraints/:id',
+export const testConstraints = route('/constraints/:id').get(
   async (
     id: string & t.Format<'uuid'>,
     searchParams: {

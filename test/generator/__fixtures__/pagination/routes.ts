@@ -14,22 +14,19 @@ declare const db: {
   }) => AsyncGenerator<Post, void, unknown>
 }
 
-export const listPosts = route.get(
-  '/posts',
-  async function* ({
-    page = 1,
-    limit = 10,
-  }: {
-    page?: number
-    limit?: number
-  }) {
-    yield* db.streamPosts({ page, limit })
+export const listPosts = route('/posts').get(async function* ({
+  page = 1,
+  limit = 10,
+}: {
+  page?: number
+  limit?: number
+}) {
+  yield* db.streamPosts({ page, limit })
 
-    const postCount = await db.countPosts()
-    return paginate(this, {
-      prev: page > 1 ? { page: page - 1, limit } : null,
-      next:
-        page < Math.ceil(postCount / limit) ? { page: page + 1, limit } : null,
-    })
-  }
-)
+  const postCount = await db.countPosts()
+  return paginate(this, {
+    prev: page > 1 ? { page: page - 1, limit } : null,
+    next:
+      page < Math.ceil(postCount / limit) ? { page: page + 1, limit } : null,
+  })
+})

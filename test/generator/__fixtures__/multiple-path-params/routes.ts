@@ -1,6 +1,5 @@
 import { route } from '@alien-rpc/service'
 
-export const getBookByAuthor = route.get(
-  '/books/:author/:title',
+export const getBookByAuthor = route('/books/:author/:title').get(
   async ([author, title]) => {}
 )
