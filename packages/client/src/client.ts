@@ -1,7 +1,7 @@
 /// <reference lib="dom.asynciterable" />
 import { bodylessMethods } from '@alien-rpc/route'
 import * as jsonQS from '@json-qs/json-qs'
-import ky, { HTTPError } from 'ky'
+import ky, { HTTPError, TimeoutError } from 'ky'
 import { buildPath, InferParams } from 'pathic'
 import { isFunction, isPromise, isString, omit } from 'radashi'
 import jsonFormat from './formats/json.js'
@@ -48,6 +48,8 @@ interface ClientPrototype<
 
   unsetCachedResponse<P extends RoutePathname<API>>(path: P): void
 }
+
+export { HTTPError, TimeoutError }
 
 export type Client<
   API extends Record<string, Route> = Record<string, Route>,
