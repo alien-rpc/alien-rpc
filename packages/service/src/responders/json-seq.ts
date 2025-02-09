@@ -1,20 +1,14 @@
-import type { TAsyncIterator } from '@sinclair/typebox'
-import { Value } from '@sinclair/typebox/value'
 import type { JSON } from '../internal/types'
 import { resolvePaginationLink } from '../pagination'
-import type { Route, RouteIterator, RouteResponder } from '../types'
+import type { RouteIterator, RouteResponder } from '../types'
 
 const responder: RouteResponder =
   route =>
   async (args, { url, response }) => {
     const routeDef = await route.import()
 
-    let result = await routeDef.handler.apply(routeDef, args)
-    result = Value.Encode(route.responseSchema, result)
-
-    const stream = ReadableStream.from(
-      generateJsonTextSequence(result, route, url)
-    )
+    const result = await routeDef.handler.apply(routeDef, args)
+    const stream = ReadableStream.from(generateJsonTextSequence(result, url))
 
     // Don't use "application/json-seq" until it's been standardized.
     response.headers.set('Content-Type', 'text/plain; charset=utf-8')
@@ -29,12 +23,7 @@ export default responder
  *
  * @see https://datatracker.ietf.org/doc/html/rfc7464
  */
-async function* generateJsonTextSequence(
-  iterator: RouteIterator,
-  route: Route,
-  url: URL
-) {
-  const yieldSchema = (route.responseSchema as TAsyncIterator).items
+async function* generateJsonTextSequence(iterator: RouteIterator, url: URL) {
   const encoder = new TextEncoder()
 
   let done: boolean | undefined
@@ -54,7 +43,7 @@ async function* generateJsonTextSequence(
           $next: links.next ? resolvePaginationLink(url, links.next) : null,
         }
       } else {
-        value = Value.Encode(yieldSchema, iteration.value)
+        value = iteration.value as any
       }
     } catch (error: any) {
       done = true

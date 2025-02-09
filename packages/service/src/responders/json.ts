@@ -1,4 +1,3 @@
-import { Value } from '@sinclair/typebox/value'
 import type { JSON, Promisable } from '../internal/types'
 import type { RouteResponder } from '../types'
 
@@ -15,7 +14,6 @@ const responder: RouteResponder =
     if (request.method === 'HEAD') {
       result = null
     } else {
-      result = Value.Encode(route.responseSchema, result)
       result = JSON.stringify(result)
 
       if (result !== undefined) {

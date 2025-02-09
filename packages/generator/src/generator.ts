@@ -254,16 +254,7 @@ export default (rawOptions: Options) =>
         }
       }
 
-      const responseSchemaDecl =
-        route.resolvedFormat === 'response'
-          ? `Type.Any()`
-          : await project.generateRuntimeValidator(
-              `type Response = ${route.resolvedResult}`
-            )
-
-      collectValidatedStringFormats(
-        pathSchemaDecl + requestSchemaDecl + responseSchemaDecl
-      )
+      collectValidatedStringFormats(pathSchemaDecl + requestSchemaDecl)
 
       const handlerPath = resolveImportPath(
         options.serverOutFile,
@@ -290,7 +281,6 @@ export default (rawOptions: Options) =>
         `format: "${route.resolvedFormat}"`,
         pathSchemaDecl && `pathSchema: ${pathSchemaDecl}`,
         requestSchemaDecl && `requestSchema: ${requestSchemaDecl}`,
-        `responseSchema: ${responseSchemaDecl}`,
       ])
 
       serverDefinitions.push(`{${serverProperties.join(', ')}}`)

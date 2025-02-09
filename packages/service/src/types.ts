@@ -1,6 +1,6 @@
 import type { RouteMethod, RouteResultFormat } from '@alien-rpc/route'
 import type { RequestContext } from '@hattip/compose'
-import type { TObject, TSchema } from '@sinclair/typebox'
+import type { TObject } from '@sinclair/typebox'
 import type { InferParamNames, InferParamsArray } from 'pathic'
 import type { JSON, JSONCodable, Promisable } from './internal/types'
 import type { PaginationLinks } from './pagination.js'
@@ -107,7 +107,6 @@ export interface Route<TDefinition extends RouteDefinition = RouteDefinition> {
   format: RouteResultFormat
   pathSchema?: TObject
   requestSchema?: TObject
-  responseSchema: TSchema
 }
 
 export type PathParams = { [key: string]: PathParam }
