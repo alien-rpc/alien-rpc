@@ -56,6 +56,14 @@ export async function createProject(
     }
   }
 
+  const getDefaultLibFileName = (options: ts.CompilerOptions) => {
+    return path.join(
+      ts.resolvedCompilerPath,
+      '..',
+      ts.getDefaultLibFileName(options)
+    )
+  }
+
   const compilerHost: ts.CompilerHost = {
     getSourceFile: (
       filePath,
@@ -87,13 +95,7 @@ export async function createProject(
     },
     // getSourceFileByPath: (...) => {}, // not providing these will force it to use the file name as the file path
     // getDefaultLibLocation: (...) => {},
-    getDefaultLibFileName(options) {
-      return path.join(
-        ts.resolvedCompilerPath,
-        '..',
-        ts.getDefaultLibFileName(options)
-      )
-    },
+    getDefaultLibFileName,
     writeFile() {
       throw new Error('Not implemented')
     },
@@ -408,6 +410,7 @@ export async function createProject(
           ts,
           compilerOptions,
           documentRegistry,
+          getDefaultLibFileName,
           () => projectVersion.toString(),
           () => (projectVersion++).toString()
         ),
@@ -450,6 +453,7 @@ function getLanguageServiceHost(
   ts: Compiler,
   compilerOptions: ts.CompilerOptions,
   documentRegistry: DocumentRegistry,
+  getDefaultLibFileName: (options: ts.CompilerOptions) => string,
   getProjectVersion: () => string,
   getProjectVersionThenIncrement: () => string
 ): ts.LanguageServiceHost {
@@ -485,7 +489,7 @@ function getLanguageServiceHost(
         ? ts.ScriptSnapshot.fromString(sourceFile.getFullText())
         : undefined
     },
-    getDefaultLibFileName: ts.getDefaultLibFileName,
+    getDefaultLibFileName,
     directoryExists: ts.sys.directoryExists,
     fileExists: ts.sys.fileExists,
     getCurrentDirectory: ts.sys.getCurrentDirectory,
