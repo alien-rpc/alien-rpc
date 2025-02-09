@@ -148,6 +148,7 @@ export default (rawOptions: Options) =>
             emit({ type: 'route', route })
           }
         }
+        fs.watch(sourceFile.fileName)
         project.collectDependencies(
           sourceFile,
           project.compilerOptions,
