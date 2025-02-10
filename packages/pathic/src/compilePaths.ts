@@ -115,9 +115,10 @@ export function compilePaths(paths: string[]): PathMatcher {
       return iterateUntilResult(
         dynamicPaths[prefix],
         ({ parser, index, offset }) => {
-          parser.lastIndex = offset ?? prefix.length
-
-          const pathMatch = parser.exec(path)
+          const lastIndex = offset ?? prefix.length
+          const pathMatch = parser.exec(
+            lastIndex > 0 ? path.slice(lastIndex) : path
+          )
           if (pathMatch) {
             return callback(index, pathMatch.groups ?? {}, ...args)
           }
@@ -191,32 +192,27 @@ function getPrefix(path: string, fromOffset: number) {
   return path.slice(fromOffset)
 }
 
-/**
- * Note: The first static part is not included in the regex.
- */
 function tokensToRegex(tokens: string[]) {
-  return new RegExp(
-    tokens
-      .slice(1)
-      .map((token, i) => {
-        if (i % 2 === 1) {
-          return escapeRegexChars(token)
-        }
-        if (token === '*') {
-          return '.*?'
-        }
-        let pattern: string
-        if (token[0] === ':') {
-          pattern = '[^/]+?'
-        } else {
-          pattern = '[\\S\\s]*?'
-        }
-        const name = token.slice(1)
-        return `(?<${name}>${pattern})`
-      })
-      .join('') + '$',
-    'g'
-  )
+  const patterns = tokens.map((token, i) => {
+    if (i % 2) {
+      if (token === '*') {
+        return '.*?'
+      }
+      let pattern: string
+      if (token[0] === ':') {
+        pattern = '[^/]+?'
+      } else {
+        pattern = '[\\S\\s]*?'
+      }
+      const name = token.slice(1)
+      return `(?<${name}>${pattern})`
+    }
+    if (i === 0) {
+      return '' // Skip the first static part.
+    }
+    return escapeRegexChars(token)
+  })
+  return new RegExp('^' + patterns.join('') + '$')
 }
 
 /**

@@ -51,4 +51,13 @@ describe('compilePaths', () => {
       [3, { b: 'b/c' }],
     ])
   })
+
+  test('edge case: incorrect match for trailing dynamic part', () => {
+    // In this edge case, we were seeing "/a/:b" false positive.
+    const spy = vi.fn()
+    const match = compilePaths(['/a/:b', '/a/:b/c'])
+
+    match('/a/123/c', spy)
+    expect(spy.mock.calls).toEqual([[1, { b: '123' }]])
+  })
 })
