@@ -98,57 +98,22 @@ export function compileRoutes(
 
     try {
       return await matchRoute(url.pathname, async (route, params) => {
+        if (process.env.NODE_ENV !== 'production') {
+          ctx.response.headers.set('X-Route-Name', route.name)
+        }
+
         step = RequestStep.Validate
         const args = await route.getHandlerArgs(params, ctx)
 
         step = RequestStep.Respond
-        const result = await route.responder(args, ctx)
-
-        step = RequestStep.Match
-        return result
+        return await route.responder(args, ctx)
       })
     } catch (error: any) {
-      if (step === RequestStep.Respond) {
-        // An HttpError is thrown by the application code to indicate a
-        // failed request, as opposed to an unexpected error.
-        if (error instanceof Response) {
-          return error
-        }
-        if (!process.env.TEST) {
-          console.error(error)
-        }
-        if (process.env.NODE_ENV === 'production') {
-          return new Response(null, { status: 500 })
-        }
-        return new InternalServerError({
-          ...error,
-          message: error.message ?? 'Internal server error',
-          stack: error.stack,
-        })
+      const response = handleRouteError(error, step)
+      for (const [name, value] of ctx.response.headers) {
+        response.headers.set(name, value)
       }
-
-      if (!process.env.TEST && process.env.NODE_ENV === 'development') {
-        console.error(error)
-      }
-
-      if (step === RequestStep.Validate) {
-        const checkError = isDecodeError(error) ? error.error : error
-        if (isDecodeCheckError(checkError)) {
-          const { message, path, value } = firstLeafError(
-            checkError.error
-          ) as ValueError & {
-            value: JSONCodable
-          }
-          return new BadRequestError({ message, path, value })
-        }
-      }
-
-      // Otherwise, it's a malformed request.
-      return new BadRequestError(
-        process.env.NODE_ENV === 'production'
-          ? { message: error.message }
-          : error
-      )
+      return response
     }
   }
 }
@@ -181,6 +146,48 @@ function prepareRoutes(
         return handler(routes[index], params)
       })
   })
+}
+
+function handleRouteError(error: any, step: RequestStep) {
+  if (step === RequestStep.Respond) {
+    // An HttpError is thrown by the application code to indicate a
+    // failed request, as opposed to an unexpected error.
+    if (error instanceof Response) {
+      return error
+    }
+    if (!process.env.TEST) {
+      console.error(error)
+    }
+    if (process.env.NODE_ENV === 'production') {
+      return new Response(null, { status: 500 })
+    }
+    return new InternalServerError({
+      ...error,
+      message: error.message ?? 'Internal server error',
+      stack: error.stack,
+    })
+  }
+
+  if (!process.env.TEST && process.env.NODE_ENV === 'development') {
+    console.error(error)
+  }
+
+  if (step === RequestStep.Validate) {
+    const checkError = isDecodeError(error) ? error.error : error
+    if (isDecodeCheckError(checkError)) {
+      const { message, path, value } = firstLeafError(
+        checkError.error
+      ) as ValueError & {
+        value: JSONCodable
+      }
+      return new BadRequestError({ message, path, value })
+    }
+  }
+
+  // Otherwise, it's a malformed request.
+  return new BadRequestError(
+    process.env.NODE_ENV === 'production' ? { message: error.message } : error
+  )
 }
 
 function isDecodeError(error: any): error is TransformDecodeError {

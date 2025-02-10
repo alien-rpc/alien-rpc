@@ -99,10 +99,11 @@ export interface RouteDefinition<
 /**
  * A route definition enhanced with compile-time metadata.
  */
-export interface Route<TDefinition extends RouteDefinition = RouteDefinition> {
+export interface Route {
   method: RouteMethod
   path: string
-  import: () => Promise<TDefinition>
+  name: string
+  import: () => Promise<any>
   pathParams?: readonly string[]
   format: RouteResultFormat
   pathSchema?: TObject

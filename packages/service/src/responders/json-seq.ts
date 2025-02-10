@@ -1,20 +1,19 @@
+import { importRouteDefinition } from '../importRouteDefinition'
 import type { JSON } from '../internal/types'
 import { resolvePaginationLink } from '../pagination'
 import type { RouteIterator, RouteResponder } from '../types'
 
-const responder: RouteResponder =
-  route =>
-  async (args, { url, response }) => {
-    const routeDef = await route.import()
+const responder: RouteResponder = route => async (args, ctx) => {
+  const routeDef = await importRouteDefinition(route)
 
-    const result = await routeDef.handler.apply(routeDef, args)
-    const stream = ReadableStream.from(generateJsonTextSequence(result, url))
+  const result = await routeDef.handler.apply(routeDef, args)
+  const stream = ReadableStream.from(generateJsonTextSequence(result, ctx.url))
 
-    // Don't use "application/json-seq" until it's been standardized.
-    response.headers.set('Content-Type', 'text/plain; charset=utf-8')
+  // Don't use "application/json-seq" until it's been standardized.
+  ctx.response.headers.set('Content-Type', 'text/plain; charset=utf-8')
 
-    return new Response(stream, response)
-  }
+  return new Response(stream, ctx.response)
+}
 
 export default responder
 

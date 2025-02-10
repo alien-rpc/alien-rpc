@@ -47,6 +47,7 @@ export function compileRoute(route: Route, options: CompileRouteOptions = {}) {
   return {
     method: route.method,
     path: route.path,
+    name: route.name,
     /**
      * Parse and validate the request, returning an array of arguments to
      * call the route handler with.
