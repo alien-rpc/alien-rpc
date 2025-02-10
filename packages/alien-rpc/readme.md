@@ -54,7 +54,7 @@ This allows for breaking changes to your API without breaking existing client ap
 The code generator _must_ be told where to find your routes, which is typically done with a glob pattern. At this point, you should have at least one route defined in your server code. I like to keep my routes in the `src/api` directory of my server package, so we'll use that in the following example. Any unflagged arguments will be interpreted as glob patterns, used to search for routes:
 
 ```sh
-pnpm alien-rpc src/api/**/*.ts \
+pnpm alien-rpc 'src/api/**/*.ts' \
   --clientOutFile client/generated/api.ts \
   --serverOutFile server/generated/api.ts \
   --versionPrefix v1 \
