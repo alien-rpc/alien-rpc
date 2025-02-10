@@ -1,4 +1,5 @@
 import { resolve } from 'import-meta-resolve'
+import path from 'node:path'
 import type ts from 'typescript'
 
 export type Compiler = Awaited<ReturnType<typeof getCompiler>>
@@ -10,7 +11,7 @@ export async function getCompiler(
   } = {}
 ) {
   const resolvedCompilerPath = new URL(
-    resolve('typescript', 'file://' + rootDir)
+    resolve('typescript', 'file://' + path.join(rootDir, 'index.js'))
   ).pathname
 
   const ts = (await import(resolvedCompilerPath)) as typeof import('typescript')
