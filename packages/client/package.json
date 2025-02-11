@@ -1,6 +1,6 @@
 {
   "name": "@alien-rpc/client",
-  "version": "0.2.8",
+  "version": "0.2.9",
   "description": "Client library for alien-rpc",
   "type": "module",
   "files": [
