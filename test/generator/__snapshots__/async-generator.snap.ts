@@ -5,7 +5,7 @@
  */
 import { route } from "@alien-rpc/service";
 
-export const streamNumbers = route.get("/numbers", async function* () {
+export const streamNumbers = route("/numbers").get(async function* () {
   yield 1;
   yield 2;
   yield 3;
@@ -14,7 +14,7 @@ export const streamNumbers = route.get("/numbers", async function* () {
 /**
  * client/generated/api.ts
  */
-import { RequestOptions, ResponseStream, Route } from "@alien-rpc/client";
+import type { RequestOptions, ResponseStream, Route } from "@alien-rpc/client";
 import jsonSeq from "@alien-rpc/client/formats/json-seq";
 
 export const streamNumbers: Route<
@@ -31,10 +31,8 @@ export default [
   {
     path: "/numbers",
     method: "GET",
-    import: async () => (await import("../../routes.js")).streamNumbers as any,
+    name: "streamNumbers",
+    import: () => import("../../routes.js"),
     format: "json-seq",
-    responseSchema: Type.AsyncIterator(
-      Type.Union([Type.Literal(1), Type.Literal(2), Type.Literal(3)]),
-    ),
   },
 ] as const;

@@ -5,15 +5,14 @@
  */
 import { route } from "@alien-rpc/service";
 
-export const getBookByAuthor = route.get(
-  "/books/:author/:title",
+export const getBookByAuthor = route("/books/:author/:title").get(
   async ([author, title]) => {},
 );
 
 /**
  * client/generated/api.ts
  */
-import { RequestOptions, RequestParams, Route } from "@alien-rpc/client";
+import type { RequestOptions, RequestParams, Route } from "@alien-rpc/client";
 
 export const getBookByAuthor: Route<
   "books/:author/:title",
@@ -42,9 +41,8 @@ export default [
     path: "/books/:author/:title",
     method: "GET",
     pathParams: ["author", "title"],
-    import: async () =>
-      (await import("../../routes.js")).getBookByAuthor as any,
+    name: "getBookByAuthor",
+    import: () => import("../../routes.js"),
     format: "json",
-    responseSchema: Type.Undefined(),
   },
 ] as const;

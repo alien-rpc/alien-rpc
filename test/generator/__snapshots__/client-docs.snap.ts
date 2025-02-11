@@ -11,14 +11,14 @@ import { route } from "@alien-rpc/service";
  * @returns "foo"
  * @see https://en.wikipedia.org/wiki/Foo_(disambiguation)
  */
-export const foo = route.get("/foo", () => {
+export const foo = route("/foo").get(() => {
   return "foo";
 });
 
 /**
  * client/generated/api.ts
  */
-import { RequestOptions, Route } from "@alien-rpc/client";
+import type { RequestOptions, Route } from "@alien-rpc/client";
 
 /**
  * Get "foo" from the server.
@@ -40,8 +40,8 @@ export default [
   {
     path: "/foo",
     method: "GET",
-    import: async () => (await import("../../routes.js")).foo as any,
+    name: "foo",
+    import: () => import("../../routes.js"),
     format: "json",
-    responseSchema: Type.Literal("foo"),
   },
 ] as const;

@@ -24,7 +24,7 @@ export type Post = {
 import { route } from "@alien-rpc/service";
 import type { Post } from "./post";
 
-export const getPost = route.get("/posts/:id", async (id): Promise<Post> => {
+export const getPost = route("/posts/:id").get(async (id): Promise<Post> => {
   return {
     id,
     title: "Hello World",
@@ -39,17 +39,19 @@ export const getPost = route.get("/posts/:id", async (id): Promise<Post> => {
 /**
  * client/generated/api.ts
  */
-import { RequestOptions, RequestParams, Route } from "@alien-rpc/client";
-
-export type Author = { id: string; name: string };
-export type Post = { id: string; title: string; body: string; author: Author };
+import type { RequestOptions, RequestParams, Route } from "@alien-rpc/client";
 
 export const getPost: Route<
   "posts/:id",
   (
     params: RequestParams<{ id: string }, Record<string, never>>,
     requestOptions?: RequestOptions,
-  ) => Promise<Post>
+  ) => Promise<{
+    id: string;
+    title: string;
+    body: string;
+    author: { id: string; name: string };
+  }>
 > = {
   path: "posts/:id",
   method: "GET",
@@ -63,25 +65,13 @@ export const getPost: Route<
  */
 import * as Type from "@sinclair/typebox/type";
 
-const Author = Type.Object({
-  id: Type.String(),
-  name: Type.String(),
-});
-
-const Post = Type.Object({
-  id: Type.String(),
-  title: Type.String(),
-  body: Type.String(),
-  author: Author,
-});
-
 export default [
   {
     path: "/posts/:id",
     method: "GET",
     pathParams: ["id"],
-    import: async () => (await import("../../routes.js")).getPost as any,
+    name: "getPost",
+    import: () => import("../../routes.js"),
     format: "json",
-    responseSchema: Post,
   },
 ] as const;

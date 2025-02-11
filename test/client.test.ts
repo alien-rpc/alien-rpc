@@ -93,12 +93,7 @@ describe.concurrent('client', async () => {
   test('invalid JSON request body', async () => {
     const client = await getTestClient()
     await expect(client.createPost({} as any)).rejects
-      .toThrowErrorMatchingInlineSnapshot(`
-      [HTTPError: Expected required property
-           Path: /title
-          Value: undefined
-        Request: POST http://example.com/posts]
-    `)
+      .toThrowErrorMatchingInlineSnapshot(`[HTTPError: Expected required property]`)
   })
 
   test('route that throws an error', async () => {

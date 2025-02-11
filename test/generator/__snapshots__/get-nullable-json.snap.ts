@@ -5,7 +5,7 @@
  */
 import { route } from "@alien-rpc/service";
 
-export const getUserById = route.get("/users/:id", async (id: number) => {
+export const getUserById = route("/users/:id").get(async (id: number) => {
   if (id === 1) {
     return { id: 1, name: "John" };
   }
@@ -15,14 +15,14 @@ export const getUserById = route.get("/users/:id", async (id: number) => {
 /**
  * client/generated/api.ts
  */
-import { RequestOptions, RequestParams, Route } from "@alien-rpc/client";
+import type { RequestOptions, RequestParams, Route } from "@alien-rpc/client";
 
 export const getUserById: Route<
   "users/:id",
   (
     params: RequestParams<{ id: number }, Record<string, never>>,
     requestOptions?: RequestOptions,
-  ) => Promise<null | { id: number; name: string }>
+  ) => Promise<{ id: 1; name: "John" } | null>
 > = {
   path: "users/:id",
   method: "GET",
@@ -42,17 +42,11 @@ export default [
     path: "/users/:id",
     method: "GET",
     pathParams: ["id"],
-    import: async () => (await import("../../routes.js")).getUserById as any,
+    name: "getUserById",
+    import: () => import("../../routes.js"),
     format: "json",
     pathSchema: Type.Object({
       id: NumberParam(),
     }),
-    responseSchema: Type.Union([
-      Type.Null(),
-      Type.Object({
-        id: Type.Number(),
-        name: Type.String(),
-      }),
-    ]),
   },
 ] as const;

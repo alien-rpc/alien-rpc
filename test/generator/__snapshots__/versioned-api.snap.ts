@@ -5,7 +5,7 @@
  */
 import { route } from "@alien-rpc/service";
 
-export const funFact = route.get("/fun-fact", () => {
+export const funFact = route("/fun-fact").get(() => {
   const funFacts = [
     "Bananas are berries, but strawberries aren't!",
     "A group of flamingos is called a 'flamboyance'.",
@@ -19,7 +19,7 @@ export const funFact = route.get("/fun-fact", () => {
 /**
  * client/generated/api.ts
  */
-import { RequestOptions, Route } from "@alien-rpc/client";
+import type { RequestOptions, Route } from "@alien-rpc/client";
 
 export const funFact: Route<
   "v1/fun-fact",
@@ -35,8 +35,8 @@ export default [
   {
     path: "/v1/fun-fact",
     method: "GET",
-    import: async () => (await import("../../routes.js")).funFact as any,
+    name: "funFact",
+    import: () => import("../../routes.js"),
     format: "json",
-    responseSchema: Type.String(),
   },
 ] as const;

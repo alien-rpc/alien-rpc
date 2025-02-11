@@ -5,8 +5,7 @@
  */
 import { route, t } from "@alien-rpc/service";
 
-export const testConstraints = route.get(
-  "/constraints/:id",
+export const testConstraints = route("/constraints/:id").get(
   async (
     id: string & t.Format<"uuid">,
     searchParams: {
@@ -23,7 +22,7 @@ export const testConstraints = route.get(
 /**
  * client/generated/api.ts
  */
-import { RequestOptions, RequestParams, Route } from "@alien-rpc/client";
+import type { RequestOptions, RequestParams, Route } from "@alien-rpc/client";
 
 export const testConstraints: Route<
   "constraints/:id",
@@ -31,12 +30,12 @@ export const testConstraints: Route<
     params: RequestParams<
       { id: string },
       {
-        tuple?: [string, string];
-        array?: Array<string>;
-        object?: Record<string, string>;
-        email?: string;
-        month?: string;
-        date?: Date;
+        tuple?: [string, string] | undefined;
+        array?: string[] | undefined;
+        object?: Record<string, string> | undefined;
+        email?: string | undefined;
+        month?: string | undefined;
+        date?: Date | undefined;
       }
     >,
     requestOptions?: RequestOptions,
@@ -57,7 +56,7 @@ import {
   addStringFormat,
   EmailFormat,
   UuidFormat,
-} from "@alien-rpc/service/format";
+} from "@alien-rpc/service/formats";
 
 addStringFormat("email", EmailFormat);
 addStringFormat("uuid", UuidFormat);
@@ -67,29 +66,49 @@ export default [
     path: "/constraints/:id",
     method: "GET",
     pathParams: ["id"],
-    import: async () =>
-      (await import("../../routes.js")).testConstraints as any,
+    name: "testConstraints",
+    import: () => import("../../routes.js"),
     format: "json",
     pathSchema: Type.Object({
       id: Type.String({ format: "uuid" }),
     }),
     requestSchema: Type.Object({
-      tuple: Type.Optional(Type.Tuple([Type.String(), Type.String()])),
+      tuple: Type.Optional(
+        Type.Union([
+          Type.Tuple([Type.String(), Type.String()]),
+          Type.Undefined(),
+        ]),
+      ),
       array: Type.Optional(
-        Type.Array(Type.String(), { minItems: 1, maxItems: 2 }),
+        Type.Union([
+          Type.Array(Type.String(), { minItems: 1, maxItems: 2 }),
+          Type.Undefined(),
+        ]),
       ),
       object: Type.Optional(
-        Type.Record(Type.String(), Type.String(), {
-          minProperties: 1,
-          maxProperties: 2,
-        }),
+        Type.Union([
+          Type.Record(Type.String(), Type.String(), {
+            minProperties: 1,
+            maxProperties: 2,
+          }),
+          Type.Undefined(),
+        ]),
       ),
-      email: Type.Optional(Type.String({ format: "email" })),
+      email: Type.Optional(
+        Type.Union([Type.String({ format: "email" }), Type.Undefined()]),
+      ),
       month: Type.Optional(
-        Type.String({ pattern: "^[0-9]{4}-(0[1-9]|1[0-2])$" }),
+        Type.Union([
+          Type.String({ pattern: "^[0-9]{4}-(0[1-9]|1[0-2])$" }),
+          Type.Undefined(),
+        ]),
       ),
-      date: Type.Optional(Type.Date({ minimumTimestamp: 1704067200000 })),
+      date: Type.Optional(
+        Type.Union([
+          Type.Date({ minimumTimestamp: 1704067200000 }),
+          Type.Undefined(),
+        ]),
+      ),
     }),
-    responseSchema: Type.Undefined(),
   },
 ] as const;

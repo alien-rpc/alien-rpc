@@ -7,8 +7,7 @@ import { route } from "@alien-rpc/service";
 
 declare const db: any;
 
-export const createUser = route.post(
-  "/users",
+export const createUser = route("/users").post(
   async ({ name }: { name: string }) => {
     const id: number = await db.createUser({ name });
     return id;
@@ -18,7 +17,7 @@ export const createUser = route.post(
 /**
  * client/generated/api.ts
  */
-import { RequestOptions, RequestParams, Route } from "@alien-rpc/client";
+import type { RequestOptions, RequestParams, Route } from "@alien-rpc/client";
 
 export const createUser: Route<
   "users",
@@ -37,11 +36,11 @@ export default [
   {
     path: "/users",
     method: "POST",
-    import: async () => (await import("../../routes.js")).createUser as any,
+    name: "createUser",
+    import: () => import("../../routes.js"),
     format: "json",
     requestSchema: Type.Object({
       name: Type.String(),
     }),
-    responseSchema: Type.Number(),
   },
 ] as const;

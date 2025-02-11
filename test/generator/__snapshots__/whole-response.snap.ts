@@ -5,14 +5,14 @@
  */
 import { route } from "@alien-rpc/service";
 
-export const test = route.get("/test", async (): Promise<Response> => {
+export const test = route("/test").get(async (): Promise<Response> => {
   return new Response("Hello, world!");
 });
 
 /**
  * client/generated/api.ts
  */
-import { RequestOptions, ResponsePromise, Route } from "@alien-rpc/client";
+import type { RequestOptions, ResponsePromise, Route } from "@alien-rpc/client";
 
 export const test: Route<
   "test",
@@ -28,8 +28,8 @@ export default [
   {
     path: "/test",
     method: "GET",
-    import: async () => (await import("../../routes.js")).test as any,
+    name: "test",
+    import: () => import("../../routes.js"),
     format: "response",
-    responseSchema: Type.Any(),
   },
 ] as const;

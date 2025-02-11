@@ -19,30 +19,27 @@ declare const db: {
   }) => AsyncGenerator<Post, void, unknown>;
 };
 
-export const listPosts = route.get(
-  "/posts",
-  async function* ({
-    page = 1,
-    limit = 10,
-  }: {
-    page?: number;
-    limit?: number;
-  }) {
-    yield* db.streamPosts({ page, limit });
+export const listPosts = route("/posts").get(async function* ({
+  page = 1,
+  limit = 10,
+}: {
+  page?: number;
+  limit?: number;
+}) {
+  yield* db.streamPosts({ page, limit });
 
-    const postCount = await db.countPosts();
-    return paginate(this, {
-      prev: page > 1 ? { page: page - 1, limit } : null,
-      next:
-        page < Math.ceil(postCount / limit) ? { page: page + 1, limit } : null,
-    });
-  },
-);
+  const postCount = await db.countPosts();
+  return paginate(this, {
+    prev: page > 1 ? { page: page - 1, limit } : null,
+    next:
+      page < Math.ceil(postCount / limit) ? { page: page + 1, limit } : null,
+  });
+});
 
 /**
  * client/generated/api.ts
  */
-import {
+import type {
   RequestOptions,
   RequestParams,
   ResponseStream,
@@ -57,7 +54,7 @@ export const listPosts: Route<
   (
     params?: RequestParams<
       Record<string, never>,
-      { page?: number; limit?: number | undefined }
+      { page?: number | undefined; limit?: number | undefined }
     > | null,
     requestOptions?: RequestOptions,
   ) => ResponseStream<Post>
@@ -68,7 +65,7 @@ export const listPosts: Route<
  */
 import * as Type from "@sinclair/typebox/type";
 
-const Post = Type.Object({
+export const Post = Type.Object({
   id: Type.Number(),
   title: Type.String(),
   content: Type.String(),
@@ -78,12 +75,12 @@ export default [
   {
     path: "/posts",
     method: "GET",
-    import: async () => (await import("../../routes.js")).listPosts as any,
+    name: "listPosts",
+    import: () => import("../../routes.js"),
     format: "json-seq",
     requestSchema: Type.Object({
-      page: Type.Optional(Type.Number()),
+      page: Type.Optional(Type.Union([Type.Number(), Type.Undefined()])),
       limit: Type.Optional(Type.Union([Type.Number(), Type.Undefined()])),
     }),
-    responseSchema: Type.AsyncIterator(Post),
   },
 ] as const;

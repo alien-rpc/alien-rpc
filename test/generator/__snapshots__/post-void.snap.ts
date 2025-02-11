@@ -5,12 +5,12 @@
  */
 import { route } from "@alien-rpc/service";
 
-export const voidTest = route.post("/void", async () => {});
+export const voidTest = route("/void").post(async () => {});
 
 /**
  * client/generated/api.ts
  */
-import { RequestOptions, Route } from "@alien-rpc/client";
+import type { RequestOptions, Route } from "@alien-rpc/client";
 
 export const voidTest: Route<
   "void",
@@ -26,8 +26,8 @@ export default [
   {
     path: "/void",
     method: "POST",
-    import: async () => (await import("../../routes.js")).voidTest as any,
+    name: "voidTest",
+    import: () => import("../../routes.js"),
     format: "json",
-    responseSchema: Type.Undefined(),
   },
 ] as const;
