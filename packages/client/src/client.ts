@@ -258,9 +258,9 @@ function createPathsProxy(
       if (route) {
         if (route.pathParams.length) {
           return (params: {}) =>
-            options.prefixUrl + buildPath(route.path, params)
+            new URL(buildPath(route.path, params), options.prefixUrl).href
         }
-        return options.prefixUrl + route.path
+        return new URL(route.path, options.prefixUrl).href
       }
     },
   })
