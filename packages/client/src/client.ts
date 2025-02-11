@@ -258,10 +258,19 @@ function createPathsProxy(
       if (route) {
         if (route.pathParams.length) {
           return (params: {}) =>
-            new URL(buildPath(route.path, params), options.prefixUrl).href
+            joinURL(options.prefixUrl, buildPath(route.path, params))
         }
-        return new URL(route.path, options.prefixUrl).href
+        return joinURL(options.prefixUrl, route.path)
       }
     },
   })
+}
+
+function joinURL(prefixUrl: string | URL | undefined, path: string) {
+  const newUrl = new URL(prefixUrl ?? location.origin)
+  if (!newUrl.pathname.endsWith('/')) {
+    newUrl.pathname += '/'
+  }
+  newUrl.pathname += path
+  return newUrl.href
 }
