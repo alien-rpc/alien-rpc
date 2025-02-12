@@ -10,7 +10,6 @@ import { analyzeFile } from './project/analyze-file.js'
 import { reportDiagnostics } from './project/diagnostics.js'
 import { createSupportingTypes } from './project/supporting-types.js'
 import { createTsConfigCache } from './project/tsconfig.js'
-import { ReferencedTypes } from './project/type-references.js'
 import { typeConstraints } from './type-constraints.js'
 
 export type { Options }
@@ -129,7 +128,7 @@ export default (rawOptions: Options) =>
 
     project.resolveSourceFileDependencies()
 
-    const referencedTypes: ReferencedTypes = new Map()
+    const referencedTypes = new Map<string, string>()
 
     const routes = Array.from(project.getSourceFiles())
       .filter(sourceFile => entryFilePaths.includes(sourceFile.fileName))
@@ -157,7 +156,7 @@ export default (rawOptions: Options) =>
           project.getModuleResolutionHost()
         )
         for (const [symbol, type] of metadata.referencedTypes) {
-          referencedTypes.set(symbol, type)
+          referencedTypes.set(symbol.name, type)
         }
         return metadata.routes
       })
