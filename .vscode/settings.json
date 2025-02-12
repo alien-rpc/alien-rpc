@@ -12,5 +12,5 @@
   },
   "autoHide.autoHidePanel": false,
   "typescript.tsdk": "./node_modules/typescript/lib",
-  "typescript.preferences.importModuleSpecifierEnding": "js"
+  "typescript.preferences.importModuleSpecifierEnding": "minimal"
 }
