@@ -171,10 +171,6 @@ export default (rawOptions: Options) =>
       }
     })
 
-    if (!routes.length) {
-      throw new Error('No routes were exported by the included files')
-    }
-
     reportDiagnostics(project, {
       verbose: options.verbose,
       ignoreFile: file => !includedFiles.has(file),
@@ -187,6 +183,10 @@ export default (rawOptions: Options) =>
           project.getModuleResolutionHost()
         ),
     })
+
+    if (!routes.length) {
+      throw new Error('No routes were exported by the included files')
+    }
 
     const clientDefinitions: string[] = []
     const clientTypeImports = new Set<string>(['RequestOptions', 'Route'])
