@@ -1,5 +1,5 @@
 import type { RouteMethod } from '@alien-rpc/route'
-import type { PathTemplate } from 'pathic'
+import type { InferParams, PathTemplate } from 'pathic'
 import type { Client } from './client.js'
 
 type AnyFn = (...args: any) => any
@@ -46,26 +46,51 @@ export type Route<
 }
 
 /**
- * Any valid URI pathname for the given route interface.
+ * These routes are imported from the `./client/generated/api.ts` file (which might
+ * have another name if you set the `clientOutFile` option).
+ *
+ * ```ts
+ * import * as api from './client/generated/api.ts'
+ * ```
  */
-export type RoutePathname<TRoutes extends Record<string, Route>> =
-  TRoutes[keyof TRoutes] extends Route<infer TEndpointPath>
-    ? PathTemplate<TEndpointPath>
-    : never
+export type ClientRoutes = Record<string, Route | Record<string, Route>>
 
 /**
- * The response type for the given URI pathname and route interface.
+ * Any valid URI pathname for the given set of client routes.
  */
-export type RouteResponseByPath<
-  TRoutes extends Record<string, Route>,
+export type RoutePathname<TRoutes extends ClientRoutes> =
+  TRoutes[keyof TRoutes] extends Route<infer TEndpointPath>
+    ? PathTemplate<TEndpointPath>
+    : TRoutes[keyof TRoutes] extends Record<string, Route>
+      ? RoutePathname<TRoutes[keyof TRoutes]>
+      : never
+
+/**
+ * The route definition for the given URI pathname and set of client routes.
+ */
+export type FindRouteForPath<
+  TRoutes extends ClientRoutes,
   TPath extends string,
 > = {
   [K in keyof TRoutes]: TRoutes[K] extends Route<infer P>
     ? TPath extends PathTemplate<P>
       ? TRoutes[K]
       : never
-    : never
+    : TRoutes[K] extends Record<string, Route>
+      ? FindRouteForPath<TRoutes[K], TPath>
+      : never
 }[keyof TRoutes]
+
+/**
+ * The response type for the given URI pathname and set of client routes.
+ */
+export type FindResponseForPath<
+  TRoutes extends ClientRoutes,
+  TPath extends string,
+> =
+  FindRouteForPath<TRoutes, TPath> extends infer TRoute extends Route
+    ? ReturnType<TRoute['callee']>
+    : never
 
 /**
  * Pagination links (relative to the client prefix URL) are received at the
@@ -196,3 +221,22 @@ export interface RouteResultCache {
 }
 
 export type ErrorMode = 'return' | 'reject'
+
+export type PathsProxy<API extends ClientRoutes> = {
+  readonly [TKey in keyof API]: API[TKey] extends Route
+    ? PathBuilderForRoute<API[TKey]>
+    : API[TKey] extends Record<string, Route>
+      ? PathsProxy<API[TKey]>
+      : never
+}
+
+/**
+ * Produces either a fixed URL or, for dynamic paths, a function that
+ * converts a parameters object into a URL.
+ */
+type PathBuilderForRoute<TRoute extends Route> =
+  InferParams<TRoute['path']> extends infer TParams
+    ? Record<string, never> extends TParams
+      ? string
+      : (params: TParams) => string
+    : never

@@ -2,48 +2,44 @@
 import { bodylessMethods } from '@alien-rpc/route'
 import * as jsonQS from '@json-qs/json-qs'
 import ky, { HTTPError, TimeoutError } from 'ky'
-import { buildPath, InferParams } from 'pathic'
+import { buildPath } from 'pathic'
 import { isFunction, isPromise, isString, omit } from 'radashi'
 import jsonFormat from './formats/json.js'
 import responseFormat from './formats/response.js'
 import {
   CachedRouteResult,
   ClientOptions,
+  ClientRoutes,
   ErrorMode,
+  FindResponseForPath,
+  PathsProxy,
   ResponseStream,
   ResultFormatter,
   Route,
   RoutePathname,
-  RouteResponseByPath,
   RouteResultCache,
 } from './types.js'
 import { mergeOptions } from './utils/mergeOptions.js'
 
 interface ClientPrototype<
-  API extends Record<string, Route>,
+  API extends ClientRoutes,
   TErrorMode extends ErrorMode = ErrorMode,
 > {
   readonly request: typeof ky
   readonly options: Readonly<ClientOptions<TErrorMode>>
-  readonly paths: {
-    [TKey in keyof API]: InferParams<API[TKey]['path']> extends infer TParams
-      ? Record<string, never> extends TParams
-        ? string
-        : (params: TParams) => string
-      : never
-  }
+  readonly paths: PathsProxy<API>
 
   extend<TNewErrorMode extends ErrorMode = TErrorMode>(
     defaults: ClientOptions<TNewErrorMode>
   ): Client<API, TNewErrorMode>
 
-  getCachedResponse<P extends RoutePathname<API>>(
-    path: P
-  ): CachedRouteResult<Awaited<RouteResponseByPath<API, P>>> | undefined
+  getCachedResponse<TPath extends RoutePathname<API>>(
+    path: TPath
+  ): CachedRouteResult<Awaited<FindResponseForPath<API, TPath>>> | undefined
 
-  setCachedResponse<P extends RoutePathname<API>>(
-    path: P,
-    response: CachedRouteResult<Awaited<RouteResponseByPath<API, P>>>
+  setCachedResponse<TPath extends RoutePathname<API>>(
+    path: TPath,
+    response: CachedRouteResult<Awaited<FindResponseForPath<API, TPath>>>
   ): void
 
   unsetCachedResponse<P extends RoutePathname<API>>(path: P): void
@@ -52,7 +48,7 @@ interface ClientPrototype<
 export { HTTPError, TimeoutError }
 
 export type Client<
-  API extends Record<string, Route> = Record<string, Route>,
+  API extends ClientRoutes = ClientRoutes,
   TErrorMode extends ErrorMode = ErrorMode,
 > = ClientPrototype<API, TErrorMode> & {
   [TKey in keyof API]: Extract<API[TKey], Route>['callee'] extends (
@@ -69,7 +65,7 @@ export type Client<
 }
 
 export function defineClient<
-  API extends Record<string, Route>,
+  API extends ClientRoutes,
   TErrorMode extends ErrorMode = ErrorMode,
 >(
   routes: API,
@@ -132,20 +128,24 @@ function createRequest(client: Client<any>) {
   })
 }
 
-function createClientProxy<API extends Record<string, Route>>(
+function createClientProxy<API extends ClientRoutes>(
   routes: API,
   client: ClientPrototype<API>
 ): any {
   return new Proxy(client, {
     get(client, key, proxy) {
-      if (Object.prototype.hasOwnProperty.call(routes, key)) {
-        return createRouteFunction(
-          routes[key as keyof API],
-          client.options.errorMode!,
-          client.options.resultCache!,
-          client.request,
-          proxy
-        )
+      const route = routes[key as keyof API]
+      if (route) {
+        if (isRouteDefinition(route)) {
+          return createRouteFunction(
+            route,
+            client.options.errorMode!,
+            client.options.resultCache!,
+            client.request,
+            proxy
+          )
+        }
+        return createClientProxy(route, client)
       }
       if (client.hasOwnProperty(key)) {
         return client[key as keyof ClientPrototype<API>]
@@ -244,23 +244,30 @@ function resolveResultFormat(format: Route['format']): ResultFormatter {
   return format
 }
 
-function isObject(arg: unknown) {
+function isRouteDefinition(obj: any): obj is Route {
+  return !!obj && isString(obj.method) && isString(obj.path)
+}
+
+function isObject(arg: {}) {
   return Object.getPrototypeOf(arg) === Object.prototype
 }
 
-function createPathsProxy(
-  routes: Record<string, Route>,
+function createPathsProxy<API extends ClientRoutes>(
+  routes: API,
   options: ClientOptions
-) {
+): any {
   return new Proxy(routes, {
-    get(routes: Record<string, Route>, key: string) {
-      const route = routes[key as keyof typeof routes]
+    get(routes, key) {
+      const route = routes[key as keyof API]
       if (route) {
-        if (route.pathParams.length) {
-          return (params: {}) =>
-            joinURL(options.prefixUrl, buildPath(route.path, params))
+        if (isRouteDefinition(route)) {
+          if (route.pathParams.length) {
+            return (params: {}) =>
+              joinURL(options.prefixUrl, buildPath(route.path, params))
+          }
+          return joinURL(options.prefixUrl, route.path)
         }
-        return joinURL(options.prefixUrl, route.path)
+        return createPathsProxy(route, options)
       }
     },
   })

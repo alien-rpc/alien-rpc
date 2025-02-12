@@ -18,8 +18,19 @@ export function analyzeFile(
   const typeChecker = project.getTypeChecker()
   const ts = project.utils
 
-  ts.forEachChild(sourceFile, node => {
-    if (!ts.isVariableStatement(node) || !ts.isExportedNode(node)) {
+  const visitor = (
+    node: ts.Node,
+    moduleDeclaration?: ts.ModuleDeclaration
+  ): void => {
+    if (!ts.isExportedNode(node)) {
+      return // Only consider exported declarations.
+    }
+
+    if (ts.isModuleDeclaration(node) && node.body) {
+      return ts.forEachChild(node.body, child => visitor(child, node))
+    }
+
+    if (!ts.isVariableStatement(node)) {
       return
     }
 
@@ -34,7 +45,11 @@ export function analyzeFile(
       return
     }
 
-    const routeName = symbol.getName()
+    let routeName = symbol.getName()
+    if (moduleDeclaration) {
+      routeName = `${moduleDeclaration.name.text}.${routeName}`
+    }
+
     try {
       const route = analyzeRoute(
         project,
@@ -52,7 +67,9 @@ export function analyzeFile(
       Object.assign(error, { routeName })
       throw error
     }
-  })
+  }
+
+  ts.forEachChild(sourceFile, visitor)
 
   return { routes, referencedTypes }
 }

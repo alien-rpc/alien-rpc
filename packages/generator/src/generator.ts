@@ -188,7 +188,7 @@ export default (rawOptions: Options) =>
       throw new Error('No routes were exported by the included files')
     }
 
-    const clientDefinitions: string[] = []
+    const clientDefinitions: Record<string, string[]> = {}
     const clientTypeImports = new Set<string>(['RequestOptions', 'Route'])
     const clientFormats = new Set<string>()
 
@@ -348,10 +348,16 @@ export default (rawOptions: Options) =>
         }`,
       ])
 
+      const [methodName, scopeName = ''] = route.exportedName
+        .split('.')
+        .reverse()
+
+      const scopeDefinitions = (clientDefinitions[scopeName] ??= [])
+
       clientFormats.add(route.resolvedFormat)
-      clientDefinitions.push(
+      scopeDefinitions.push(
         (description || '') +
-          `export const ${route.exportedName}: Route<"${clientPathname}", (${clientArgs.join(', ')}) => ${clientReturn}> = {${clientProperties.join(', ')}} as any`
+          `export const ${methodName}: Route<"${clientPathname}", (${clientArgs.join(', ')}) => ${clientReturn}> = {${clientProperties.join(', ')}} as any`
       )
     }
 
@@ -420,7 +426,10 @@ export default (rawOptions: Options) =>
           new RegExp(`\\s*&\\s*(${typeConstraints.join('|')})\\<.+?\\>`, 'g'),
           ''
         ),
-        ...clientDefinitions,
+        ...Object.entries(clientDefinitions).map(
+          ([scopeName, methodDefinitions]) =>
+            `export namespace ${scopeName} { ${methodDefinitions.join(', ')} }`
+        ),
       ]).join('\n\n')
 
       fs.write(outFile, content)
