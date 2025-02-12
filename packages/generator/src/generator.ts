@@ -13,6 +13,8 @@ import { createTsConfigCache } from './project/tsconfig.js'
 import { ReferencedTypes } from './project/type-references.js'
 import { typeConstraints } from './type-constraints.js'
 
+export type { Options }
+
 export default (rawOptions: Options) =>
   jumpgen<Store, Event, void>('alien-rpc', async context => {
     const { fs, root, store, emit, changes } = context
