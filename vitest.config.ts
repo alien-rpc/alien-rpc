@@ -22,6 +22,9 @@ export default defineConfig({
         singleThread: true,
       },
     },
+    env: {
+      TEST: 'alien-rpc',
+    },
     isolate: false,
     testTimeout: 0,
     maxConcurrency: os.cpus().length - 1,
