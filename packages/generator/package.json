@@ -23,8 +23,9 @@
   "dependencies": {
     "debug": "^4.3.7",
     "import-meta-resolve": "^4.1.0",
-    "jumpgen": "^0.2.0",
+    "jumpgen": "^0.2.2",
     "minimatch": "^9.0.4",
+    "option-types": "^1.1.0",
     "pathic": "workspace:^",
     "tinyglobby": "^0.2.9",
     "tsc-extra": ">=0.1.0-beta.1"

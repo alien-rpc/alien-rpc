@@ -1,3 +1,4 @@
+import type { ShallowOptions } from 'option-types'
 import type ts from 'typescript'
 import type { Project } from './project.js'
 import type { AnalyzedFile } from './project/analyze-file.js'
@@ -5,7 +6,7 @@ import type { AnalyzedRoute } from './project/analyze-route.js'
 import type { SupportingTypes } from './project/supporting-types.js'
 import type { TsConfigCache, TsConfigResolution } from './project/tsconfig.js'
 
-export type Options = {
+export type Options = ShallowOptions<{
   /**
    * Paths to modules that export route definitions. Glob patterns are
    * allowed. Negated glob patterns (e.g. `!foo`) are also supported.
@@ -47,7 +48,7 @@ export type Options = {
    * @default false
    */
   verbose?: boolean
-}
+}>
 
 export interface Store {
   tsConfigCache: TsConfigCache
