@@ -161,7 +161,8 @@ function processSourceFile(
     if (properties.length === 0 && indexSignature) {
       return `{},\n{\nadditionalProperties: ${renderIndexSignature(indexSignature)}\n }`
     }
-    return ''
+
+    return '{}'
   }
 
   function renderName(node: { name: ts.Identifier }) {
