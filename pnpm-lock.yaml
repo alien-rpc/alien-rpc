@@ -5,15 +5,15 @@ settings:
   excludeLinksFromLockfile: false
 
 overrides:
-  '@sinclair/typebox': ^0.33.17
+  '@sinclair/typebox': ^0.34.0
 
 importers:
 
   .:
     dependencies:
       '@sinclair/typebox':
-        specifier: ^0.33.17
-        version: 0.33.22
+        specifier: ^0.34.0
+        version: 0.34.21
       radashi:
         specifier: ^12.3.0
         version: 12.3.4
@@ -110,8 +110,8 @@ importers:
   packages/generator:
     dependencies:
       '@sinclair/typebox':
-        specifier: ^0.33.17
-        version: 0.33.22
+        specifier: ^0.34.0
+        version: 0.34.21
       debug:
         specifier: ^4.3.7
         version: 4.4.0
@@ -163,8 +163,8 @@ importers:
         specifier: ^1.2.0
         version: 1.2.0
       '@sinclair/typebox':
-        specifier: ^0.33.17
-        version: 0.33.22
+        specifier: ^0.34.0
+        version: 0.34.21
       option-types:
         specifier: ^1.1.0
         version: 1.1.0
@@ -637,8 +637,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@sinclair/typebox@0.33.22':
-    resolution: {integrity: sha512-auUj4k+f4pyrIVf4GW5UKquSZFHJWri06QgARy9C0t9ZTjJLIuNIrr1yl9bWcJWJ1Gz1vOvYN1D+QPaIlNMVkQ==}
+  '@sinclair/typebox@0.34.21':
+    resolution: {integrity: sha512-G+7YVIZalo+N+h7KapWBxRH2at9yO4yIHq49PkQLTQQkPTM0ZYaPOfPDpeNv/ukWjm8a1GdnO3yDC7bietT23A==}
 
   '@types/debug@4.1.12':
     resolution: {integrity: sha512-vIChWdVG3LG1SMxEvI/AK+FWJthlrqlTu7fbrlywTkkaONwk/UAGaULXRlf8vkzFBLVm0zkMdCquhL5aOjhXPQ==}
@@ -1488,7 +1488,7 @@ snapshots:
   '@rollup/rollup-win32-x64-msvc@4.34.0':
     optional: true
 
-  '@sinclair/typebox@0.33.22': {}
+  '@sinclair/typebox@0.34.21': {}
 
   '@types/debug@4.1.12':
     dependencies:
