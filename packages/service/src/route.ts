@@ -1,4 +1,5 @@
 import type { RouteMethod } from '@alien-rpc/route'
+import type { RequestHandlerStack } from '@hattip/compose'
 import type { InferParamsArray } from 'pathic'
 import {
   FixedRouteHandler,
@@ -12,13 +13,36 @@ import {
   SingleParamRoutePath,
 } from './types'
 
-export function route<TPath extends string>(path: TPath): RouteFactory<TPath> {
+/**
+ * Define a new route, optionally with a set of middlewares.
+ */
+export function route<TPath extends string, TPlatform = unknown>(
+  path: TPath,
+  middlewares?: RequestHandlerStack<TPlatform>[]
+): RouteFactory<TPath, TPlatform> {
   return new Proxy(globalThis as any, {
     get(_, method: string) {
       method = method.toUpperCase() as RouteMethod
-      return (handler: any) => ({ method, path, handler })
+      return (handler: any) => ({ method, path, handler, middlewares })
     },
   })
+}
+
+/**
+ * Use a set of middlewares for all routes defined with the returned
+ * factory function.
+ */
+route.use = <TPlatform = unknown>(
+  sharedMiddlewares: RequestHandlerStack<TPlatform>[]
+) => {
+  return <TPath extends string>(
+    path: TPath,
+    middlewares?: RequestHandlerStack<TPlatform>[]
+  ): RouteFactory<TPath, TPlatform> =>
+    route(
+      path,
+      middlewares ? [...sharedMiddlewares, ...middlewares] : sharedMiddlewares
+    )
 }
 
 type ToJSON<T> = T extends { toJSON(): infer TData }
@@ -42,13 +66,14 @@ type ClientResult<T> = T extends Response
 type MultiParamRouteFactory<
   TPath extends MultiParamRoutePath,
   TMethod extends RouteMethod,
+  TDefaultPlatform = unknown,
 > = <
   TPathParams extends InferParamsArray<TPath, PathParam> = InferParamsArray<
     TPath,
     string
   >,
   TData extends object = any,
-  TPlatform = unknown,
+  TPlatform = TDefaultPlatform,
   const TResult extends RouteResult = any,
 >(
   handler: MultiParamRouteHandler<TPath, TPathParams, TData, TPlatform, TResult>
@@ -62,10 +87,11 @@ type MultiParamRouteFactory<
 type SingleParamRouteFactory<
   TPath extends SingleParamRoutePath,
   TMethod extends RouteMethod,
+  TDefaultPlatform = unknown,
 > = <
   TPathParam extends PathParam = string,
   TData extends object = any,
-  TPlatform = unknown,
+  TPlatform = TDefaultPlatform,
   const TResult extends RouteResult = any,
 >(
   handler: SingleParamRouteHandler<TPath, TPathParam, TData, TPlatform, TResult>
@@ -76,9 +102,13 @@ type SingleParamRouteFactory<
   TMethod
 >
 
-type FixedRouteFactory<TPath extends string, TMethod extends RouteMethod> = <
+type FixedRouteFactory<
+  TPath extends string,
+  TMethod extends RouteMethod,
+  TDefaultPlatform = unknown,
+> = <
   TData extends object = any,
-  TPlatform = unknown,
+  TPlatform = TDefaultPlatform,
   const TResult extends RouteResult = any,
 >(
   handler: FixedRouteHandler<TPath, TData, TPlatform, TResult>
@@ -89,12 +119,12 @@ type FixedRouteFactory<TPath extends string, TMethod extends RouteMethod> = <
   TMethod
 >
 
-export type RouteFactory<TPath extends string> = {
+export type RouteFactory<TPath extends string, TPlatform = unknown> = {
   [TMethod in
     | RouteMethod
     | Lowercase<RouteMethod>]: TPath extends MultiParamRoutePath
-    ? MultiParamRouteFactory<TPath, Uppercase<TMethod>>
+    ? MultiParamRouteFactory<TPath, Uppercase<TMethod>, TPlatform>
     : TPath extends SingleParamRoutePath
-      ? SingleParamRouteFactory<TPath, Uppercase<TMethod>>
-      : FixedRouteFactory<TPath, Uppercase<TMethod>>
+      ? SingleParamRouteFactory<TPath, Uppercase<TMethod>, TPlatform>
+      : FixedRouteFactory<TPath, Uppercase<TMethod>, TPlatform>
 }
