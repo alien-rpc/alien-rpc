@@ -3,7 +3,7 @@ import { resolve } from 'import-meta-resolve'
 import { FileChange, jumpgen } from 'jumpgen'
 import path from 'path'
 import { parsePathParams } from 'pathic'
-import { camel, guard, pascal, sift } from 'radashi'
+import { camel, dedent, guard, pascal, sift } from 'radashi'
 import type { Event, Options, Store } from './generator-types.js'
 import { createProject } from './project.js'
 import { analyzeFile } from './project/analyze-file.js'
@@ -427,8 +427,17 @@ export default (rawOptions: Options) =>
           ''
         ),
         ...Object.entries(clientDefinitions).map(
-          ([scopeName, methodDefinitions]) =>
-            `export namespace ${scopeName} { ${methodDefinitions.join(', ')} }`
+          ([scopeName, methodDefinitions]) => {
+            const body = methodDefinitions.join('\n\n')
+            if (scopeName) {
+              return dedent`
+                export namespace ${scopeName} {
+                  ${body}
+                }
+              `
+            }
+            return body
+          }
         ),
       ]).join('\n\n')
 
