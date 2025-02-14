@@ -279,8 +279,8 @@ export type RouteFunctions<
     }
 
 type RouteFunctionResult<TResult, TErrorMode extends ErrorMode> =
-  TResult extends ResponseStream<infer TValue>
-    ? TValue
+  TResult extends ResponseStream<any>
+    ? TResult
     : TErrorMode extends 'return'
       ? Promise<[Error, undefined] | [undefined, Awaited<TResult>]>
       : TResult
