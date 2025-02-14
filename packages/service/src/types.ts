@@ -2,7 +2,7 @@ import type { RouteMethod, RouteResultFormat } from '@alien-rpc/route'
 import type { RequestContext } from '@hattip/compose'
 import type { TObject } from '@sinclair/typebox'
 import type { InferParamNames, InferParamsArray } from 'pathic'
-import type { JSON, JSONCodable, Promisable } from './internal/types'
+import type { JSONCodable, Promisable } from './internal/types'
 import type { PaginationLinks } from './pagination.js'
 
 declare module '@hattip/compose' {
@@ -30,7 +30,9 @@ declare module '@hattip/compose' {
 export type RouteIterator<TYield extends JSONCodable = JSONCodable> =
   AsyncIterator<TYield, PaginationLinks | void | null, any>
 
-export type RouteResult = Promisable<JSON | Response | RouteIterator | void>
+export type RouteResult = Promisable<
+  JSONCodable | Response | RouteIterator | void
+>
 
 export type RouteHandler =
   | FixedRouteHandler<any>
