@@ -616,8 +616,17 @@ function processSourceFile(
 
     // Unhandled Node //
     else {
+      const { line, character } = ts.getLineAndCharacterOfPosition(
+        sourceFile,
+        node.pos
+      )
+
+      let codeFrame = sourceFile.text.split('\n').slice(line - 3, line + 3)
+      codeFrame.splice(3, 0, ' '.repeat(character) + '^')
+
       throw Error(
-        `Unhandled node: ${ts.SyntaxKind[node.kind]} ${node.getText()}`
+        `Unsupported node ${ts.SyntaxKind[node.kind]}\n\n` +
+          codeFrame.join('\n').replace(/^/gm, '\t')
       )
     }
   }
