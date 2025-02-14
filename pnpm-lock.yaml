@@ -109,6 +109,9 @@ importers:
 
   packages/generator:
     dependencies:
+      '@alloc/formatly':
+        specifier: ^0.1.0
+        version: 0.1.0
       '@sinclair/typebox':
         specifier: ^0.34.0
         version: 0.34.21
@@ -201,6 +204,11 @@ packages:
 
   '@alloc/fast-rimraf@1.0.8':
     resolution: {integrity: sha512-TsRTRLLDW6Q4fWBAYlbkcaHQDAANKsI0smrhS/1x7/GHcjVxo+r+2VRbqrWaYpmjdhvCp5v7n2wtwkMYp+Kivw==}
+    hasBin: true
+
+  '@alloc/formatly@0.1.0':
+    resolution: {integrity: sha512-2d4Ghup/m9uRlHtSY8KVSy4pYA7eQ8rF7DD7WprumQIqVvSrPIbR90/zqh+H8jW+zwyx2eJAEheQRehCaWcIWw==}
+    engines: {node: '>=18.3.0'}
     hasBin: true
 
   '@alloc/prettier-config@1.0.0':
@@ -1232,6 +1240,8 @@ snapshots:
       mri: 1.2.0
 
   '@alloc/fast-rimraf@1.0.8': {}
+
+  '@alloc/formatly@0.1.0': {}
 
   '@alloc/prettier-config@1.0.0': {}
 
