@@ -293,7 +293,7 @@ export default (rawOptions: Options) =>
         : 'Record<string, never>'
 
       const resolvedRequestData =
-        dataArgument && dataArgument !== 'any'
+        dataArgument && dataArgument !== 'any' && dataArgument !== '{}'
           ? stripTypeConstraints(dataArgument)
           : 'Record<string, never>'
 
