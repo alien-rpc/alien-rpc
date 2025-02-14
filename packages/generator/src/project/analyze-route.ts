@@ -239,7 +239,6 @@ function resolveResultType(
   referencedTypes?: Map<ts.Symbol, string>
 ) {
   const typeChecker = project.getTypeChecker()
-  const ts = project.utils
 
   // Prevent mapping of `Response` to literal type
   if (isAssignableTo(typeChecker, type, types.Response)) {
@@ -251,11 +250,11 @@ function resolveResultType(
     return 'undefined'
   }
 
-  // Async generators are coerced to `AsyncIterableIterator` since
-  // typebox-codegen has no Type.AsyncGenerator validator
-  if (ts.isAsyncGeneratorType(type) && hasTypeArguments(type)) {
+  // Coerce route iterators to `AsyncIterableIterator` which is a type that
+  // is supported by typebox-codegen
+  if (isAssignableTo(typeChecker, type, types.RouteIterator)) {
     const yieldType = project.printTypeLiteralToString(
-      type.typeArguments[0],
+      (type as ts.TypeReference).typeArguments![0],
       referencedTypes
     )
     return `AsyncIterableIterator<${yieldType}>`

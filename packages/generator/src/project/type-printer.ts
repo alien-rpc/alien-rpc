@@ -11,7 +11,7 @@ export const createTypePrinter = (
     type: ts.Type,
     referencedTypes?: ReferencedTypes,
     symbolStack: string[] = []
-  ) {
+  ): string {
     if (referencedTypes) {
       collectReferencedTypes(type, project as any, referencedTypes, symbolStack)
     }
@@ -22,11 +22,29 @@ export const createTypePrinter = (
 
     const typeChecker = project.getTypeChecker()
 
-    // This exists to preserve “type constraints” like `t.Format<'uuid'>`
-    // but we should skip this logic for lib types like `Promise<{…}>` or
-    // else we'll have issues with truncation.
-    if (utils.isTypeReference(type) && !utils.isLibSymbol(type.symbol)) {
-      const typeArguments = typeChecker.getTypeArguments(type)
+    if (utils.isTypeReference(type)) {
+      let typeArguments = typeChecker.getTypeArguments(type)
+
+      // Lib symbols should be preserved, instead of expanding them. But
+      // their type arguments should still be expanded.
+      if (utils.isLibSymbol(type.symbol)) {
+        if (!typeArguments.length) {
+          return type.symbol.name
+        }
+
+        // Ignore the TReturn and TNext type arguments for `AsyncIterator`
+        // since the client-side ResponseStream type doesn't use them.
+        if (type.symbol.name === 'AsyncIterator') {
+          typeArguments = typeArguments.slice(0, 1)
+        }
+
+        const printedTypeArguments = typeArguments.map(arg => {
+          return printTypeLiteralToString(arg, undefined, symbolStack)
+        })
+        return type.symbol.name + '<' + printedTypeArguments.join(', ') + '>'
+      }
+
+      // Preserve type constraints like `t.Format<'uuid'>`
       if (typeArguments.length > 0) {
         return typeChecker.typeToString(type)
       }

@@ -318,9 +318,7 @@ export default (rawOptions: Options) =>
       let clientReturn: string
       if (route.resolvedFormat === 'json-seq') {
         clientTypeImports.add('ResponseStream')
-        clientReturn = route.resolvedResult
-          .replace(/^\w+/, 'ResponseStream')
-          .replace(/, *any, *any>$/, '>')
+        clientReturn = route.resolvedResult.replace(/^\w+/, 'ResponseStream')
       } else if (route.resolvedFormat === 'json') {
         clientReturn = `Promise<${route.resolvedResult}>`
       } else if (route.resolvedFormat === 'response') {
