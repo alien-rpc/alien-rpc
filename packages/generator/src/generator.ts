@@ -375,7 +375,7 @@ export default (rawOptions: Options) =>
       collectValidatedStringFormats(serverTypeAliases)
     }
 
-    const writeServerDefinitions = async (outFile: string) => {
+    const writeServerDefinitions = (outFile: string) => {
       let imports = ''
       let sideEffects = ''
 
@@ -403,15 +403,9 @@ export default (rawOptions: Options) =>
       ]).join('\n\n')
 
       fs.write(outFile, content)
-
-      if (!options.noFormat) {
-        await formatly([path.basename(outFile)], {
-          cwd: path.dirname(outFile),
-        })
-      }
     }
 
-    const writeClientDefinitions = async (outFile: string) => {
+    const writeClientDefinitions = (outFile: string) => {
       let imports = ''
 
       // Delete the two formats that are always available.
@@ -449,18 +443,22 @@ export default (rawOptions: Options) =>
       ]).join('\n\n')
 
       fs.write(outFile, content)
-
-      if (!options.noFormat) {
-        await formatly([path.basename(outFile)], {
-          cwd: path.dirname(outFile),
-        })
-      }
     }
 
-    await Promise.all([
-      writeServerDefinitions(options.serverOutFile),
-      writeClientDefinitions(options.clientOutFile),
-    ])
+    writeServerDefinitions(options.serverOutFile)
+    writeClientDefinitions(options.clientOutFile)
+
+    if (!options.noFormat) {
+      await formatly(
+        [options.serverOutFile, options.clientOutFile].map(file =>
+          path.relative(options.outDir, file)
+        ),
+        {
+          cwd: options.outDir,
+          stdio: 'inherit',
+        }
+      )
+    }
   })
 
 function isProjectInvalidated(store: Store, changes: FileChange[]) {
