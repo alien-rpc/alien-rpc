@@ -31,6 +31,14 @@ export type Options = ShallowOptions<{
    */
   clientOutFile?: string
   /**
+   * By default, any generated files are formatted using your preferred
+   * formatter. This results in a double-save, once with the unformatted
+   * code and again after formatting; which may be undesirable in some
+   * cases. Therefore, you can disable formatting entirely with this
+   * option.
+   */
+  noFormat?: boolean
+  /**
    * Your API's current version. There is no convention for what this
    * should be, but using the release date (e.g. `2024-10-31`) or a
    * semantic major version (e.g. `v1` or `v2`) are popular choices. Note

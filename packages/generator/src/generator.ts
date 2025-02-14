@@ -1,4 +1,5 @@
 import { bodylessMethods } from '@alien-rpc/route'
+import { formatly } from '@alloc/formatly'
 import { resolve } from 'import-meta-resolve'
 import { FileChange, jumpgen } from 'jumpgen'
 import path from 'path'
@@ -376,7 +377,7 @@ export default (rawOptions: Options) =>
       collectValidatedStringFormats(serverTypeAliases)
     }
 
-    const writeServerDefinitions = (outFile: string) => {
+    const writeServerDefinitions = async (outFile: string) => {
       let imports = ''
       let sideEffects = ''
 
@@ -404,9 +405,15 @@ export default (rawOptions: Options) =>
       ]).join('\n\n')
 
       fs.write(outFile, content)
+
+      if (!options.noFormat) {
+        await formatly([path.basename(outFile)], {
+          cwd: path.dirname(outFile),
+        })
+      }
     }
 
-    const writeClientDefinitions = (outFile: string) => {
+    const writeClientDefinitions = async (outFile: string) => {
       let imports = ''
 
       // Delete the two formats that are always available.
@@ -444,10 +451,18 @@ export default (rawOptions: Options) =>
       ]).join('\n\n')
 
       fs.write(outFile, content)
+
+      if (!options.noFormat) {
+        await formatly([path.basename(outFile)], {
+          cwd: path.dirname(outFile),
+        })
+      }
     }
 
-    writeServerDefinitions(options.serverOutFile)
-    writeClientDefinitions(options.clientOutFile)
+    await Promise.all([
+      writeServerDefinitions(options.serverOutFile),
+      writeClientDefinitions(options.clientOutFile),
+    ])
   })
 
 function isProjectInvalidated(store: Store, changes: FileChange[]) {
