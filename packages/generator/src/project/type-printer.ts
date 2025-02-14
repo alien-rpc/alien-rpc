@@ -22,7 +22,10 @@ export const createTypePrinter = (
 
     const typeChecker = project.getTypeChecker()
 
-    if (utils.isTypeReference(type)) {
+    // This exists to preserve “type constraints” like `t.Format<'uuid'>`
+    // but we should skip this logic for lib types like `Promise<{…}>` or
+    // else we'll have issues with truncation.
+    if (utils.isTypeReference(type) && !utils.isLibSymbol(type.symbol)) {
       const typeArguments = typeChecker.getTypeArguments(type)
       if (typeArguments.length > 0) {
         return typeChecker.typeToString(type)
