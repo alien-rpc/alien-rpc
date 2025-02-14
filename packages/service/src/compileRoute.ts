@@ -1,5 +1,9 @@
 import { bodylessMethods } from '@alien-rpc/route'
-import { RequestContext } from '@hattip/compose'
+import {
+  RequestContext,
+  RequestHandler,
+  RequestHandlerStack,
+} from '@hattip/compose'
 import * as jsonQS from '@json-qs/json-qs'
 import { KindGuard, TSchema, Type } from '@sinclair/typebox'
 import { TypeCompiler } from '@sinclair/typebox/compiler'
@@ -9,7 +13,7 @@ import {
   ValueErrorType,
 } from '@sinclair/typebox/value'
 import { supportedResponders } from './responders/index.js'
-import { Route, RouteHandler } from './types.js'
+import { Route, RouteDefinition, RouteHandler } from './types.js'
 
 export type CompiledRoute = ReturnType<typeof compileRoute>
 
@@ -23,7 +27,7 @@ export type CompileRouteOptions = {
 export function compileRoute(route: Route, options: CompileRouteOptions = {}) {
   const decodePathData = compilePathSchema(route, options)
   const decodeRequestData = compileRequestSchema(route, options)
-  const responder = supportedResponders[route.format](route)
+  const responder = supportedResponders[route.format]
 
   async function getHandlerArgs(
     params: {},
@@ -62,18 +66,47 @@ export function compileRoute(route: Route, options: CompileRouteOptions = {}) {
      * @param data - The decoded request data.
      * @param ctx - The route context.
      */
-    responder,
-    /**
-     * Decode the request data and invoke the route responder.
-     *
-     * @param params - The path parameters (possibly empty).
-     * @param ctx - The route context.
-     */
-    async handle(params: {}, ctx: RequestContext) {
-      const args = await getHandlerArgs(params, ctx)
-      return responder(args, ctx)
+    async responder(args: Parameters<RouteHandler>, ctx: RequestContext) {
+      const def = (await route.import())[route.name] as RouteDefinition
+      if (def.middlewares) {
+        return applyMiddlewares(def.middlewares, ctx, () => {
+          return responder(def, args, ctx)
+        })
+      }
+      return responder(def, args, ctx)
     },
   }
+}
+
+const appliedMiddlewares = new WeakMap<RequestContext, Set<RequestHandler>>()
+
+async function applyMiddlewares(
+  stack: RequestHandlerStack[],
+  ctx: RequestContext,
+  next: () => Promise<Response>
+) {
+  const applied = appliedMiddlewares.get(ctx) ?? new Set()
+  appliedMiddlewares.set(ctx, applied)
+
+  let i = 0
+  const outerNext = ctx.next
+  const middlewares = stack.flat()
+
+  return (ctx.next = async (): Promise<Response> => {
+    while (i < middlewares.length) {
+      const middleware = middlewares[i++]
+      if (!middleware || applied.has(middleware)) {
+        continue
+      }
+      applied.add(middleware)
+      const result = await middleware(ctx)
+      if (result instanceof Response) {
+        return result
+      }
+    }
+    ctx.next = outerNext
+    return next()
+  })()
 }
 
 function compileSchema<Schema extends TSchema, Output>(

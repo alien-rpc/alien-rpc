@@ -1,12 +1,9 @@
-import { importRouteDefinition } from '../importRouteDefinition'
-import type { JSON, Promisable } from '../internal/types'
+import type { JSONCodable, Promisable } from '../internal/types'
 import type { RouteResponder } from '../types'
 
-const responder: RouteResponder = route => async (args, ctx) => {
-  const routeDef = await importRouteDefinition(route)
-
-  let result: Promisable<JSON | undefined> = await routeDef.handler.apply(
-    routeDef,
+const responder: RouteResponder = async (route, args, ctx) => {
+  let result: Promisable<JSONCodable | undefined> = await route.handler.apply(
+    route,
     args
   )
 

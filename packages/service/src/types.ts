@@ -1,5 +1,5 @@
 import type { RouteMethod, RouteResultFormat } from '@alien-rpc/route'
-import type { RequestContext } from '@hattip/compose'
+import type { RequestContext, RequestHandlerStack } from '@hattip/compose'
 import type { TObject } from '@sinclair/typebox'
 import type { InferParamNames, InferParamsArray } from 'pathic'
 import type { JSONCodable, Promisable } from './internal/types'
@@ -96,6 +96,7 @@ export interface RouteDefinition<
   method: TMethod
   path: TPath
   handler: (...args: TArgs) => TResult
+  middlewares?: RequestHandlerStack[]
 }
 
 /**
@@ -168,5 +169,7 @@ export type InferRouteParams<TDefinition extends RouteDefinition> =
  * coercing its result into a Response object.
  */
 export type RouteResponder = (
-  route: Route
-) => (args: Parameters<RouteHandler>, ctx: RequestContext) => Promise<Response>
+  route: RouteDefinition,
+  args: Parameters<RouteHandler>,
+  ctx: RequestContext
+) => Promise<Response>

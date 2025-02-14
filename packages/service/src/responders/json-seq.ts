@@ -1,12 +1,9 @@
-import { importRouteDefinition } from '../importRouteDefinition'
 import type { JSON } from '../internal/types'
 import { resolvePaginationLink } from '../pagination'
 import type { RouteIterator, RouteResponder } from '../types'
 
-const responder: RouteResponder = route => async (args, ctx) => {
-  const routeDef = await importRouteDefinition(route)
-
-  const result = await routeDef.handler.apply(routeDef, args)
+const responder: RouteResponder = async (route, args, ctx) => {
+  const result = await route.handler.apply(route, args)
   const stream = ReadableStream.from(generateJsonTextSequence(result, ctx.url))
 
   // Don't use "application/json-seq" until it's been standardized.
