@@ -280,15 +280,7 @@ export type RouteFunctions<
 
 type RouteFunctionResult<TResult, TErrorMode extends ErrorMode> =
   TResult extends ResponseStream<infer TValue>
-    ? ToJSON<TValue>
+    ? TValue
     : TErrorMode extends 'return'
-      ? Promise<[Error, undefined] | [undefined, ToJSON<Awaited<TResult>>]>
-      : ToJSON<TResult>
-
-type ToJSON<T> = T extends Response
-  ? Response
-  : T extends object
-    ? T extends { toJSON(): infer TResult }
-      ? TResult
-      : { [K in keyof T]: ToJSON<T[K]> }
-    : T
+      ? Promise<[Error, undefined] | [undefined, Awaited<TResult>]>
+      : TResult

@@ -20,84 +20,80 @@ export function route<TPath extends string>(path: TPath): RouteFactory<TPath> {
   })
 }
 
-type Mutable<T> = T extends object
-  ? T extends Promise<infer TAwaited>
-    ? Promise<Mutable<TAwaited>>
-    : T extends AsyncGenerator
-      ? T
-      : T extends Response
-        ? Response
-        : T extends ReadonlyArray<infer TElement>
-          ? Mutable<TElement>[]
-          : { -readonly [K in keyof T]: Mutable<T[K]> }
-  : T
+type ToJSON<T> = T extends { toJSON(): infer TData }
+  ? TData
+  : T extends object
+    ? T extends ReadonlyArray<infer TElement>
+      ? Array<TElement> extends T
+        ? ToJSON<TElement>[]
+        : { -readonly [K in keyof T]: ToJSON<T[K]> }
+      : { -readonly [K in keyof T]: ToJSON<T[K]> }
+    : T
+
+type ClientResult<T> = T extends Response
+  ? Response
+  : T extends AsyncIterator<infer TValue>
+    ? AsyncIterator<ToJSON<TValue>>
+    : T extends Promise<infer TValue>
+      ? Promise<ToJSON<TValue>>
+      : ToJSON<T>
+
+type MultiParamRouteFactory<
+  TPath extends MultiParamRoutePath,
+  TMethod extends RouteMethod,
+> = <
+  TPathParams extends InferParamsArray<TPath, PathParam> = InferParamsArray<
+    TPath,
+    string
+  >,
+  TData extends object = any,
+  TPlatform = unknown,
+  const TResult extends RouteResult = any,
+>(
+  handler: MultiParamRouteHandler<TPath, TPathParams, TData, TPlatform, TResult>
+) => RouteDefinition<
+  TPath,
+  Parameters<MultiParamRouteHandler<TPath, TPathParams, TData, TPlatform, any>>,
+  ClientResult<TResult>,
+  TMethod
+>
+
+type SingleParamRouteFactory<
+  TPath extends SingleParamRoutePath,
+  TMethod extends RouteMethod,
+> = <
+  TPathParam extends PathParam = string,
+  TData extends object = any,
+  TPlatform = unknown,
+  const TResult extends RouteResult = any,
+>(
+  handler: SingleParamRouteHandler<TPath, TPathParam, TData, TPlatform, TResult>
+) => RouteDefinition<
+  TPath,
+  Parameters<SingleParamRouteHandler<TPath, TPathParam, TData, TPlatform, any>>,
+  ClientResult<TResult>,
+  TMethod
+>
+
+type FixedRouteFactory<TPath extends string, TMethod extends RouteMethod> = <
+  TData extends object = any,
+  TPlatform = unknown,
+  const TResult extends RouteResult = any,
+>(
+  handler: FixedRouteHandler<TPath, TData, TPlatform, TResult>
+) => RouteDefinition<
+  TPath,
+  Parameters<FixedRouteHandler<TPath, TData, TPlatform, any>>,
+  ClientResult<TResult>,
+  TMethod
+>
 
 export type RouteFactory<TPath extends string> = {
   [TMethod in
     | RouteMethod
     | Lowercase<RouteMethod>]: TPath extends MultiParamRoutePath
-    ? <
-        TPathParams extends InferParamsArray<
-          TPath,
-          PathParam
-        > = InferParamsArray<TPath, string>,
-        TData extends object = any,
-        TPlatform = unknown,
-        const TResult extends RouteResult = any,
-      >(
-        handler: MultiParamRouteHandler<
-          TPath,
-          TPathParams,
-          TData,
-          TPlatform,
-          TResult
-        >
-      ) => RouteDefinition<
-        TPath,
-        Parameters<
-          MultiParamRouteHandler<TPath, TPathParams, TData, TPlatform, TResult>
-        >,
-        Mutable<TResult>,
-        Uppercase<TMethod>
-      >
+    ? MultiParamRouteFactory<TPath, Uppercase<TMethod>>
     : TPath extends SingleParamRoutePath
-      ? <
-          TPathParam extends PathParam = string,
-          TData extends object = any,
-          TPlatform = unknown,
-          const TResult extends RouteResult = any,
-        >(
-          handler: SingleParamRouteHandler<
-            TPath,
-            TPathParam,
-            TData,
-            TPlatform,
-            TResult
-          >
-        ) => RouteDefinition<
-          TPath,
-          Parameters<
-            SingleParamRouteHandler<
-              TPath,
-              TPathParam,
-              TData,
-              TPlatform,
-              TResult
-            >
-          >,
-          Mutable<TResult>,
-          Uppercase<TMethod>
-        >
-      : <
-          TData extends object = any,
-          TPlatform = unknown,
-          const TResult extends RouteResult = any,
-        >(
-          handler: FixedRouteHandler<TPath, TData, TPlatform, TResult>
-        ) => RouteDefinition<
-          TPath,
-          Parameters<FixedRouteHandler<TPath, TData, TPlatform, TResult>>,
-          Mutable<TResult>,
-          Uppercase<TMethod>
-        >
+      ? SingleParamRouteFactory<TPath, Uppercase<TMethod>>
+      : FixedRouteFactory<TPath, Uppercase<TMethod>>
 }
