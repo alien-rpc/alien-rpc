@@ -6,6 +6,7 @@ import {
   MultiParamRoutePath,
   PathParam,
   RouteDefinition,
+  RouteIterator,
   RouteResult,
   SingleParamRouteHandler,
   SingleParamRoutePath,
@@ -32,8 +33,8 @@ type ToJSON<T> = T extends { toJSON(): infer TData }
 
 type ClientResult<T> = T extends Response
   ? Response
-  : T extends AsyncIterator<infer TValue>
-    ? AsyncIterator<ToJSON<TValue>>
+  : T extends RouteIterator<infer TValue>
+    ? RouteIterator<ToJSON<TValue>>
     : T extends Promise<infer TValue>
       ? Promise<ToJSON<TValue>>
       : ToJSON<T>

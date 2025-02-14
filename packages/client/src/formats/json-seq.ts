@@ -54,7 +54,7 @@ function mapCachedResult(values: unknown[], client: Client) {
   return responseStream
 }
 
-async function toArray(this: AsyncGenerator<any>) {
+async function toArray(this: AsyncIterableIterator<any>) {
   const result = []
   for await (const value of this) {
     result.push(value)
