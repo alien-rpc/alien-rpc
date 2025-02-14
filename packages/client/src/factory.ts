@@ -1,8 +1,8 @@
 import { Client, defineClient } from './client.js'
-import { ClientOptions, ErrorMode, Route } from './types.js'
+import { ClientOptions, ClientRoutes, ErrorMode } from './types.js'
 
 export function defineClientFactory<
-  API extends Record<string, Route>,
+  API extends ClientRoutes,
   TDefaultErrorMode extends ErrorMode = 'reject',
 >(routes: API, options: ClientOptions<TDefaultErrorMode> = {}) {
   const client = defineClient(routes, options)

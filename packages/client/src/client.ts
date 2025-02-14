@@ -7,24 +7,23 @@ import { isFunction, isPromise, isString, omit } from 'radashi'
 import jsonFormat from './formats/json.js'
 import responseFormat from './formats/response.js'
 import {
-  CachedRouteResult,
+  CachedResponse,
   ClientOptions,
   ClientRoutes,
   ErrorMode,
-  FindResponseForPath,
   PathsProxy,
-  ResponseStream,
   ResultFormatter,
   Route,
+  RouteFunctions,
   RoutePathname,
   RouteResultCache,
 } from './types.js'
 import { mergeOptions } from './utils/mergeOptions.js'
 
-interface ClientPrototype<
+type ClientPrototype<
   API extends ClientRoutes,
   TErrorMode extends ErrorMode = ErrorMode,
-> {
+> = {
   readonly request: typeof ky
   readonly options: Readonly<ClientOptions<TErrorMode>>
   readonly paths: PathsProxy<API>
@@ -35,11 +34,11 @@ interface ClientPrototype<
 
   getCachedResponse<TPath extends RoutePathname<API>>(
     path: TPath
-  ): CachedRouteResult<Awaited<FindResponseForPath<API, TPath>>> | undefined
+  ): CachedResponse<API, TPath> | undefined
 
   setCachedResponse<TPath extends RoutePathname<API>>(
     path: TPath,
-    response: CachedRouteResult<Awaited<FindResponseForPath<API, TPath>>>
+    response: CachedResponse<API, TPath>
   ): void
 
   unsetCachedResponse<P extends RoutePathname<API>>(path: P): void
@@ -48,21 +47,9 @@ interface ClientPrototype<
 export { HTTPError, TimeoutError }
 
 export type Client<
-  API extends ClientRoutes = ClientRoutes,
+  API extends ClientRoutes = any,
   TErrorMode extends ErrorMode = ErrorMode,
-> = ClientPrototype<API, TErrorMode> & {
-  [TKey in keyof API]: Extract<API[TKey], Route>['callee'] extends (
-    ...args: infer TArgs
-  ) => infer TResult
-    ? (
-        ...args: TArgs
-      ) => TResult extends ResponseStream<any>
-        ? TResult
-        : TErrorMode extends 'return'
-          ? Promise<[Error, undefined] | [undefined, Awaited<TResult>]>
-          : TResult
-    : never
-}
+> = ClientPrototype<API, TErrorMode> & RouteFunctions<API, TErrorMode>
 
 export function defineClient<
   API extends ClientRoutes,
@@ -70,7 +57,7 @@ export function defineClient<
 >(
   routes: API,
   options: ClientOptions<TErrorMode> = {},
-  parent?: Client<any> | undefined
+  parent?: Client | undefined
 ): Client<API, TErrorMode> {
   const mergedOptions = mergeOptions(parent?.options, options)
   const { resultCache } = mergedOptions
@@ -111,7 +98,7 @@ async function extendHTTPError(error: HTTPError) {
   return error
 }
 
-function createRequest(client: Client<any>) {
+function createRequest(client: Client) {
   let { hooks, prefixUrl = '/' } = client.options
 
   if (isFunction(hooks)) {

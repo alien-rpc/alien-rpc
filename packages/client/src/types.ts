@@ -1,13 +1,21 @@
 import type { RouteMethod } from '@alien-rpc/route'
 import type { InferParams, PathTemplate } from 'pathic'
+import type { Any } from 'radashi'
 import type { Client } from './client.js'
 
-type AnyFn = (...args: any) => any
+export type CachedResponseStream<T> =
+  | readonly T[]
+  | readonly [...T[], RoutePagination]
 
-export type CachedRouteResult<TResult> =
-  TResult extends ResponseStream<infer TStreamResult>
-    ? readonly TStreamResult[] | readonly [...TStreamResult[], RoutePagination]
-    : TResult
+export type CachedResponse<
+  API extends ClientRoutes,
+  TPath extends RoutePathname<API>,
+> =
+  Awaited<FindResponseForPath<API, TPath>> extends infer TResponse
+    ? TResponse extends ResponseStream<infer TValue>
+      ? CachedResponseStream<TValue>
+      : TResponse
+    : never
 
 export type ResultFormatter<
   TResult = unknown,
@@ -21,6 +29,8 @@ export type ResultFormatter<
    */
   parseResponse(promisedResponse: Promise<Response>, client: Client): TResult
 }
+
+type AnyFn = (...args: any) => any
 
 export type Route<
   TPath extends string = string,
@@ -58,12 +68,18 @@ export type ClientRoutes = Record<string, Route | Record<string, Route>>
 /**
  * Any valid URI pathname for the given set of client routes.
  */
-export type RoutePathname<TRoutes extends ClientRoutes> =
-  TRoutes[keyof TRoutes] extends Route<infer TEndpointPath>
-    ? PathTemplate<TEndpointPath>
-    : TRoutes[keyof TRoutes] extends Record<string, Route>
-      ? RoutePathname<TRoutes[keyof TRoutes]>
-      : never
+export type RoutePathname<TRoutes extends ClientRoutes> = //
+  [TRoutes] extends [Any]
+    ? string
+    : {
+        [K in keyof TRoutes]: TRoutes[K] extends infer TRoute
+          ? TRoute extends Route<infer TPath>
+            ? PathTemplate<TPath>
+            : TRoute extends Record<string, Route>
+              ? RoutePathname<TRoute>
+              : never
+          : never
+      }[keyof TRoutes]
 
 /**
  * The route definition for the given URI pathname and set of client routes.
@@ -72,13 +88,15 @@ export type FindRouteForPath<
   TRoutes extends ClientRoutes,
   TPath extends string,
 > = {
-  [K in keyof TRoutes]: TRoutes[K] extends Route<infer P>
-    ? TPath extends PathTemplate<P>
-      ? TRoutes[K]
-      : never
-    : TRoutes[K] extends Record<string, Route>
-      ? FindRouteForPath<TRoutes[K], TPath>
-      : never
+  [K in keyof TRoutes]: TRoutes[K] extends infer TRoute
+    ? TRoute extends Route<infer P>
+      ? TPath extends PathTemplate<P>
+        ? TRoute
+        : never
+      : TRoute extends Record<string, Route>
+        ? FindRouteForPath<TRoute, TPath>
+        : never
+    : never
 }[keyof TRoutes]
 
 /**
@@ -88,8 +106,10 @@ export type FindResponseForPath<
   TRoutes extends ClientRoutes,
   TPath extends string,
 > =
-  FindRouteForPath<TRoutes, TPath> extends infer TRoute extends Route
-    ? ReturnType<TRoute['callee']>
+  FindRouteForPath<TRoutes, TPath> extends infer TRoute
+    ? TRoute extends Route
+      ? ReturnType<TRoute['callee']>
+      : never
     : never
 
 /**
@@ -240,3 +260,27 @@ type PathBuilderForRoute<TRoute extends Route> =
       ? string
       : (params: TParams) => string
     : never
+
+export type RouteFunctions<
+  API extends ClientRoutes,
+  TErrorMode extends ErrorMode,
+> = [API] extends [Any]
+  ? unknown
+  : {
+      [K in keyof API]: API[K] extends infer TRoute
+        ? TRoute extends Route<string, infer TCallee>
+          ? (
+              ...args: Parameters<TCallee>
+            ) => RouteFunctionResult<ReturnType<TCallee>, TErrorMode>
+          : TRoute extends Record<string, Route>
+            ? RouteFunctions<TRoute, TErrorMode>
+            : never
+        : never
+    }
+
+type RouteFunctionResult<TResult, TErrorMode extends ErrorMode> =
+  TResult extends ResponseStream<any>
+    ? TResult
+    : TErrorMode extends 'return'
+      ? Promise<[Error, undefined] | [undefined, Awaited<TResult>]>
+      : TResult
