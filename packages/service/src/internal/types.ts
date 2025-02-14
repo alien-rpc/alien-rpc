@@ -4,12 +4,12 @@ type JSONPrimitive = string | number | boolean | null
 
 export type JSONObjectCodable =
   | { [key: string]: JSONCodable | undefined }
-  | { toJSON(): JSONObjectCodable }
+  | { toJSON(): JSONObject }
 
 export type JSONCodable =
   | JSONPrimitive
   | { [key: string]: JSONCodable | undefined }
-  | { toJSON(): JSONCodable }
+  | { toJSON(): JSON }
   | readonly JSONCodable[]
 
 export type JSONObject = { [key: string]: JSON | undefined }
