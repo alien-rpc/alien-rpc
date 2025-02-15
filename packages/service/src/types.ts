@@ -190,3 +190,26 @@ export interface AnyResponse {
   readonly json: () => Promise<unknown>
   readonly text: () => Promise<string>
 }
+
+type ToJSON<T> = T extends { toJSON(): infer TData }
+  ? TData
+  : T extends object
+    ? T extends ReadonlyArray<infer TElement>
+      ? Array<TElement> extends T
+        ? ToJSON<TElement>[]
+        : { -readonly [K in keyof T]: ToJSON<T[K]> }
+      : { -readonly [K in keyof T]: ToJSON<T[K]> }
+    : T
+
+/**
+ * Convert a route handler's result into a value that can be sent to the
+ * client.
+ */
+export type ClientResult<T> =
+  T extends Promise<infer TAwaited>
+    ? Promise<ClientResult<TAwaited>>
+    : T extends AnyResponse
+      ? T
+      : T extends RouteIterator<infer TValue>
+        ? RouteIterator<ToJSON<TValue>>
+        : ToJSON<T>
