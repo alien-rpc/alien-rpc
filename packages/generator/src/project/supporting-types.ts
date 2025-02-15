@@ -18,7 +18,7 @@ export function createSupportingTypes(
 
   const typeDeclarations = {
     AnyNonNull: '{}',
-    Response: 'globalThis.Response',
+    Response: `import("${serviceModuleId}").AnyResponse`,
     RouteDefinition: `import("${serviceModuleId}").RouteDefinition`,
     RouteIterator: `import("${serviceModuleId}").RouteIterator`,
     RouteMethod: `import("${serviceModuleId}").RouteMethod`,
@@ -30,15 +30,6 @@ export function createSupportingTypes(
   type TypeValidator = (typeChecker: ts.TypeChecker, type: ts.Type) => void
 
   const typeValidation: Record<string, TypeValidator> = {
-    Response(typeChecker: ts.TypeChecker, type: ts.Type) {
-      // If the type "{}" is assignable to our "Response" type, then
-      // something is misconfigured on the user's end.
-      if (typeChecker.isTypeAssignableTo(types.AnyNonNull(typeChecker), type)) {
-        throw new Error(
-          `Could not resolve Response type. Make sure @types/node is installed in your project. If already installed, it may need to be re-installed.`
-        )
-      }
-    },
     RouteIterator(typeChecker: ts.TypeChecker, type: ts.Type) {
       // If the type "{}" is assignable to our "RouteIterator" type, then
       // something is misconfigured on the user's end.

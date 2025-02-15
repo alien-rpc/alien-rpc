@@ -6,6 +6,7 @@ export * from './response.js'
 export { route, type RouteFactory } from './route.js'
 
 export type {
+  AnyResponse,
   FixedRouteHandler,
   MultiParamRouteHandler,
   RouteDefinition,

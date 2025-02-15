@@ -2,6 +2,7 @@ import type { RouteMethod } from '@alien-rpc/route'
 import type { RequestHandlerStack } from '@hattip/compose'
 import type { InferParamsArray } from 'pathic'
 import {
+  AnyResponse,
   FixedRouteHandler,
   MultiParamRouteHandler,
   MultiParamRoutePath,
@@ -55,8 +56,8 @@ type ToJSON<T> = T extends { toJSON(): infer TData }
       : { -readonly [K in keyof T]: ToJSON<T[K]> }
     : T
 
-type ClientResult<T> = T extends Response
-  ? Response
+type ClientResult<T> = T extends AnyResponse
+  ? T
   : T extends RouteIterator<infer TValue>
     ? RouteIterator<ToJSON<TValue>>
     : T extends Promise<infer TValue>

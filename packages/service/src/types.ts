@@ -31,7 +31,7 @@ export type RouteIterator<TYield extends JSONCodable = JSONCodable> =
   AsyncIterator<TYield, PaginationLinks | void | null, any>
 
 export type RouteResult = Promisable<
-  JSONCodable | Response | RouteIterator | void
+  JSONCodable | AnyResponse | RouteIterator | void
 >
 
 export type RouteHandler =
@@ -173,3 +173,20 @@ export type RouteResponder = (
   args: Parameters<RouteHandler>,
   ctx: RequestContext
 ) => Promise<Response>
+
+/**
+ * Both the Node.js and Cloudflare workers environments have a `Response`
+ * type that *should* be assignable to this interface.
+ */
+export interface AnyResponse {
+  readonly headers: object
+  readonly ok: boolean
+  readonly status: number
+  readonly statusText: string
+  readonly url: string
+  readonly arrayBuffer: () => Promise<ArrayBuffer>
+  readonly blob: () => Promise<object>
+  readonly formData: () => Promise<object>
+  readonly json: () => Promise<unknown>
+  readonly text: () => Promise<string>
+}
