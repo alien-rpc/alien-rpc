@@ -15,6 +15,10 @@ export function getShouldRetry(
   let retryCount = 0
 
   return response => {
+    if (retryCount >= options.limit) {
+      return false
+    }
+
     if (!options.statusCodes.includes(response.status)) {
       return false
     }
