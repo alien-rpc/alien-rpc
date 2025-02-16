@@ -68,7 +68,7 @@ export function defineClient<
   const client: Client<API, TErrorMode> = createClientProxy(routes, {
     options: mergedOptions,
     get request() {
-      return (request ??= createRequest(client))
+      return (request ??= createRequestFunction(client))
     },
     get paths() {
       return createPathsProxy(routes, client.options) as any
@@ -99,7 +99,7 @@ async function extendHTTPError(error: HTTPError) {
   return error
 }
 
-function createRequest(client: Client) {
+function createRequestFunction(client: Client) {
   let { hooks, prefixUrl = '/' } = client.options
 
   if (isFunction(hooks)) {
