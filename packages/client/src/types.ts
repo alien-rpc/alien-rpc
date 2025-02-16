@@ -127,6 +127,12 @@ export type RoutePagination = {
 
 export type { InferParams, PathTemplate } from 'pathic'
 
+export interface ResolvedClientOptions<TErrorMode extends ErrorMode = ErrorMode>
+  extends ClientOptions<TErrorMode> {
+  errorMode: TErrorMode
+  resultCache: RouteResultCache
+}
+
 export interface ClientOptions<TErrorMode extends ErrorMode = ErrorMode>
   extends Omit<
     import('ky').Options,

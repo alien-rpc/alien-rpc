@@ -12,6 +12,7 @@ import {
   ClientRoutes,
   ErrorMode,
   PathsProxy,
+  ResolvedClientOptions,
   ResultFormatter,
   Route,
   RouteFunctions,
@@ -25,7 +26,7 @@ type ClientPrototype<
   TErrorMode extends ErrorMode = ErrorMode,
 > = {
   readonly request: typeof ky
-  readonly options: Readonly<ClientOptions<TErrorMode>>
+  readonly options: Readonly<ResolvedClientOptions<TErrorMode>>
   readonly paths: PathsProxy<API>
 
   extend<TNewErrorMode extends ErrorMode = TErrorMode>(
