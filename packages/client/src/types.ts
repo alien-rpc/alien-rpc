@@ -2,6 +2,7 @@ import type { RouteMethod } from '@alien-rpc/route'
 import type { InferParams, PathTemplate } from 'pathic'
 import type { Any } from 'radashi'
 import type { Client } from './client.js'
+import { RetryOptions } from './utils/retry.js'
 
 export type CachedResponseStream<T> =
   | readonly T[]
@@ -133,11 +134,54 @@ export interface ResolvedClientOptions<TErrorMode extends ErrorMode = ErrorMode>
   resultCache: RouteResultCache
 }
 
+// Allow undefined header values.
+export type HeadersInit =
+  | globalThis.HeadersInit
+  | Record<string, string | undefined>
+
+export interface RequestOptions
+  extends Omit<RequestInit, 'method' | 'body' | 'headers'> {
+  /**
+   * A `Headers` object, an object literal, or an array of two-item arrays
+   * to set request's headers.
+   */
+  headers?: HeadersInit | undefined
+
+  /**
+   * An object representing `limit`, `methods`, `statusCodes`,
+   * `afterStatusCodes`, and `maxRetryAfter` fields for maximum retry
+   * count, allowed methods, allowed status codes, status codes allowed to
+   * use the [`Retry-After`][1] time, and maximum [`Retry-After`][1] time.
+   *
+   * If `retry` is a number, it will be used as `limit` and other defaults
+   * will remain in place.
+   *
+   * If the response provides an HTTP status contained in
+   * `afterStatusCodes`, Ky will wait until the date or timeout given in
+   * the [`Retry-After`][1] header has passed to retry the request. If
+   * `Retry-After` is missing, the non-standard [`RateLimit-Reset`][2]
+   * header is used in its place as a fallback. If the provided status code
+   * is not in the list, the [`Retry-After`][1] header will be ignored.
+   *
+   * If [`Retry-After`][1] header is greater than `maxRetryAfter`, it will
+   * cancel the request.
+   *
+   * Retries are not triggered following a timeout.
+   *
+   * [1]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Retry-After
+   * [2]: https://www.ietf.org/archive/id/draft-polli-ratelimit-headers-02.html#section-3.3
+   */
+  retry?: RetryOptions | number | undefined
+}
+
 export interface ClientOptions<TErrorMode extends ErrorMode = ErrorMode>
-  extends Omit<
-    import('ky').Options,
-    'method' | 'body' | 'json' | 'searchParams' | 'hooks'
-  > {
+  extends RequestOptions {
+  /**
+   * The base URL for the client.
+   *
+   * @default location.origin
+   */
+  prefixUrl?: string | URL
   /**
    * Control how errors are handled.
    *
@@ -158,18 +202,6 @@ export interface ClientOptions<TErrorMode extends ErrorMode = ErrorMode>
    * @default new Map()
    */
   resultCache?: RouteResultCache | undefined
-  /**
-   * Hooks allow modifications during the request lifecycle. Hook functions
-   * may be async and are run serially. Pass a function to receive the
-   * client instance and customize hooks on a per-instance level.
-   */
-  hooks?: ClientHooks | ((client: Client) => ClientHooks) | undefined
-}
-
-export type ClientHooks = import('ky').Hooks
-
-export interface RequestOptions extends Omit<ClientOptions, 'prefixUrl'> {
-  hooks?: ClientHooks | undefined
 }
 
 export type RequestParams<
@@ -222,8 +254,6 @@ type HasSingleKey<T extends object> = keyof T extends infer TKey
       : false
     : never
   : never
-
-export type { ResponsePromise } from 'ky'
 
 export interface ResponseStream<T> extends AsyncIterableIterator<T> {
   toArray(): Promise<T[]>

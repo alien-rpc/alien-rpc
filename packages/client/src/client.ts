@@ -1,9 +1,9 @@
 /// <reference lib="dom.asynciterable" />
 import { bodylessMethods } from '@alien-rpc/route'
 import * as jsonQS from '@json-qs/json-qs'
-import ky, { HTTPError, TimeoutError } from 'ky'
 import { buildPath } from 'pathic'
-import { isFunction, isPromise, isString, omit } from 'radashi'
+import { isPromise, isString, omit, shake, sleep } from 'radashi'
+import { HTTPError } from './error'
 import jsonFormat from './formats/json.js'
 import responseFormat from './formats/response.js'
 import {
@@ -12,6 +12,7 @@ import {
   ClientRoutes,
   ErrorMode,
   PathsProxy,
+  RequestOptions,
   ResolvedClientOptions,
   ResultFormatter,
   Route,
@@ -19,13 +20,24 @@ import {
   RoutePathname,
   RouteResultCache,
 } from './types.js'
+import { mergeHeaders } from './utils/mergeHeaders.js'
 import { mergeOptions } from './utils/mergeOptions.js'
+import { getShouldRetry, ShouldRetryFunction } from './utils/retry.js'
+
+type Fetch = (
+  path: string,
+  options?: RequestOptions & {
+    body?: RequestInit['body']
+    json?: unknown
+    method?: string
+  }
+) => Promise<Response>
 
 type ClientPrototype<
   API extends ClientRoutes,
   TErrorMode extends ErrorMode = ErrorMode,
 > = {
-  readonly request: typeof ky
+  readonly fetch: Fetch
   readonly options: Readonly<ResolvedClientOptions<TErrorMode>>
   readonly paths: PathsProxy<API>
 
@@ -45,8 +57,6 @@ type ClientPrototype<
   unsetCachedResponse<P extends RoutePathname<API>>(path: P): void
 }
 
-export { HTTPError, TimeoutError }
-
 export type Client<
   API extends ClientRoutes = any,
   TErrorMode extends ErrorMode = ErrorMode,
@@ -57,18 +67,18 @@ export function defineClient<
   TErrorMode extends ErrorMode = ErrorMode,
 >(
   routes: API,
-  options: ClientOptions<TErrorMode> = {},
+  options: ClientOptions<TErrorMode>,
   parent?: Client | undefined
 ): Client<API, TErrorMode> {
   const mergedOptions = mergeOptions(parent?.options, options)
   const { resultCache } = mergedOptions
 
-  let request: typeof ky | undefined
+  let fetch: Fetch | undefined
 
   const client: Client<API, TErrorMode> = createClientProxy(routes, {
     options: mergedOptions,
-    get request() {
-      return (request ??= createRequestFunction(client))
+    get fetch() {
+      return (fetch ??= createFetchFunction(client))
     },
     get paths() {
       return createPathsProxy(routes, client.options) as any
@@ -90,30 +100,43 @@ export function defineClient<
   return client
 }
 
-async function extendHTTPError(error: HTTPError) {
-  const { response } = error
-  if (response.headers.get('Content-Type') === 'application/json') {
-    const errorInfo = await response.json<any>()
-    Object.assign(error, errorInfo)
+function createFetchFunction(client: Client): Fetch {
+  const { prefixUrl = location.origin } = client.options
+
+  const tryRequest = async (
+    request: Request,
+    shouldRetry: ShouldRetryFunction
+  ) => {
+    const response = await fetch(request)
+    if (response.status >= 400) {
+      const retryDelay = shouldRetry(response)
+      if (retryDelay !== false) {
+        request.signal.throwIfAborted()
+        await sleep(retryDelay)
+        return tryRequest(request, shouldRetry)
+      }
+      const error = new HTTPError(request, response)
+      throw response.headers.get('Content-Type') === 'application/json'
+        ? Object.assign(error, await response.json())
+        : error
+    }
+    return response
   }
-  return error
-}
 
-function createRequestFunction(client: Client) {
-  let { hooks, prefixUrl = '/' } = client.options
-
-  if (isFunction(hooks)) {
-    hooks = hooks(client)
+  return (input, init) => {
+    let headers = mergeHeaders(client.options.headers, init?.headers)
+    if (init?.json) {
+      headers ??= new Headers()
+      headers.set('Content-Type', 'application/json')
+      init.body = JSON.stringify(init.json)
+    }
+    const request = new Request(joinURL(prefixUrl, input), {
+      ...client.options,
+      ...(init && shake(init)),
+      headers,
+    })
+    return tryRequest(request, getShouldRetry(request, client.options.retry))
   }
-
-  hooks ??= {}
-  hooks.beforeError = insertHook(hooks.beforeError, extendHTTPError, prepend)
-
-  return ky.create({
-    ...client.options,
-    prefixUrl,
-    hooks,
-  })
 }
 
 function createClientProxy<API extends ClientRoutes>(
@@ -129,7 +152,7 @@ function createClientProxy<API extends ClientRoutes>(
             route,
             client.options.errorMode!,
             client.options.resultCache!,
-            client.request,
+            client.fetch,
             proxy
           )
         }
@@ -146,7 +169,7 @@ function createRouteFunction(
   route: Route,
   errorMode: ErrorMode,
   resultCache: RouteResultCache,
-  request: typeof ky,
+  fetch: Fetch,
   client: Client
 ) {
   const format = resolveResultFormat(route.format)
@@ -154,7 +177,7 @@ function createRouteFunction(
   return (
     arg: unknown,
     options = route.arity === 1
-      ? (arg as import('ky').Options | undefined)
+      ? (arg as RequestOptions | undefined)
       : undefined
   ) => {
     let params: Record<string, any> | undefined
@@ -187,7 +210,7 @@ function createRouteFunction(
       body = omit(params, route.pathParams)
     }
 
-    const promisedResponse = request(path, {
+    const promisedResponse = fetch(path, {
       ...options,
       json: body,
       method: route.method,
@@ -205,18 +228,6 @@ function createRouteFunction(
     }
     return format.parseResponse(promisedResponse, client)
   }
-}
-
-function insertHook<T>(
-  hooks: T[] | undefined,
-  hook: T | undefined,
-  insert: (hooks: T[], hook: T) => T[]
-) {
-  return hook ? (hooks ? insert(hooks, hook) : [hook]) : hooks
-}
-
-function prepend<T>(array: T[], newValue: T) {
-  return [newValue, ...array]
 }
 
 function resolveResultFormat(format: Route['format']): ResultFormatter {
@@ -249,11 +260,12 @@ function createPathsProxy<API extends ClientRoutes>(
       const route = routes[key as keyof API]
       if (route) {
         if (isRouteDefinition(route)) {
+          const { prefixUrl = location.origin } = options
           if (route.pathParams.length) {
             return (params: {}) =>
-              joinURL(options.prefixUrl, buildPath(route.path, params))
+              joinURL(prefixUrl, buildPath(route.path, params))
           }
-          return joinURL(options.prefixUrl, route.path)
+          return joinURL(prefixUrl, route.path)
         }
         return createPathsProxy(route, options)
       }
@@ -261,8 +273,8 @@ function createPathsProxy<API extends ClientRoutes>(
   })
 }
 
-function joinURL(prefixUrl: string | URL | undefined, path: string) {
-  const newUrl = new URL(prefixUrl ?? location.origin)
+function joinURL(prefixUrl: string | URL, path: string) {
+  const newUrl = new URL(prefixUrl)
   if (!newUrl.pathname.endsWith('/')) {
     newUrl.pathname += '/'
   }

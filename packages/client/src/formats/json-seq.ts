@@ -66,7 +66,7 @@ function requestPage(client: Client, path: string, options?: RequestOptions) {
   const values = client.getCachedResponse(path) as any[] | undefined
   return values
     ? mapCachedResult(values, client)
-    : parseResponse(client.request(path, options), client)
+    : parseResponse(client.fetch(path, options), client)
 }
 
 function attachPageMethods(

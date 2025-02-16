@@ -1,9 +1,8 @@
 import { shake } from 'radashi'
-
-type KyHeadersInit = NonNullable<import('ky').Options['headers']>
+import { HeadersInit } from '../types.js'
 
 function castHeaders(
-  init: KyHeadersInit | undefined,
+  init: HeadersInit | undefined,
   shouldClone?: boolean
 ): Headers | undefined {
   if (!init) {
@@ -19,8 +18,8 @@ function castHeaders(
 }
 
 export function mergeHeaders(
-  left: KyHeadersInit | undefined,
-  right: KyHeadersInit | undefined
+  left: HeadersInit | undefined,
+  right: HeadersInit | undefined
 ) {
   const overrides = castHeaders(right)
   const merged = castHeaders(left, !!overrides)
