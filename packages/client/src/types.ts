@@ -4,6 +4,8 @@ import type { Any } from 'radashi'
 import type { Client } from './client.js'
 import { RetryOptions } from './utils/retry.js'
 
+export type { RetryOptions }
+
 export type CachedResponseStream<T> =
   | readonly T[]
   | readonly [...T[], RoutePagination]
