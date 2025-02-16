@@ -153,7 +153,7 @@ export interface ClientOptions<TErrorMode extends ErrorMode = ErrorMode>
    *
    * The `ResponseCache` interface is intentionally simplistic to allow use
    * of your own caching algorithm, like one with “least recently used”
-   * eviction. Note that `undefined` values are not allowed.
+   * eviction.
    *
    * @default new Map()
    */
