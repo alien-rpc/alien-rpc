@@ -4,9 +4,7 @@ import { ClientOptions, ws } from '../types'
 import { joinURL } from '../utils/joinURL'
 import { withRetry } from '../utils/retry'
 
-export function isWebSocketRouteDefinition(
-  obj: any
-): obj is ws.RouteDefinition {
+export function isWebSocketRoute(obj: any): obj is ws.Route {
   return !!obj && obj.protocol === 'ws'
 }
 
@@ -16,7 +14,7 @@ export function getWebSocketURL(options: ClientOptions) {
 
 export function createWebSocketFunction(
   method: string,
-  route: ws.RouteDefinition,
+  route: ws.Route,
   client: Client
 ) {
   if (route.pattern === 'n') {

@@ -9,7 +9,7 @@ import responseFormat from './formats/response.js'
 import {
   createWebSocketFunction,
   getWebSocketURL,
-  isWebSocketRouteDefinition,
+  isWebSocketRoute,
 } from './formats/websocket.js'
 import {
   CachedResponse,
@@ -159,7 +159,7 @@ function createClientProxy<API extends ClientRoutes>(
         if (!value) {
           value = isRouteDefinition(route)
             ? createRouteFunction(route, client)
-            : isWebSocketRouteDefinition(route)
+            : isWebSocketRoute(route)
               ? createWebSocketFunction(key as string, route, client)
               : createClientProxy(route, client)
 
@@ -269,7 +269,7 @@ function createPathsProxy<API extends ClientRoutes>(
           }
           return joinURL(prefixUrl, route.path)
         }
-        if (isWebSocketRouteDefinition(route)) {
+        if (isWebSocketRoute(route)) {
           return getWebSocketURL(options)
         }
         return createPathsProxy(route, options)
