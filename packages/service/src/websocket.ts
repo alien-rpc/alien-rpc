@@ -9,8 +9,8 @@ import {
 import { isError } from 'radashi'
 import { importRoute } from './internal/importRoute'
 import { JSONCodable, Promisable } from './internal/types'
-import { JsonResponse } from './response'
-import { RouteList } from './types'
+import type { JsonResponse } from './response.js'
+import type { RouteList } from './types.js'
 
 export function isWebSocketRoute(route: any): route is ws.Route {
   return !!route && route.protocol === 'ws'

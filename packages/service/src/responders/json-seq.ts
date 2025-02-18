@@ -1,6 +1,6 @@
-import type { JSON } from '../internal/types'
-import { resolvePaginationLink } from '../pagination'
-import type { RouteIterator, RouteResponder } from '../types'
+import type { JSON } from '../internal/types.js'
+import { resolvePaginationLink } from '../pagination.js'
+import type { RouteIterator, RouteResponder } from '../types.js'
 
 const responder: RouteResponder = async (route, args, ctx) => {
   const result = await route.handler.apply(route, args)

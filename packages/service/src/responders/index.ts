@@ -1,8 +1,8 @@
 import type { RouteResultFormat } from '@alien-rpc/route'
-import type { RouteResponder } from '../types'
+import type { RouteResponder } from '../types.js'
 
-import jsonResponder from './json'
-import jsonSeqResponder from './json-seq'
+import jsonSeqResponder from './json-seq.js'
+import jsonResponder from './json.js'
 
 export const supportedResponders: Record<RouteResultFormat, RouteResponder> = {
   json: jsonResponder,

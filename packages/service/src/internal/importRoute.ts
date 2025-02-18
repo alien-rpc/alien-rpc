@@ -1,5 +1,5 @@
-import { Route } from '../types'
-import { ws } from '../websocket'
+import type { Route } from '../types.js'
+import type { ws } from '../websocket.js'
 
 export async function importRoute(route: Route | ws.Route) {
   return follow(await route.import(), route.name.split('.'))

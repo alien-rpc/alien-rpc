@@ -3,7 +3,7 @@ import { bodylessMethods } from '@alien-rpc/route'
 import * as jsonQS from '@json-qs/json-qs'
 import { buildPath } from 'pathic'
 import { isPromise, isString, omit, shake, sleep } from 'radashi'
-import { HTTPError } from './error'
+import { HTTPError } from './error.js'
 import jsonFormat from './formats/json.js'
 import responseFormat from './formats/response.js'
 import {
@@ -24,7 +24,7 @@ import {
   RouteFunctions,
   RoutePathname,
 } from './types.js'
-import { joinURL } from './utils/joinURL'
+import { joinURL } from './utils/joinURL.js'
 import { mergeHeaders } from './utils/mergeHeaders.js'
 import { mergeOptions } from './utils/mergeOptions.js'
 import { getShouldRetry, ShouldRetryFunction } from './utils/retry.js'

@@ -1,7 +1,7 @@
 import type { RouteMethod } from '@alien-rpc/route'
 import type { RequestHandlerStack } from '@hattip/compose'
 import type { InferParamsArray } from 'pathic'
-import {
+import type {
   ClientResult,
   FixedRouteHandler,
   MultiParamRouteHandler,
@@ -11,8 +11,8 @@ import {
   RouteResult,
   SingleParamRouteHandler,
   SingleParamRoutePath,
-} from './types'
-import { ws } from './websocket'
+} from './types.js'
+import type { ws } from './websocket.js'
 
 /**
  * Define a new route, optionally with a set of middlewares.

@@ -12,7 +12,7 @@ import {
   TransformDecodeCheckError,
   ValueErrorType,
 } from '@sinclair/typebox/value'
-import { importRoute } from './internal/importRoute'
+import { importRoute } from './internal/importRoute.js'
 import { supportedResponders } from './responders/index.js'
 import { Route, RouteDefinition, RouteHandler } from './types.js'
 

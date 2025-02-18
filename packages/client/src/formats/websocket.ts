@@ -1,8 +1,8 @@
-import { Client } from '../client'
-import { NetworkError } from '../error'
-import { ClientOptions, ws } from '../types'
-import { joinURL } from '../utils/joinURL'
-import { withRetry } from '../utils/retry'
+import { Client } from '../client.js'
+import { NetworkError } from '../error.js'
+import { ClientOptions, ws } from '../types.js'
+import { joinURL } from '../utils/joinURL.js'
+import { withRetry } from '../utils/retry.js'
 
 export function isWebSocketRoute(obj: any): obj is ws.Route {
   return !!obj && obj.protocol === 'ws'

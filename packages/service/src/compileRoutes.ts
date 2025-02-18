@@ -20,7 +20,7 @@ import {
 import { JSONCodable } from './internal/types.js'
 import { BadRequestError, InternalServerError } from './response.js'
 import type { Route, RouteList } from './types.js'
-import { isWebSocketRoute } from './websocket'
+import { isWebSocketRoute } from './websocket.js'
 
 enum RequestStep {
   Match = 0,

@@ -4,7 +4,7 @@ import type { TObject } from '@sinclair/typebox'
 import type { InferParamNames, InferParamsArray } from 'pathic'
 import type { JSONCodable, Promisable } from './internal/types'
 import type { PaginationLinks } from './pagination.js'
-import type { ws } from './websocket'
+import type { ws } from './websocket.js'
 
 declare module '@hattip/compose' {
   interface RequestContextExtensions {

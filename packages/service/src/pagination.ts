@@ -1,6 +1,6 @@
 import * as jsonQS from '@json-qs/json-qs'
 import { buildPath, parsePathParams } from 'pathic'
-import type { InferRouteParams, RouteDefinition } from './types'
+import type { InferRouteParams, RouteDefinition } from './types.js'
 
 export type PaginationLink<
   TParams extends jsonQS.CodableObject = jsonQS.CodableObject,
