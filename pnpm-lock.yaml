@@ -63,6 +63,9 @@ importers:
       tinyspawn:
         specifier: ^1.3.3
         version: 1.3.3
+      tsc-lint:
+        specifier: ^0.1.8
+        version: 0.1.8(typescript@5.7.3)
       tsup:
         specifier: ^8.0.2
         version: 8.3.6(postcss@8.5.1)(typescript@5.7.3)
@@ -875,6 +878,10 @@ packages:
       '@types/node':
         optional: true
 
+  ignore@7.0.3:
+    resolution: {integrity: sha512-bAH5jbK/F3T3Jls4I0SO1hmPR0dKU0a7+SY6n1yzRtG54FLO8d6w/nxLFX2Nb7dBu6cCWXPaAME6cYqFUMmuCA==}
+    engines: {node: '>= 4'}
+
   import-meta-resolve@4.1.0:
     resolution: {integrity: sha512-I6fiaX09Xivtk+THaMfAwnA3MVA5Big1WHF1Dfx9hFuvNIWpXnorlkzhcQf6ehrqQiiZECRt1poOAkPmer3ruw==}
 
@@ -940,6 +947,9 @@ packages:
 
   mz@2.7.0:
     resolution: {integrity: sha512-z81GNO7nnYMEhrGh9LeymoE4+Yr0Wn5McHIZMK5cfQCl+NDX08sCZgUc9/6MHni9IWuFLm1Z3HTCXu2z9fN62Q==}
+
+  nanocolors@0.2.13:
+    resolution: {integrity: sha512-0n3mSAQLPpGLV9ORXT5+C/D4mwew7Ebws69Hx4E2sgz2ZA5+32Q80B9tL8PbL7XHnRDiAxH/pnrUJ9a4fkTNTA==}
 
   nanoid@3.3.8:
     resolution: {integrity: sha512-WNLf5Sd8oZxOm+TzppcYk8gVOgP+l58xNy58D0nbUnOxOWRWvlcCV4kUF7ltmI6PsrLl/BgKEyS4mqsGChFN0w==}
@@ -1142,6 +1152,20 @@ packages:
     resolution: {integrity: sha512-h88fjz3w2wz1vpi2NkKmLiUTtyqR6oYZ3FPO/RnF2j+rAsZZDkc7zeXCssG9Um4LADy+CRGYncfYIVr/i0o4PA==}
     peerDependencies:
       typescript: ^5
+
+  tsc-lint@0.1.8:
+    resolution: {integrity: sha512-1yQ1NPbXzGM++Kg7FskhFq83GJpXHUHm1wuVqOYsFZw7YPPjWURhhFNbdZte89ntC5m7E/18thWPrp9ePrQ4xw==}
+    hasBin: true
+
+  tsconfck@3.1.5:
+    resolution: {integrity: sha512-CLDfGgUp7XPswWnezWwsCRxNmgQjhYq3VXHM0/XIRxhVrKw0M1if9agzryh1QS3nxjCROvV+xWxoJO1YctzzWg==}
+    engines: {node: ^18 || >=20}
+    hasBin: true
+    peerDependencies:
+      typescript: ^5.0.0
+    peerDependenciesMeta:
+      typescript:
+        optional: true
 
   tslib@2.8.1:
     resolution: {integrity: sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w==}
@@ -1770,6 +1794,8 @@ snapshots:
       '@hattip/compose': 0.0.49
       '@types/node': 22.13.0
 
+  ignore@7.0.3: {}
+
   import-meta-resolve@4.1.0: {}
 
   is-fullwidth-code-point@3.0.0: {}
@@ -1826,6 +1852,8 @@ snapshots:
       any-promise: 1.3.0
       object-assign: 4.1.1
       thenify-all: 1.6.0
+
+  nanocolors@0.2.13: {}
 
   nanoid@3.3.8: {}
 
@@ -1997,6 +2025,21 @@ snapshots:
   tsc-extra@0.1.0-beta.1(typescript@5.7.3):
     dependencies:
       import-meta-resolve: 4.1.0
+      typescript: 5.7.3
+
+  tsc-lint@0.1.8(typescript@5.7.3):
+    dependencies:
+      debug: 4.4.0
+      ignore: 7.0.3
+      nanocolors: 0.2.13
+      tinyglobby: 0.2.10
+      tsconfck: 3.1.5(typescript@5.7.3)
+    transitivePeerDependencies:
+      - supports-color
+      - typescript
+
+  tsconfck@3.1.5(typescript@5.7.3):
+    optionalDependencies:
       typescript: 5.7.3
 
   tslib@2.8.1: {}
