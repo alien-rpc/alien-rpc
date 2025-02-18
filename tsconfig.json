@@ -6,8 +6,9 @@
     "target": "esnext",
     "module": "esnext",
     "moduleResolution": "bundler",
+    "sourceMap": true,
     "declaration": true,
-    "emitDeclarationOnly": true,
+    "declarationMap": true,
     "allowSyntheticDefaultImports": true,
     "skipLibCheck": true,
     "types": []

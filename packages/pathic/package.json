@@ -21,11 +21,10 @@
     "directory": "packages/pathic"
   },
   "scripts": {
-    "dev": "watchlist src -- pnpm build:dev",
+    "dev": "pnpm clean && tsc -p . --watch",
     "build": "pnpm clean && PROD=1 tsup --treeshake=smallest",
-    "build:dev": "tsup --sourcemap --no-treeshake",
+    "build:dev": "tsc -p .",
     "clean": "rimraf dist",
-    "lint": "tsc -p . --outDir node_modules/.tmp",
     "prepublishOnly": "pnpm lint && pnpm build"
   },
   "keywords": [

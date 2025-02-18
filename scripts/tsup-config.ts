@@ -1,8 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import { diff, isString, noop, sift } from 'radashi'
+import { diff, isString, sift } from 'radashi'
 import { globSync } from 'tinyglobby'
-import spawn from 'tinyspawn'
 import { defineConfig, Options } from 'tsup'
 
 // https://github.com/egoist/tsup/issues/1233
@@ -16,15 +15,11 @@ function defineBuild(importer: string, overrides?: Options) {
     format: ['esm'],
     splitting: pkg.entry.length > 1,
     ...overrides,
-    dts: !!process.env.PROD && pkg.dts && { resolve: true },
+    dts: pkg.dts && { resolve: true },
     entry: pkg.entry,
     outDir: pkg.outDir,
     external: [...pkg.dependencies, ...(overrides?.external || [])],
-    plugins: sift([
-      overrides?.plugins,
-      deleteOldFiles(pkg),
-      !process.env.PROD && pkg.dts && dtsPlugin(pkg),
-    ]).flat(),
+    plugins: sift([overrides?.plugins, deleteOldFiles(pkg)]).flat(),
   })
 }
 
@@ -98,56 +93,6 @@ function deleteOldFiles(pkg: Package): Plugin {
             dir = path.dirname(dir)
           }
         } catch {}
-      }
-    },
-  }
-}
-
-function dtsPlugin(pkg: Package): Plugin {
-  let tscProcess: ReturnType<typeof spawn>
-
-  return {
-    name: 'dts',
-    buildStart() {
-      tscProcess = spawn(
-        'tsc',
-        [
-          '-p',
-          '.',
-          '--emitDeclarationOnly',
-          '--declarationMap',
-          '--outDir',
-          pkg.outDir,
-        ],
-        {
-          cwd: pkg.root,
-        }
-      )
-      tscProcess.catch(noop)
-    },
-    async buildEnd({ writtenFiles }) {
-      console.log('Emitting type declarations...')
-      await tscProcess.catch(error => {
-        if ('stdout' in error) {
-          throw new Error(error.stdout)
-        }
-        throw error
-      })
-      const outputs = globSync(pkg.outDir + '/**/*.d.ts', {
-        cwd: pkg.root,
-      })
-      for (const name of outputs) {
-        // Delete files older than 2 seconds. Add the rest to writtenFiles,
-        // so they get logged.
-        const stat = fs.statSync(path.join(pkg.root, name))
-        if (stat.mtimeMs > Date.now() - 2000) {
-          writtenFiles.push({
-            name,
-            size: stat.size,
-          })
-        } else {
-          fs.rmSync(path.join(pkg.root, name))
-        }
       }
     },
   }

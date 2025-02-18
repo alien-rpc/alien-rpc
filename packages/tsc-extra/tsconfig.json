@@ -2,6 +2,7 @@
   "extends": "../../tsconfig.json",
   "include": ["src"],
   "compilerOptions": {
-    "types": ["node", "ts-expose-internals"]
+    "types": ["node", "ts-expose-internals"],
+    "outDir": "dist"
   }
 }

@@ -3,6 +3,7 @@
   "include": ["src"],
   "compilerOptions": {
     "customConditions": ["node"],
-    "types": ["node"]
+    "types": ["node"],
+    "outDir": "dist"
   }
 }
