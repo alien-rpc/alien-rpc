@@ -1,4 +1,5 @@
-import { TObject } from '@sinclair/typebox'
+import { TArray } from '@sinclair/typebox'
+import { Decode } from '@sinclair/typebox/value'
 import {
   Hooks,
   PeerContext,
@@ -46,7 +47,7 @@ export namespace ws {
             await hooks.message(peer, message)
           }
 
-          const { method, params, id } = message.json() as {
+          let { method, params, id } = message.json() as {
             method: string
             params: any[]
             id?: number
@@ -59,8 +60,14 @@ export namespace ws {
                 `Received client notification for unknown WebSocket route: ${method}`
               )
             }
+
+            if (route.requestSchema) {
+              params = Decode(route.requestSchema, params)
+            }
+
             const handler = (await importRoute(route)) as RouteHandler
             const endHandlers: (() => void)[] = []
+
             try {
               await handler(...params, {
                 ...peer.context,
@@ -94,6 +101,10 @@ export namespace ws {
                 error: { code: 404, message: 'Not Found' },
                 id,
               })
+            }
+
+            if (route.requestSchema) {
+              params = Decode(route.requestSchema, params)
             }
 
             const handler = (await importRoute(route)) as RouteHandler
@@ -209,6 +220,6 @@ export namespace ws {
     protocol: 'ws'
     name: string
     import: () => Promise<any>
-    requestSchema?: TObject
+    requestSchema?: TArray
   }
 }
