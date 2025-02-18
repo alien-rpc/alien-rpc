@@ -59,7 +59,7 @@ export type Route<
 }
 
 export declare namespace ws {
-  export type RouteDefinition<TCallee extends AnyFn = AnyFn> = {
+  export type Route<TCallee extends AnyFn = AnyFn> = {
     protocol: 'ws'
     /**
      * The route's messaging pattern.
