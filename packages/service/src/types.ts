@@ -4,6 +4,7 @@ import type { TObject } from '@sinclair/typebox'
 import type { InferParamNames, InferParamsArray } from 'pathic'
 import type { JSONCodable, Promisable } from './internal/types'
 import type { PaginationLinks } from './pagination.js'
+import type { ws } from './websocket'
 
 declare module '@hattip/compose' {
   interface RequestContextExtensions {
@@ -98,6 +99,11 @@ export interface RouteDefinition<
   handler: (...args: TArgs) => TResult
   middlewares?: RequestHandlerStack[]
 }
+
+/**
+ * The route list exported by the generated `serverOutFile`.
+ */
+export type RouteList = readonly (Route | ws.Route)[]
 
 /**
  * A route definition enhanced with compile-time metadata.

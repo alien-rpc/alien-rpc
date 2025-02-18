@@ -12,6 +12,7 @@ import {
   TransformDecodeCheckError,
   ValueErrorType,
 } from '@sinclair/typebox/value'
+import { importRoute } from './internal/importRoute'
 import { supportedResponders } from './responders/index.js'
 import { Route, RouteDefinition, RouteHandler } from './types.js'
 
@@ -67,7 +68,7 @@ export function compileRoute(route: Route, options: CompileRouteOptions = {}) {
      * @param ctx - The route context.
      */
     async responder(args: Parameters<RouteHandler>, ctx: RequestContext) {
-      const def = (await route.import())[route.name] as RouteDefinition
+      const def = (await importRoute(route)) as RouteDefinition
       if (def.middlewares) {
         return applyMiddlewares(def.middlewares, ctx, () => {
           return responder(def, args, ctx)

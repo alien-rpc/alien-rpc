@@ -1,4 +1,4 @@
-import { isNumber } from 'radashi'
+import { isNumber, sleep } from 'radashi'
 
 export type ShouldRetryFunction = (response: Response) => number | false
 
@@ -125,7 +125,7 @@ const defaultRetryAfterStatusCodes = [413, 429, 503]
 const defaultRetryDelay = (attemptCount: number) =>
   0.3 * 2 ** (attemptCount - 1) * 1000
 
-export function castRetryOptions(
+function castRetryOptions(
   options?: number | RetryOptions
 ): Required<RetryOptions> {
   let limit: number
@@ -149,10 +149,7 @@ export function castRetryOptions(
   }
 }
 
-export function getRetryDelay(
-  retryCount: number,
-  options: Required<RetryOptions>
-) {
+function getRetryDelay(retryCount: number, options: Required<RetryOptions>) {
   return Math.min(options.backoffLimit, options.delay(retryCount))
 }
 
@@ -170,4 +167,25 @@ export function mergeRetryOptions(
     return { ...parentOptions, ...options }
   }
   return options ?? parentOptions
+}
+
+export async function withRetry<TFunc extends () => any>(
+  init: RetryOptions | number | undefined,
+  func: TFunc,
+  signal?: AbortSignal
+) {
+  const options = castRetryOptions(init)
+  let retryCount = 0
+  while (true) {
+    signal?.throwIfAborted()
+    try {
+      return await func()
+    } catch (error) {
+      if (retryCount >= options.limit) {
+        throw error
+      }
+      signal?.throwIfAborted()
+      await sleep(getRetryDelay(retryCount++, options))
+    }
+  }
 }

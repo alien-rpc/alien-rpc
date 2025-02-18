@@ -8,6 +8,11 @@ import { camel, dedent, guard, pascal, sift } from 'radashi'
 import type { Event, Options, Store } from './generator-types.js'
 import { createProject } from './project.js'
 import { analyzeFile } from './project/analyze-file.js'
+import {
+  AnalyzedRoute,
+  ResolvedHttpRoute,
+  ResolvedWsRoute,
+} from './project/analyze-route.js'
 import { reportDiagnostics } from './project/diagnostics.js'
 import { createSupportingTypes } from './project/supporting-types.js'
 import { createTsConfigCache } from './project/tsconfig.js'
@@ -142,7 +147,9 @@ export default (rawOptions: Options) =>
           // Prepend the API version to all route pathnames.
           if (options.versionPrefix) {
             for (const route of metadata.routes) {
-              route.resolvedPathname = `/${options.versionPrefix}${route.resolvedPathname}`
+              if (route.resolvedHttpRoute) {
+                route.resolvedHttpRoute.pathname = `/${options.versionPrefix}${route.resolvedHttpRoute.pathname}`
+              }
             }
           }
 
@@ -209,17 +216,39 @@ export default (rawOptions: Options) =>
       path.dirname(options.serverOutFile)
     )
 
-    for (const route of routes) {
-      let pathSchemaDecl = ''
-      let requestSchemaDecl = ''
+    const generateRequestSchema = async (
+      argumentType: string,
+      contentType: 'json' | 'json-qs'
+    ) => {
+      let schema = await project.generateRuntimeValidator(
+        `type Request = ${argumentType}`
+      )
+      if (contentType === 'json') {
+        schema = schema.replace(/\bType\.(Date)\(/g, (match, type) => {
+          switch (type) {
+            case 'Date':
+              serverImports.add('DateString')
+              return 'DateString('
+          }
+          return match
+        })
+      }
+      return schema
+    }
 
-      if (
-        route.resolvedPathParams &&
-        project.needsPathSchema(route.resolvedPathParams)
-      ) {
-        pathSchemaDecl = (
+    const processHttpRoute = async (
+      { name, fileName, description }: AnalyzedRoute,
+      route: ResolvedHttpRoute
+    ) => {
+      if (description) {
+        description = `/**\n${description.replace(/^/gm, ' * ')}\n */\n`
+      }
+
+      let pathSchema = ''
+      if (route.pathParams && project.needsPathSchema(route.pathParams)) {
+        pathSchema = (
           await project.generateRuntimeValidator(
-            `type Path = ${route.resolvedPathParams}`
+            `type Path = ${route.pathParams}`
           )
         ).replace(/\bType\.(Number|Array)\(/g, (match, type) => {
           switch (type) {
@@ -234,63 +263,46 @@ export default (rawOptions: Options) =>
         })
       }
 
-      const dataArgument =
-        route.resolvedArguments[route.resolvedPathParams ? 1 : 0]
-
-      if (dataArgument && dataArgument !== 'any') {
-        requestSchemaDecl = await project.generateRuntimeValidator(
-          `type Request = ${dataArgument}`
-        )
-
-        if (!bodylessMethods.has(route.resolvedMethod)) {
-          requestSchemaDecl = requestSchemaDecl.replace(
-            /\bType\.(Date)\(/g,
-            (match, type) => {
-              switch (type) {
-                case 'Date':
-                  serverImports.add('DateString')
-                  return 'DateString('
-              }
-              return match
-            }
+      const dataArgument = route.argumentTypes[route.pathParams ? 1 : 0]
+      const requestSchema = dataArgument
+        ? await generateRequestSchema(
+            dataArgument,
+            bodylessMethods.has(route.method) ? 'json-qs' : 'json'
           )
-        }
-      }
+        : ''
 
-      collectValidatedStringFormats(pathSchemaDecl + requestSchemaDecl)
+      collectValidatedStringFormats(pathSchema + requestSchema)
 
       const handlerPath = resolveImportPath(
         options.serverOutFile,
-        route.fileName,
+        fileName,
         serverTsConfig?.options.allowImportingTsExtensions
       )
 
-      const pathParams = parsePathParams(route.resolvedPathname)
+      const pathParams = parsePathParams(route.pathname)
 
       const sharedProperties = [
-        `method: "${route.resolvedMethod}"`,
+        `method: "${route.method}"`,
         pathParams.length && `pathParams: ${JSON.stringify(pathParams)}`,
       ]
 
       const serverPathname =
-        route.resolvedPathname[0] === '/'
-          ? route.resolvedPathname
-          : `/${route.resolvedPathname}`
+        route.pathname[0] === '/' ? route.pathname : `/${route.pathname}`
 
       const serverProperties = sift([
         `path: "${serverPathname}"`,
         ...sharedProperties,
-        `name: "${route.exportedName}"`,
+        `name: "${name}"`,
         `import: () => import(${JSON.stringify(handlerPath)})`,
-        `format: "${route.resolvedFormat}"`,
-        pathSchemaDecl && `pathSchema: ${pathSchemaDecl}`,
-        requestSchemaDecl && `requestSchema: ${requestSchemaDecl}`,
+        `format: "${route.format}"`,
+        pathSchema && `pathSchema: ${pathSchema}`,
+        requestSchema && `requestSchema: ${requestSchema}`,
       ])
 
       serverDefinitions.push(`{${serverProperties.join(', ')}}`)
 
-      const resolvedPathParams = route.resolvedPathParams
-        ? stripTypeConstraints(route.resolvedPathParams)
+      const resolvedPathParams = route.pathParams
+        ? stripTypeConstraints(route.pathParams)
         : 'Record<string, never>'
 
       const resolvedRequestData =
@@ -316,50 +328,104 @@ export default (rawOptions: Options) =>
       }
 
       let clientReturn: string
-      if (route.resolvedFormat === 'json-seq') {
+      if (route.format === 'json-seq') {
         clientTypeImports.add('ResponseStream')
-        clientReturn = route.resolvedResult.replace(/^\w+/, 'ResponseStream')
-      } else if (route.resolvedFormat === 'json') {
-        clientReturn = `Promise<${route.resolvedResult}>`
-      } else if (route.resolvedFormat === 'response') {
+        clientReturn = route.resultType.replace(/^\w+/, 'ResponseStream')
+      } else if (route.format === 'json') {
+        clientReturn = `Promise<${route.resultType}>`
+      } else if (route.format === 'response') {
         clientTypeImports.add('ResponsePromise')
         clientReturn = 'ResponsePromise'
       } else {
-        throw new Error(`Unsupported response format: ${route.resolvedFormat}`)
+        throw new Error(`Unsupported response format: ${route.format}`)
       }
-
-      const description =
-        route.description &&
-        `/**\n${route.description.replace(/^/gm, ' * ')}\n */\n`
 
       // Ky doesn't support leading slashes in pathnames.
       const clientPathname =
-        route.resolvedPathname[0] === '/'
-          ? route.resolvedPathname.slice(1)
-          : route.resolvedPathname
+        route.pathname[0] === '/' ? route.pathname.slice(1) : route.pathname
 
       const clientProperties = sift([
         `path: "${clientPathname}"`,
         ...sharedProperties,
         `arity: ${clientParamsExist ? 2 : 1}`,
         `format: ${
-          /^json-seq$/.test(route.resolvedFormat)
-            ? camel(route.resolvedFormat)
-            : `"${route.resolvedFormat}"`
+          // The "JSON sequence" format is imported, rather than being
+          // included by default, so we use an identifier here.
+          route.format === 'json-seq'
+            ? camel(route.format)
+            : `"${route.format}"`
         }`,
       ])
 
-      const [methodName, scopeName = ''] = route.exportedName
-        .split('.')
-        .reverse()
-
+      const [methodName, scopeName = ''] = name.split('.').reverse()
       const scopeDefinitions = (clientDefinitions[scopeName] ??= [])
 
-      clientFormats.add(route.resolvedFormat)
+      clientFormats.add(route.format)
       scopeDefinitions.push(
         (description || '') +
           `export const ${methodName}: Route<"${clientPathname}", (${clientArgs.join(', ')}) => ${clientReturn}> = {${clientProperties.join(', ')}} as any`
       )
+    }
+
+    const processWsRoute = async (
+      { name, fileName, description }: AnalyzedRoute,
+      route: ResolvedWsRoute
+    ) => {
+      if (description) {
+        description = `/**\n${description.replace(/^/gm, ' * ')}\n */\n`
+      }
+
+      const requestSchema = await generateRequestSchema(
+        '[' + route.argumentTypes.join(', ') + ']',
+        'json'
+      )
+
+      collectValidatedStringFormats(requestSchema)
+
+      const handlerPath = resolveImportPath(
+        options.serverOutFile,
+        fileName,
+        serverTsConfig?.options.allowImportingTsExtensions
+      )
+
+      serverDefinitions.push(
+        `{${sift([
+          `protocol: "ws"`,
+          `name: "${name}"`,
+          `import: () => import(${JSON.stringify(handlerPath)})`,
+          requestSchema && `requestSchema: ${requestSchema}`,
+        ]).join(', ')}}`
+      )
+
+      const clientProperties = [`protocol: "ws"`, `pattern: "${route.pattern}"`]
+
+      const clientArgs = route.argumentNames
+        .map((name, index) => `${name}: ${route.argumentTypes[index]}`)
+        .concat('requestOptions?: ws.RequestOptions')
+
+      const clientReturn =
+        route.pattern === 'n'
+          ? 'void'
+          : route.pattern === 'r'
+            ? `Promise<${route.resultType}>`
+            : `ReadableStream<${route.resultType}>`
+
+      const [methodName, scopeName = ''] = name.split('.').reverse()
+      const scopeDefinitions = (clientDefinitions[scopeName] ??= [])
+
+      clientTypeImports.add('ws')
+      scopeDefinitions.push(
+        (description || '') +
+          `export const ${methodName}: ws.Route<(${clientArgs.join(', ')}) => ${clientReturn}> = {${clientProperties.join(', ')}} as any`
+      )
+    }
+
+    for (const route of routes) {
+      if (route.resolvedHttpRoute) {
+        await processHttpRoute(route, route.resolvedHttpRoute)
+      } else if (route.resolvedWsRoute) {
+        await processWsRoute(route, route.resolvedWsRoute)
+      }
     }
 
     const clientTypeAliases = Array.from(referencedTypes.values()).join('\n')

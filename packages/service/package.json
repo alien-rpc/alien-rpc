@@ -39,7 +39,13 @@
   },
   "peerDependencies": {
     "@hattip/compose": "*",
-    "@sinclair/typebox": "*"
+    "@sinclair/typebox": "*",
+    "hattip-ws": "*"
+  },
+  "peerDependenciesMeta": {
+    "hattip-ws": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@alien-rpc/route": "workspace:^"

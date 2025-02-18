@@ -91,11 +91,12 @@ app
         })
         .on('custom', event => {
           if (event.type === 'route') {
-            log(
-              'Generated route:',
-              event.route.resolvedMethod,
-              event.route.resolvedPathname
-            )
+            const routeId = event.route.resolvedHttpRoute
+              ? event.route.resolvedHttpRoute.method +
+                event.route.resolvedHttpRoute.pathname
+              : `GET /ws (${event.route.name})`
+
+            log('Generated route:', routeId)
           } else if (event.type === 'info') {
             if (isArray(event.message)) {
               log(...event.message)

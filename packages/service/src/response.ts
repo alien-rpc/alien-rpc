@@ -5,12 +5,12 @@ import { JSONCodable } from './internal/types.js'
  * Stringify the `body` argument with `JSON.stringify` and set the
  * `Content-Type` header to `application/json`.
  */
-export class JsonResponse extends Response {
+export class JsonResponse<T extends JSONCodable> extends Response {
   constructor(
-    body: JSONCodable,
+    readonly decodedBody: T,
     options?: { status?: number; headers?: Headers }
   ) {
-    super(JSON.stringify(body), {
+    super(JSON.stringify(decodedBody), {
       ...options,
       headers: {
         ...options?.headers,
@@ -20,16 +20,15 @@ export class JsonResponse extends Response {
   }
 }
 
+type ErrorDetails = { message: string } & Record<string, JSONCodable>
+
 /**
  * HTTP 500 response with a JSON body
  *
  * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500
  */
-export class InternalServerError extends JsonResponse {
-  constructor(
-    error: { message: string } & Record<string, JSONCodable>,
-    headers?: Headers
-  ) {
+export class InternalServerError extends JsonResponse<ErrorDetails> {
+  constructor(error: ErrorDetails, headers?: Headers) {
     super(error, { status: 500, headers })
   }
 }
@@ -39,11 +38,8 @@ export class InternalServerError extends JsonResponse {
  *
  * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400
  */
-export class BadRequestError extends JsonResponse {
-  constructor(
-    error: { message: string } & Record<string, JSONCodable>,
-    headers?: Headers
-  ) {
+export class BadRequestError extends JsonResponse<ErrorDetails> {
+  constructor(error: ErrorDetails, headers?: Headers) {
     super(error, { status: 400, headers })
   }
 }

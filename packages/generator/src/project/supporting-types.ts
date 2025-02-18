@@ -25,6 +25,10 @@ export function createSupportingTypes(
     RouteResult: `import("${serviceModuleId}").RouteResult`,
     RequestContext: `import("${serviceModuleId}").RequestContext`,
     Void: 'void',
+    wsRouteHandler: `import("${serviceModuleId}").ws.RouteHandler`,
+    wsRouteResult: `import("${serviceModuleId}").ws.RouteResult`,
+    wsRouteIterableResult: `import("${serviceModuleId}").ws.RouteIterableResult`,
+    wsRequestContext: `import("${serviceModuleId}").ws.RequestContext`,
   } as const
 
   type TypeValidator = (typeChecker: ts.TypeChecker, type: ts.Type) => void

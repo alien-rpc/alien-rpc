@@ -58,6 +58,36 @@ export type Route<
   callee: TCallee
 }
 
+export declare namespace ws {
+  export type RouteDefinition<TCallee extends AnyFn = AnyFn> = {
+    protocol: 'ws'
+    /**
+     * The route's messaging pattern.
+     *
+     * - `n`: One-way notification (no response).
+     * - `r`: Request with one response.
+     * - `s`: Subscription with multiple responses.
+     */
+    pattern: 'n' | 'r' | 's'
+    // Doesn't exist at runtime.
+    callee: TCallee
+  }
+
+  export type RequestOptions = {
+    signal?: AbortSignal | undefined
+  }
+
+  export interface RequestError extends globalThis.Error {
+    name: 'ws.RequestError'
+    code: number
+    data: unknown
+  }
+
+  export interface ConnectionError extends globalThis.Error {
+    name: 'ws.ConnectionError'
+  }
+}
+
 /**
  * These routes are imported from the `./client/generated/api.ts` file (which might
  * have another name if you set the `clientOutFile` option).

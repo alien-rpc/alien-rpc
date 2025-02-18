@@ -7,3 +7,7 @@ export class HTTPError extends Error {
     super(response.statusText)
   }
 }
+
+export class NetworkError extends Error {
+  readonly name = 'NetworkError'
+}

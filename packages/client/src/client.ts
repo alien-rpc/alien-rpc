@@ -7,6 +7,11 @@ import { HTTPError } from './error'
 import jsonFormat from './formats/json.js'
 import responseFormat from './formats/response.js'
 import {
+  createWebSocketFunction,
+  getWebSocketURL,
+  isWebSocketRouteDefinition,
+} from './formats/websocket.js'
+import {
   CachedResponse,
   ClientOptions,
   ClientRoutes,
@@ -18,8 +23,8 @@ import {
   Route,
   RouteFunctions,
   RoutePathname,
-  RouteResultCache,
 } from './types.js'
+import { joinURL } from './utils/joinURL'
 import { mergeHeaders } from './utils/mergeHeaders.js'
 import { mergeOptions } from './utils/mergeOptions.js'
 import { getShouldRetry, ShouldRetryFunction } from './utils/retry.js'
@@ -40,6 +45,7 @@ type ClientPrototype<
   readonly fetch: Fetch
   readonly options: Readonly<ResolvedClientOptions<TErrorMode>>
   readonly paths: PathsProxy<API>
+  ws?: WebSocket
 
   extend<TNewErrorMode extends ErrorMode = TErrorMode>(
     defaults: ClientOptions<TNewErrorMode>
@@ -143,20 +149,23 @@ function createClientProxy<API extends ClientRoutes>(
   routes: API,
   client: ClientPrototype<API>
 ): any {
+  const propertyCache = new Map<keyof any, any>()
+
   return new Proxy(client, {
-    get(client, key, proxy) {
+    get(client, key) {
       const route = routes[key as keyof API]
       if (route) {
-        if (isRouteDefinition(route)) {
-          return createRouteFunction(
-            route,
-            client.options.errorMode!,
-            client.options.resultCache!,
-            client.fetch,
-            proxy
-          )
+        let value = propertyCache.get(key)
+        if (!value) {
+          value = isRouteDefinition(route)
+            ? createRouteFunction(route, client)
+            : isWebSocketRouteDefinition(route)
+              ? createWebSocketFunction(key as string, route, client)
+              : createClientProxy(route, client)
+
+          propertyCache.set(key, value)
         }
-        return createClientProxy(route, client)
+        return value
       }
       if (client.hasOwnProperty(key)) {
         return client[key as keyof ClientPrototype<API>]
@@ -165,13 +174,7 @@ function createClientProxy<API extends ClientRoutes>(
   })
 }
 
-function createRouteFunction(
-  route: Route,
-  errorMode: ErrorMode,
-  resultCache: RouteResultCache,
-  fetch: Fetch,
-  client: Client
-) {
+function createRouteFunction(route: Route, client: Client) {
   const format = resolveResultFormat(route.format)
 
   return (
@@ -182,7 +185,7 @@ function createRouteFunction(
   ) => {
     let params: Record<string, any> | undefined
     if (route.arity === 2 && arg != null) {
-      if (isObject(arg)) {
+      if (Object.getPrototypeOf(arg) === Object.prototype) {
         params = arg
       } else if (route.pathParams.length) {
         params = { [route.pathParams[0]]: arg }
@@ -203,20 +206,23 @@ function createRouteFunction(
           path += '?' + query
         }
       }
-      if (route.method === 'GET' && resultCache.has(path)) {
-        return format.mapCachedResult(resultCache.get(path), client)
+      if (route.method === 'GET' && client.options.resultCache.has(path)) {
+        return format.mapCachedResult(
+          client.options.resultCache.get(path),
+          client
+        )
       }
     } else if (params) {
       body = omit(params, route.pathParams)
     }
 
-    const promisedResponse = fetch(path, {
+    const promisedResponse = client.fetch(path, {
       ...options,
       json: body,
       method: route.method,
     })
 
-    if (errorMode === 'return') {
+    if (client.options.errorMode === 'return') {
       const result = format.parseResponse(promisedResponse, client)
       if (isPromise(result)) {
         return result.then(
@@ -247,10 +253,6 @@ function isRouteDefinition(obj: any): obj is Route {
   return !!obj && isString(obj.method) && isString(obj.path)
 }
 
-function isObject(arg: {}) {
-  return Object.getPrototypeOf(arg) === Object.prototype
-}
-
 function createPathsProxy<API extends ClientRoutes>(
   routes: API,
   options: ClientOptions
@@ -267,17 +269,11 @@ function createPathsProxy<API extends ClientRoutes>(
           }
           return joinURL(prefixUrl, route.path)
         }
+        if (isWebSocketRouteDefinition(route)) {
+          return getWebSocketURL(options)
+        }
         return createPathsProxy(route, options)
       }
     },
   })
-}
-
-function joinURL(prefixUrl: string | URL, path: string) {
-  const newUrl = new URL(prefixUrl)
-  if (!newUrl.pathname.endsWith('/')) {
-    newUrl.pathname += '/'
-  }
-  newUrl.pathname += path
-  return newUrl.href
 }

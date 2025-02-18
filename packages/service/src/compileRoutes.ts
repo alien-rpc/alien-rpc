@@ -19,7 +19,8 @@ import {
 } from './cors.js'
 import { JSONCodable } from './internal/types.js'
 import { BadRequestError, InternalServerError } from './response.js'
-import type { Route } from './types.js'
+import type { Route, RouteList } from './types.js'
+import { isWebSocketRoute } from './websocket'
 
 enum RequestStep {
   Match = 0,
@@ -37,10 +38,13 @@ export interface CompileRoutesOptions extends CompileRouteOptions {
 }
 
 export function compileRoutes(
-  rawRoutes: readonly Route[],
+  rawRoutes: RouteList,
   options: CompileRoutesOptions = {}
 ) {
-  const routesByMethod = prepareRoutes(rawRoutes, options)
+  const routesByMethod = prepareRoutes(
+    rawRoutes.filter((route): route is Route => !isWebSocketRoute(route)),
+    options
+  )
 
   // Browsers send an OPTIONS request as a preflight request for a CORS
   // request. This handler will respond with Access-Control-Allow headers

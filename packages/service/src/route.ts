@@ -12,6 +12,7 @@ import {
   SingleParamRouteHandler,
   SingleParamRoutePath,
 } from './types'
+import { ws } from './websocket'
 
 /**
  * Define a new route, optionally with a set of middlewares.
@@ -44,6 +45,22 @@ route.use = <TPlatform = unknown>(
       middlewares ? [...sharedMiddlewares, ...middlewares] : sharedMiddlewares
     )
 }
+
+/**
+ * Define a websocket route powered by [crossws].
+ *
+ * All websocket routes are funneled through the same websocket connection.
+ * Clients connect through the `/ws` endpoint.
+ *
+ * [crossws]: https://crossws.unjs.io/
+ */
+route.ws = <
+  TParams extends any[],
+  TPlatform,
+  const TResult extends ws.RouteResult,
+>(
+  handler: (...args: [...TParams, ws.RequestContext<TPlatform>]) => TResult
+): ws.RouteHandler<TParams, TPlatform, TResult> => handler as any
 
 type MultiParamRouteFactory<
   TPath extends MultiParamRoutePath,

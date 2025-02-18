@@ -1,0 +1,13 @@
+import { Route } from '../types'
+import { ws } from '../websocket'
+
+export async function importRoute(route: Route | ws.Route) {
+  return follow(await route.import(), route.name.split('.'))
+}
+
+function follow(object: any, keyPath: string[]) {
+  for (const key of keyPath) {
+    object = object[key]
+  }
+  return object
+}

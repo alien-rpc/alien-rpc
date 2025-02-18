@@ -11,16 +11,30 @@ import {
   isAssignableTo,
 } from './utils.js'
 
+export type ResolvedHttpRoute = {
+  protocol: 'http'
+  pathParams: string
+  format: RouteResultFormat
+  method: RouteMethod
+  pathname: string
+  argumentTypes: string[]
+  resultType: string
+}
+
+export type ResolvedWsRoute = {
+  protocol: 'ws'
+  pattern: 'n' | 'r' | 's'
+  argumentNames: string[]
+  argumentTypes: string[]
+  resultType: string
+}
+
 export type AnalyzedRoute = {
-  fileName: string
-  exportedName: string
+  name: string
   description: string | undefined
-  resolvedPathParams: string
-  resolvedFormat: RouteResultFormat
-  resolvedMethod: RouteMethod
-  resolvedPathname: string
-  resolvedArguments: string[]
-  resolvedResult: string
+  fileName: string
+  resolvedHttpRoute?: ResolvedHttpRoute | undefined
+  resolvedWsRoute?: ResolvedWsRoute | undefined
 }
 
 export function analyzeRoute(
@@ -36,7 +50,97 @@ export function analyzeRoute(
   const typeChecker = project.getTypeChecker()
   const ts = project.utils
 
-  const declarationType = typeChecker.getTypeAtLocation(declaration)
+  const assertReturnType = (callSignature: ts.Signature) => {
+    const returnType = typeChecker.getAwaitedType(callSignature.getReturnType())
+    if (!returnType) {
+      throw new Error('Route handler has an unknown return type')
+    }
+    return returnType
+  }
+
+  const assertCallSignature = (handler: ts.Symbol) => {
+    const callSignatures = typeChecker
+      .getTypeOfSymbolAtLocation(handler, declaration)
+      .getCallSignatures()
+
+    if (callSignatures.length !== 1) {
+      throw new Error('Route handler must have exactly 1 call signature')
+    }
+
+    return callSignatures[0]
+  }
+
+  const resolveArguments = (callSignature: ts.Signature) => {
+    const resolvedArguments: { name: string; type: ts.Type }[] = []
+
+    // Assume the call signature takes a single variadic "args" parameter,
+    // as defined in the RouteDefinition type of @alien-rpc/service.
+    const [argumentsSymbol] = callSignature.parameters
+    const argumentsType = typeChecker.getTypeOfSymbol(argumentsSymbol)
+
+    for (const argumentSymbol of getTupleElements(argumentsType)) {
+      const argumentType = typeChecker.getTypeOfSymbol(argumentSymbol)
+
+      // The request context is excluded from the resolved arguments.
+      if (
+        !ts.isAnyType(argumentType) &&
+        (isAssignableTo(typeChecker, argumentType, types.RequestContext) ||
+          isAssignableTo(typeChecker, argumentType, types.wsRequestContext))
+      ) {
+        continue
+      }
+
+      resolvedArguments.push({
+        name: argumentSymbol.name,
+        type: argumentType,
+      })
+    }
+
+    return resolvedArguments
+  }
+
+  const resolveCallSignature = (callSignature: ts.Signature) => ({
+    arguments: resolveArguments(callSignature),
+    resultType: resolveResultType(
+      project,
+      assertReturnType(callSignature),
+      types,
+      referencedTypes
+    ),
+  })
+
+  const declarationSymbol = typeChecker.getSymbolAtLocation(declaration)!
+  const declarationType = typeChecker.getTypeOfSymbol(declarationSymbol)
+
+  if (isAssignableTo(typeChecker, declarationType, types.wsRouteHandler)) {
+    const callSignature = assertCallSignature(declarationSymbol)
+    const returnType = assertReturnType(callSignature)
+
+    const resolvedArguments = resolveArguments(callSignature)
+    const argumentNames = resolvedArguments.map(arg => arg.name)
+    const argumentTypes = resolvedArguments.map(arg =>
+      project.printTypeLiteralToString(arg.type, referencedTypes)
+    )
+
+    return {
+      name: routeName,
+      description: extractDescription(project, declaration),
+      fileName,
+      resolvedWsRoute: {
+        protocol: 'ws',
+        pattern: resolveWebSocketPattern(project, returnType, types),
+        argumentNames,
+        argumentTypes,
+        resultType: resolveResultType(
+          project,
+          returnType,
+          types,
+          referencedTypes
+        ),
+      },
+    }
+  }
+
   if (!isAssignableTo(typeChecker, declarationType, types.RouteDefinition)) {
     return null
   }
@@ -79,23 +183,6 @@ export function analyzeRoute(
     throw new Error(`Route path is not a string`)
   }
 
-  const handlerCallSignatures = typeChecker
-    .getTypeOfSymbolAtLocation(handler, declaration)
-    .getCallSignatures()
-
-  const handlerCallSignature = handlerCallSignatures[0]
-
-  if (handlerCallSignatures.length !== 1) {
-    throw new Error('Route handler must have exactly 1 call signature')
-  }
-
-  const handlerResultType = typeChecker.getAwaitedType(
-    handlerCallSignature.getReturnType()
-  )
-  if (!handlerResultType) {
-    throw new Error('Route handler has an unknown return type')
-  }
-
   const resolvedMethod = project.printTypeLiteralToString(
     typeChecker.getTypeOfSymbol(method)
   )
@@ -119,81 +206,58 @@ export function analyzeRoute(
     throw new Error(`Route must have a string literal for its "path" property.`)
   }
 
+  const callSignature = assertCallSignature(declarationSymbol)
+  const returnType = assertReturnType(callSignature)
+  const resolvedArguments = resolveArguments(callSignature)
   const pathParams = parsePathParams(resolvedPathname)
 
   let resolvedPathParams = ''
-  let resolvedArguments: string[] = []
+  if (pathParams.length > 0 && resolvedArguments.length > 0) {
+    const { type } = resolvedArguments[0]
+    if (pathParams.length === 1) {
+      resolvedPathParams = `{ ${pathParams[0]}: ${project.printTypeLiteralToString(type, referencedTypes)} }`
+    } else if (typeChecker.isTupleType(type)) {
+      resolvedPathParams = `{ ${pathParams
+        .map((prop, index) => {
+          const propSymbol = type.getProperty(String(index))
+          const propType = propSymbol && typeChecker.getTypeOfSymbol(propSymbol)
 
-  // The handler's call signature takes a single variadic "args" parameter,
-  // as defined in the RouteDefinition type of @alien-rpc/service.
-  let i = 0
-  for (const argument of getTupleElements(
-    typeChecker.getTypeOfSymbol(handlerCallSignature.parameters[0])
-  )) {
-    const argumentType = typeChecker.getTypeOfSymbol(argument)
-    const argumentIndex = i++
-
-    // The request context is excluded from the resolved arguments.
-    if (
-      !ts.isAnyType(argumentType) &&
-      isAssignableTo(typeChecker, argumentType, types.RequestContext)
-    ) {
-      continue
-    }
-
-    const argumentTypeLiteral = project.printTypeLiteralToString(
-      argumentType,
-      referencedTypes
-    )
-
-    resolvedArguments.push(argumentTypeLiteral)
-
-    if (argumentIndex === 0 && pathParams.length > 0) {
-      if (pathParams.length === 1) {
-        resolvedPathParams = `{ ${pathParams[0]}: ${argumentTypeLiteral} }`
-      } else if (typeChecker.isTupleType(argumentType)) {
-        resolvedPathParams = `{ ${pathParams
-          .map((prop, index) => {
-            const propSymbol = argumentType.getProperty(String(index))
-            const propType =
-              propSymbol && typeChecker.getTypeOfSymbol(propSymbol)
-
-            return `${prop}: ${propType ? project.printTypeLiteralToString(propType, referencedTypes) : 'unknown'}`
-          })
-          .join(', ')} }`
-      } else if (typeChecker.isArrayType(argumentType)) {
-        const elementType = project.printTypeLiteralToString(
-          getArrayElementType(argumentType),
-          referencedTypes
-        )
-        resolvedPathParams = `{ ${pathParams
-          .map(param => {
-            return `${param}: ${elementType}`
-          })
-          .join(', ')} }`
-      }
+          return `${prop}: ${propType ? project.printTypeLiteralToString(propType, referencedTypes) : 'unknown'}`
+        })
+        .join(', ')} }`
+    } else if (typeChecker.isArrayType(type)) {
+      const elementType = project.printTypeLiteralToString(
+        getArrayElementType(type),
+        referencedTypes
+      )
+      resolvedPathParams = `{ ${pathParams
+        .map(param => {
+          return `${param}: ${elementType}`
+        })
+        .join(', ')} }`
     }
   }
 
-  const resolvedResult = resolveResultType(
-    project,
-    handlerResultType,
-    types,
-    referencedTypes
-  )
-
-  const resolvedFormat = resolveResultFormat(project, handlerResultType, types)
-
   return {
     fileName,
-    exportedName: routeName,
+    name: routeName,
     description: extractDescription(project, declaration),
-    resolvedPathParams,
-    resolvedFormat,
-    resolvedMethod: parsedMethod,
-    resolvedPathname,
-    resolvedArguments,
-    resolvedResult,
+    resolvedHttpRoute: {
+      protocol: 'http',
+      pathParams: resolvedPathParams,
+      format: resolveResultFormat(project, returnType, types),
+      method: parsedMethod,
+      pathname: resolvedPathname,
+      argumentTypes: resolvedArguments.map(arg =>
+        project.printTypeLiteralToString(arg.type, referencedTypes)
+      ),
+      resultType: resolveResultType(
+        project,
+        returnType,
+        types,
+        referencedTypes
+      ),
+    },
   }
 }
 
@@ -263,12 +327,30 @@ function resolveResultType(
   return project.printTypeLiteralToString(type, referencedTypes)
 }
 
-interface TypeArguments {
-  typeArguments: ts.Type[]
-}
+function resolveWebSocketPattern(
+  project: Project,
+  type: ts.Type,
+  types: SupportingTypes
+) {
+  const typeChecker = project.getTypeChecker()
+  const ts = project.utils
 
-function hasTypeArguments(type: ts.Type): type is ts.Type & TypeArguments {
-  return (type as ts.TypeReference).typeArguments !== undefined
+  if (ts.isAnyType(type)) {
+    throw new InvalidResponseTypeError('Your route is not type-safe.')
+  }
+  if (isAssignableTo(typeChecker, type, types.Void)) {
+    return 'n'
+  }
+  if (isAssignableTo(typeChecker, type, types.wsRouteIterableResult)) {
+    return 's'
+  }
+  if (isAssignableTo(typeChecker, type, types.wsRouteResult)) {
+    return 'r'
+  }
+  throw new InvalidResponseTypeError(
+    'Your route returns an unsupported type: ' +
+      project.printTypeLiteralToString(type)
+  )
 }
 
 function resolveResultFormat(
