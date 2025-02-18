@@ -18,37 +18,44 @@ export function createSupportingTypes(
 
   const typeDeclarations = {
     AnyNonNull: '{}',
-    Response: `import("${serviceModuleId}").AnyResponse`,
+    AsyncIterable: 'AsyncIterable<any>',
+    Promise: 'Promise<any>',
+    Response: 'Response',
     RouteDefinition: `import("${serviceModuleId}").RouteDefinition`,
-    RouteIterator: `import("${serviceModuleId}").RouteIterator`,
     RouteMethod: `import("${serviceModuleId}").RouteMethod`,
     RouteResult: `import("${serviceModuleId}").RouteResult`,
     RequestContext: `import("${serviceModuleId}").RequestContext`,
     Void: 'void',
-    wsRouteHandler: `import("${serviceModuleId}").ws.RouteHandler`,
+    wsRouteDefinition: `import("${serviceModuleId}").ws.RouteDefinition`,
     wsRouteResult: `import("${serviceModuleId}").ws.RouteResult`,
-    wsRouteIterableResult: `import("${serviceModuleId}").ws.RouteIterableResult`,
     wsRequestContext: `import("${serviceModuleId}").ws.RequestContext`,
   } as const
 
   type TypeValidator = (typeChecker: ts.TypeChecker, type: ts.Type) => void
 
-  const typeValidation: Record<string, TypeValidator> = {
-    RouteIterator(typeChecker: ts.TypeChecker, type: ts.Type) {
-      // If the type "{}" is assignable to our "RouteIterator" type, then
-      // something is misconfigured on the user's end.
+  const createMissingCheck =
+    (message: string) => (typeChecker: ts.TypeChecker, type: ts.Type) => {
       if (typeChecker.isTypeAssignableTo(types.AnyNonNull(typeChecker), type)) {
-        throw new Error(
-          `Could not resolve RouteIterator type. Make sure your tsconfig has "es2018" or higher in its \`lib\` array.`
-        )
+        throw new Error(message)
       }
-    },
+    }
+
+  const typeValidation: Record<string, TypeValidator> = {
+    AsyncIterable: createMissingCheck(
+      `Could not resolve AsyncIterable type. Make sure your tsconfig has "es2018" or higher in its \`lib\` array.`
+    ),
+    Promise: createMissingCheck(
+      `Could not resolve Promise type. Make sure your tsconfig has "es2018" or higher in its \`lib\` array.`
+    ),
+    Response: createMissingCheck(
+      `Could not resolve Response type. Make sure @types/node is installed in your project. If already installed, it may need to be re-installed.`
+    ),
   }
 
   const sourceFile = project.createSourceFile(
     path.join(rootDir, '.alien-rpc/support.ts'),
     Object.entries(typeDeclarations)
-      .map(([id, aliasedType]) => `export type ${id} = ${aliasedType}`)
+      .map(([id, aliasedType]) => `export type ${id}$1 = ${aliasedType}`)
       .join('\n')
   )
 

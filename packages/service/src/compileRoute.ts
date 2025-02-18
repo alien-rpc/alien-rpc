@@ -68,7 +68,7 @@ export function compileRoute(route: Route, options: CompileRouteOptions = {}) {
      * @param ctx - The route context.
      */
     async responder(args: Parameters<RouteHandler>, ctx: RequestContext) {
-      const def = (await importRoute(route)) as RouteDefinition
+      const def = await importRoute<RouteDefinition>(route)
       if (def.middlewares) {
         return applyMiddlewares(def.middlewares, ctx, () => {
           return responder(def, args, ctx)

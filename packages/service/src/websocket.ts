@@ -1,14 +1,20 @@
-import { TArray } from '@sinclair/typebox'
+import type { RequestHandlerStack } from '@hattip/compose'
+import type { TArray } from '@sinclair/typebox'
 import { Decode } from '@sinclair/typebox/value'
-import {
+import type {
   Hooks,
   PeerContext,
   WebSocketAdapter,
   WebSocketAdapterOptions,
 } from 'hattip-ws'
 import { isError } from 'radashi'
-import { importRoute } from './internal/importRoute'
-import { JSONCodable, Promisable } from './internal/types'
+import { importRoute } from './internal/importRoute.js'
+import type {
+  InferPlatform,
+  JSONCodable,
+  Last,
+  Promisable,
+} from './internal/types.js'
 import type { JsonResponse } from './response.js'
 import type { RouteList } from './types.js'
 
@@ -65,25 +71,29 @@ export namespace ws {
               params = Decode(route.requestSchema, params)
             }
 
-            const handler = (await importRoute(route)) as RouteHandler
-            const endHandlers: (() => void)[] = []
+            const handler = await importRoute<RouteDefinition['handler']>(route)
 
+            const deferQueue: ((reason?: any) => void)[] = []
+            const context: ws.RequestContext = {
+              ...peer.context,
+              id: peer.id,
+              ip: peer.remoteAddress,
+              signal: null,
+              defer(handler) {
+                deferQueue.push(handler)
+              },
+            }
+
+            let reason: any
             try {
-              await handler(...params, {
-                ...peer.context,
-                id: peer.id,
-                ip: peer.remoteAddress,
-                signal: null,
-                addEventListener(event, handler) {
-                  if (event === 'end') {
-                    endHandlers.push(handler)
-                  }
-                },
-              })
+              await handler(...params, context)
             } catch (error) {
               console.error(error)
+              reason = error
             } finally {
-              endHandlers.forEach(handler => handler())
+              await Promise.allSettled(
+                deferQueue.map(handler => handler(reason))
+              ).catch(console.error)
             }
           } else {
             const pendingRequests = (peer.context._pendingRequests ??=
@@ -107,25 +117,26 @@ export namespace ws {
               params = Decode(route.requestSchema, params)
             }
 
-            const handler = (await importRoute(route)) as RouteHandler
-            const endHandlers: (() => void)[] = []
+            const handler = await importRoute<RouteDefinition['handler']>(route)
 
             const ctrl = new AbortController()
             pendingRequests.set(id, ctrl)
 
+            const deferQueue: ((reason?: any) => void)[] = []
+            const context: ws.RequestContext = {
+              ...peer.context,
+              id: peer.id,
+              ip: peer.remoteAddress,
+              signal: ctrl.signal,
+              defer(handler) {
+                deferQueue.push(handler)
+              },
+            }
+
+            let reason: any
             try {
               const result: JSONCodable | AsyncIterable<JSONCodable> =
-                await handler(...params, {
-                  ...peer.context,
-                  id: peer.id,
-                  ip: peer.remoteAddress,
-                  signal: ctrl.signal,
-                  addEventListener(event, handler) {
-                    if (event === 'end') {
-                      endHandlers.push(handler)
-                    }
-                  },
-                })
+                await handler(...params, context)
 
               if (isAsyncIterable(result)) {
                 for await (const chunk of result) {
@@ -136,6 +147,7 @@ export namespace ws {
                 peer.send({ id, result })
               }
             } catch (error) {
+              reason = error
               peer.send({
                 id,
                 error:
@@ -152,7 +164,9 @@ export namespace ws {
               })
             } finally {
               pendingRequests.delete(id)
-              endHandlers.forEach(handler => handler())
+              await Promise.allSettled(
+                deferQueue.map(handler => handler(reason))
+              ).catch(console.error)
             }
           }
         },
@@ -200,21 +214,21 @@ export namespace ws {
      * Register a handler for when the request is either aborted by the
      * client or completed.
      */
-    addEventListener(event: 'end', handler: () => void): void
+    defer(handler: (reason?: any) => Promisable<void>): void
   }
 
-  export type RouteIterableResult = AsyncIterable<JSONCodable>
+  export type RouteIterableResult = AsyncIterable<JSONCodable | undefined>
 
   export type RouteResult = Promisable<JSONCodable | RouteIterableResult | void>
 
-  declare const RouteHandler: unique symbol
-
-  export type RouteHandler<
-    TParams extends any[] = any[],
-    TPlatform = any,
-    TResult extends RouteResult = any,
-  > = ((...args: [...TParams, RequestContext<TPlatform>]) => TResult) &
-    typeof RouteHandler
+  export type RouteDefinition<
+    TArgs extends any[] = any[],
+    TResult extends ws.RouteResult = any,
+  > = {
+    protocol: 'ws'
+    handler: (...args: TArgs) => TResult
+    middlewares?: RequestHandlerStack<InferPlatform<Last<TArgs>>>[] | undefined
+  }
 
   export interface Route {
     protocol: 'ws'

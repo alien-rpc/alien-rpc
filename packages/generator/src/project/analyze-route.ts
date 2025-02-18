@@ -5,11 +5,7 @@ import { debug } from '../debug.js'
 import { Project } from '../project.js'
 import { SupportingTypes } from './supporting-types.js'
 import { ReferencedTypes } from './type-references.js'
-import {
-  getArrayElementType,
-  getTupleElements,
-  isAssignableTo,
-} from './utils.js'
+import { getArrayElementType, isAssignableTo } from './utils.js'
 
 export type ResolvedHttpRoute = {
   protocol: 'http'
@@ -73,12 +69,8 @@ export function analyzeRoute(
   const resolveArguments = (callSignature: ts.Signature) => {
     const resolvedArguments: { name: string; type: ts.Type }[] = []
 
-    // Assume the call signature takes a single variadic "args" parameter,
-    // as defined in the RouteDefinition type of @alien-rpc/service.
-    const [argumentsSymbol] = callSignature.parameters
-    const argumentsType = typeChecker.getTypeOfSymbol(argumentsSymbol)
-
-    for (const argumentSymbol of getTupleElements(argumentsType)) {
+    const [argumentSymbols] = typeChecker.getExpandedParameters(callSignature)
+    for (const argumentSymbol of argumentSymbols) {
       const argumentType = typeChecker.getTypeOfSymbol(argumentSymbol)
 
       // The request context is excluded from the resolved arguments.
@@ -99,21 +91,17 @@ export function analyzeRoute(
     return resolvedArguments
   }
 
-  const resolveCallSignature = (callSignature: ts.Signature) => ({
-    arguments: resolveArguments(callSignature),
-    resultType: resolveResultType(
-      project,
-      assertReturnType(callSignature),
-      types,
-      referencedTypes
-    ),
-  })
+  const routeSymbol = typeChecker.getSymbolAtLocation(declaration.name)!
+  const routeType = typeChecker.getTypeOfSymbol(routeSymbol)
 
-  const declarationSymbol = typeChecker.getSymbolAtLocation(declaration)!
-  const declarationType = typeChecker.getTypeOfSymbol(declarationSymbol)
+  if (isAssignableTo(typeChecker, routeType, types.wsRouteDefinition)) {
+    const handler = typeChecker.getPropertyOfType(routeType, 'handler')
+    if (!handler) {
+      debug(`[skip] Route "${routeName}" has no "handler" property`)
+      return null
+    }
 
-  if (isAssignableTo(typeChecker, declarationType, types.wsRouteHandler)) {
-    const callSignature = assertCallSignature(declarationSymbol)
+    const callSignature = assertCallSignature(handler)
     const returnType = assertReturnType(callSignature)
 
     const resolvedArguments = resolveArguments(callSignature)
@@ -128,12 +116,17 @@ export function analyzeRoute(
       fileName,
       resolvedWsRoute: {
         protocol: 'ws',
-        pattern: resolveWebSocketPattern(project, returnType, types),
+        pattern: resolveWebSocketPattern(
+          project,
+          declaration,
+          returnType,
+          types
+        ),
         argumentNames,
         argumentTypes,
-        resultType: resolveResultType(
+        resultType: resolveClientResultType(
           project,
-          returnType,
+          typeChecker.getTypeOfPropertyOfType(routeType, '__clientResult'),
           types,
           referencedTypes
         ),
@@ -141,23 +134,23 @@ export function analyzeRoute(
     }
   }
 
-  if (!isAssignableTo(typeChecker, declarationType, types.RouteDefinition)) {
+  if (!isAssignableTo(typeChecker, routeType, types.RouteDefinition)) {
     return null
   }
 
-  const method = typeChecker.getPropertyOfType(declarationType, 'method')
+  const method = typeChecker.getPropertyOfType(routeType, 'method')
   if (!method) {
     debug(`[skip] Route "${routeName}" has no "method" property`)
     return null
   }
 
-  const path = typeChecker.getPropertyOfType(declarationType, 'path')
+  const path = typeChecker.getPropertyOfType(routeType, 'path')
   if (!path) {
     debug(`[skip] Route "${routeName}" has no "path" property`)
     return null
   }
 
-  const handler = typeChecker.getPropertyOfType(declarationType, 'handler')
+  const handler = typeChecker.getPropertyOfType(routeType, 'handler')
   if (!handler) {
     debug(`[skip] Route "${routeName}" has no "handler" property`)
     return null
@@ -206,7 +199,7 @@ export function analyzeRoute(
     throw new Error(`Route must have a string literal for its "path" property.`)
   }
 
-  const callSignature = assertCallSignature(declarationSymbol)
+  const callSignature = assertCallSignature(handler)
   const returnType = assertReturnType(callSignature)
   const resolvedArguments = resolveArguments(callSignature)
   const pathParams = parsePathParams(resolvedPathname)
@@ -245,15 +238,15 @@ export function analyzeRoute(
     resolvedHttpRoute: {
       protocol: 'http',
       pathParams: resolvedPathParams,
-      format: resolveResultFormat(project, returnType, types),
+      format: resolveResultFormat(project, declaration, returnType, types),
       method: parsedMethod,
       pathname: resolvedPathname,
       argumentTypes: resolvedArguments.map(arg =>
         project.printTypeLiteralToString(arg.type, referencedTypes)
       ),
-      resultType: resolveResultType(
+      resultType: resolveClientResultType(
         project,
-        returnType,
+        typeChecker.getTypeOfPropertyOfType(routeType, '__clientResult'),
         types,
         referencedTypes
       ),
@@ -296,17 +289,17 @@ function extractDescription(
   }
 }
 
-function resolveResultType(
+function resolveClientResultType(
   project: Project,
-  type: ts.Type,
+  type: ts.Type | undefined,
   types: SupportingTypes,
   referencedTypes?: Map<ts.Symbol, string>
-) {
+): string {
   const typeChecker = project.getTypeChecker()
+  const ts = project.utils
 
-  // Prevent mapping of `Response` to literal type
-  if (isAssignableTo(typeChecker, type, types.Response)) {
-    return 'Response'
+  if (!type || ts.isAnyType(type)) {
+    return 'any'
   }
 
   // Coerce `void` to `undefined`
@@ -314,14 +307,18 @@ function resolveResultType(
     return 'undefined'
   }
 
-  // Coerce route iterators to `AsyncIterableIterator` which is a type that
-  // is supported by typebox-codegen
-  if (isAssignableTo(typeChecker, type, types.RouteIterator)) {
-    const yieldType = project.printTypeLiteralToString(
-      (type as ts.TypeReference).typeArguments![0],
-      referencedTypes
-    )
-    return `AsyncIterableIterator<${yieldType}>`
+  // Coerce response-like objects to `Response`
+  if (isAssignableTo(typeChecker, type, types.Response)) {
+    return 'Response'
+  }
+
+  // Coerce async iterables to `ResponseStream`
+  if (isAssignableTo(typeChecker, type, types.AsyncIterable)) {
+    const [yieldType] = typeChecker.getTypeArguments(type as ts.TypeReference)
+
+    // This will be wrapped with either the ResponseStream or
+    // ReadableStream type at a later stage.
+    return resolveClientResultType(project, yieldType, types, referencedTypes)
   }
 
   return project.printTypeLiteralToString(type, referencedTypes)
@@ -329,6 +326,7 @@ function resolveResultType(
 
 function resolveWebSocketPattern(
   project: Project,
+  declaration: ts.VariableDeclaration,
   type: ts.Type,
   types: SupportingTypes
 ) {
@@ -336,12 +334,21 @@ function resolveWebSocketPattern(
   const ts = project.utils
 
   if (ts.isAnyType(type)) {
-    throw new InvalidResponseTypeError('Your route is not type-safe.')
+    throw new InvalidResponseTypeError(
+      'Your route is not type-safe.',
+      declaration
+    )
+  }
+  if (isAssignableTo(typeChecker, type, types.Promise)) {
+    const awaitedType =
+      typeChecker.getAwaitedType(type) ?? typeChecker.getAnyType()
+
+    return resolveWebSocketPattern(project, declaration, awaitedType, types)
   }
   if (isAssignableTo(typeChecker, type, types.Void)) {
     return 'n'
   }
-  if (isAssignableTo(typeChecker, type, types.wsRouteIterableResult)) {
+  if (isAssignableTo(typeChecker, type, types.AsyncIterable)) {
     return 's'
   }
   if (isAssignableTo(typeChecker, type, types.wsRouteResult)) {
@@ -349,12 +356,14 @@ function resolveWebSocketPattern(
   }
   throw new InvalidResponseTypeError(
     'Your route returns an unsupported type: ' +
-      project.printTypeLiteralToString(type)
+      project.printTypeLiteralToString(type),
+    declaration
   )
 }
 
 function resolveResultFormat(
   project: Project,
+  declaration: ts.VariableDeclaration,
   type: ts.Type,
   types: SupportingTypes
 ) {
@@ -362,36 +371,56 @@ function resolveResultFormat(
   const ts = project.utils
 
   if (ts.isAnyType(type)) {
-    throw new InvalidResponseTypeError('Your route is not type-safe.')
+    throw new InvalidResponseTypeError(
+      'Your route is not type-safe.',
+      declaration
+    )
+  }
+  if (isAssignableTo(typeChecker, type, types.Promise)) {
+    const awaitedType =
+      typeChecker.getAwaitedType(type) ?? typeChecker.getAnyType()
+
+    return resolveResultFormat(project, declaration, awaitedType, types)
   }
   if (isAssignableTo(typeChecker, type, types.Response)) {
     return 'response'
   }
-  if (isAssignableTo(typeChecker, type, types.RouteIterator)) {
+  if (isAssignableTo(typeChecker, type, types.AsyncIterable)) {
     return 'json-seq'
   }
-  if (isAssignableTo(typeChecker, type, types.Response)) {
+  if (isAssignableTo(typeChecker, types.Response, type)) {
     throw new InvalidResponseTypeError(
-      'Routes that return a `new Response()` cannot ever return anything else.'
+      'Routes that return a `new Response()` cannot ever return anything else.',
+      declaration
     )
   }
-  if (isAssignableTo(typeChecker, type, types.RouteIterator)) {
+  if (isAssignableTo(typeChecker, types.AsyncIterable, type)) {
     throw new InvalidResponseTypeError(
-      'Routes that return an iterator cannot ever return anything else.'
+      'Routes that return an iterator cannot ever return anything else.',
+      declaration
     )
   }
   if (!isAssignableTo(typeChecker, type, types.RouteResult)) {
     throw new InvalidResponseTypeError(
       'Your route returns an unsupported type: ' +
-        project.printTypeLiteralToString(type)
+        project.printTypeLiteralToString(type),
+      declaration
     )
   }
   return 'json'
 }
 
-class InvalidResponseTypeError extends Error {
+export class InvalidResponseTypeError extends Error {
   name = 'InvalidResponseTypeError'
-  constructor(detail?: string) {
-    super('Invalid response type' + (detail ? ': ' + detail : ''))
+  constructor(detail: string, declaration: ts.VariableDeclaration) {
+    const sourceFile = declaration.getSourceFile()
+    const start = sourceFile.getLineAndCharacterOfPosition(
+      declaration.name.getStart()
+    )
+    super(
+      'Invalid response type: ' +
+        detail +
+        ` (${sourceFile.fileName}:${start.line + 1}:${start.character + 1})`
+    )
   }
 }

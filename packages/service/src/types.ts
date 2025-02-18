@@ -2,7 +2,12 @@ import type { RouteMethod, RouteResultFormat } from '@alien-rpc/route'
 import type { RequestContext, RequestHandlerStack } from '@hattip/compose'
 import type { TObject } from '@sinclair/typebox'
 import type { InferParamNames, InferParamsArray } from 'pathic'
-import type { JSONCodable, Promisable } from './internal/types'
+import type {
+  JSON,
+  JSONCodable,
+  JSONObjectCodable,
+  Promisable,
+} from './internal/types.js'
 import type { PaginationLinks } from './pagination.js'
 import type { ws } from './websocket.js'
 
@@ -197,25 +202,34 @@ export interface AnyResponse {
   readonly text: () => Promise<string>
 }
 
-type ToJSON<T> = T extends { toJSON(): infer TData }
-  ? TData
-  : T extends object
-    ? T extends ReadonlyArray<infer TElement>
-      ? Array<TElement> extends T
-        ? ToJSON<TElement>[]
-        : { -readonly [K in keyof T]: ToJSON<T[K]> }
+type ToJSONStrict<T> = T extends object
+  ? T extends ReadonlyArray<infer TElement>
+    ? Array<TElement> extends T
+      ? ToJSON<TElement>[]
       : { -readonly [K in keyof T]: ToJSON<T[K]> }
-    : T
+    : T extends JSONObjectCodable
+      ? { -readonly [K in keyof T]: ToJSON<T[K]> }
+      : T extends BigInt
+        ? never
+        : {}
+  : Extract<T, JSON | undefined>
+
+type ToJSON<T> = T extends { toJSON(): infer TData }
+  ? ToJSONStrict<TData>
+  : ToJSONStrict<T>
 
 /**
- * Convert a route handler's result into a value that can be sent to the
- * client.
+ * Given a route handler's return type, receive a client-compatible type.
+ * This won't be the exact type the client sees, as `@alien-rpc/generator`
+ * does a bit of work after this is used.
+ *
+ * Importantly, we never want a `Promise` type back.
  */
 export type ClientResult<T> =
   T extends Promise<infer TAwaited>
-    ? Promise<ClientResult<TAwaited>>
+    ? ClientResult<TAwaited>
     : T extends AnyResponse
       ? T
-      : T extends RouteIterator<infer TValue>
-        ? RouteIterator<ToJSON<TValue>>
+      : T extends AsyncIterable<infer TValue>
+        ? AsyncIterable<ToJSON<TValue>>
         : ToJSON<T>

@@ -32,9 +32,9 @@ export const createTypePrinter = (
           return type.symbol.name
         }
 
-        // Ignore the TReturn and TNext type arguments for `AsyncIterator`
+        // Ignore the TReturn and TNext type arguments for `AsyncIterable`
         // since the client-side ResponseStream type doesn't use them.
-        if (type.symbol.name === 'AsyncIterator') {
+        if (type.symbol.name === 'AsyncIterable') {
           typeArguments = typeArguments.slice(0, 1)
         }
 

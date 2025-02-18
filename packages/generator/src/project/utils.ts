@@ -1,4 +1,4 @@
-import { pick } from 'radashi'
+import { isFunction, pick } from 'radashi'
 import type ts from 'typescript'
 
 export type ProjectUtils = ReturnType<typeof createUtils>
@@ -9,6 +9,7 @@ export function createUtils(ts: typeof import('typescript')) {
     'forEachChild',
     'getJSDocCommentsAndTags',
     'getTextOfJSDocComment',
+    'factory',
     'SyntaxKind',
     'NodeFlags',
     'TypeFlags',
@@ -120,10 +121,13 @@ export function createUtils(ts: typeof import('typescript')) {
 
 export function isAssignableTo(
   typeChecker: ts.TypeChecker,
-  type: ts.Type,
-  target: (typeChecker: ts.TypeChecker) => ts.Type
+  source: ts.Type | ((typeChecker: ts.TypeChecker) => ts.Type),
+  target: ts.Type | ((typeChecker: ts.TypeChecker) => ts.Type)
 ) {
-  return typeChecker.isTypeAssignableTo(type, target(typeChecker))
+  return typeChecker.isTypeAssignableTo(
+    isFunction(source) ? source(typeChecker) : source,
+    isFunction(target) ? target(typeChecker) : target
+  )
 }
 
 export function getArrayElementType(type: ts.Type): ts.Type {

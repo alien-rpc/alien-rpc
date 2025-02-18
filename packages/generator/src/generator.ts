@@ -330,22 +330,15 @@ export default (rawOptions: Options) =>
         )
       }
 
-      let clientReturn: string
+      let clientReturn = route.resultType
       if (route.format === 'json-seq') {
         clientTypeImports.add('ResponseStream')
-        clientReturn = route.resultType.replace(/^\w+/, 'ResponseStream')
-      } else if (route.format === 'json') {
-        clientReturn = `Promise<${route.resultType}>`
-      } else if (route.format === 'response') {
-        clientTypeImports.add('ResponsePromise')
-        clientReturn = 'ResponsePromise'
+        clientReturn = `ResponseStream<${clientReturn}>`
       } else {
-        throw new Error(`Unsupported response format: ${route.format}`)
+        clientReturn = `Promise<${clientReturn}>`
       }
 
-      // Ky doesn't support leading slashes in pathnames.
-      const clientPathname =
-        route.pathname[0] === '/' ? route.pathname.slice(1) : route.pathname
+      const clientPathname = route.pathname.replace(/^\//, '')
 
       const clientProperties = sift([
         `path: "${clientPathname}"`,
@@ -408,7 +401,7 @@ export default (rawOptions: Options) =>
 
       const clientReturn =
         route.pattern === 'n'
-          ? 'void'
+          ? 'Promise<void>'
           : route.pattern === 'r'
             ? `Promise<${route.resultType}>`
             : `ReadableStream<${route.resultType}>`

@@ -1,8 +1,8 @@
 import type { Route } from '../types.js'
 import type { ws } from '../websocket.js'
 
-export async function importRoute(route: Route | ws.Route) {
-  return follow(await route.import(), route.name.split('.'))
+export async function importRoute<T>(route: Route | ws.Route) {
+  return follow(await route.import(), route.name.split('.')) as T
 }
 
 function follow(object: any, keyPath: string[]) {
