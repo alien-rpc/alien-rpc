@@ -4,6 +4,7 @@ export { compileRoutes } from './compileRoutes.js'
 export { paginate, type PaginationLinks } from './pagination.js'
 export * from './response.js'
 export { route, type RouteFactory } from './route.js'
+export * from './stream.js'
 export { ws } from './websocket.js'
 
 export type {
