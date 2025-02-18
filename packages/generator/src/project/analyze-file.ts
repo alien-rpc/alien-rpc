@@ -1,7 +1,11 @@
 import type ts from 'typescript'
 import { debug } from '../debug.js'
 import { Project } from '../project.js'
-import { AnalyzedRoute, analyzeRoute } from './analyze-route.js'
+import {
+  AnalyzedRoute,
+  analyzeRoute,
+  InvalidResponseTypeError,
+} from './analyze-route.js'
 import { SupportingTypes } from './supporting-types.js'
 import { ReferencedTypes } from './type-references.js'
 
@@ -14,6 +18,7 @@ export function analyzeFile(
 ) {
   const routes: AnalyzedRoute[] = []
   const referencedTypes: ReferencedTypes = new Map()
+  const warnings: string[] = []
 
   const typeChecker = project.getTypeChecker()
   const ts = project.utils
@@ -64,12 +69,16 @@ export function analyzeFile(
         routes.push(route)
       }
     } catch (error: any) {
-      Object.assign(error, { routeName })
-      throw error
+      if (error instanceof InvalidResponseTypeError) {
+        warnings.push(`Route "${routeName}" was skipped: ${error.message}`)
+      } else {
+        Object.assign(error, { routeName })
+        throw error
+      }
     }
   }
 
   ts.forEachChild(sourceFile, visitor)
 
-  return { routes, referencedTypes }
+  return { routes, referencedTypes, warnings }
 }

@@ -97,6 +97,8 @@ app
               : `GET /ws (${event.route.name})`
 
             log('Generated route:', routeId)
+          } else if (event.type === 'warning') {
+            log.warn(event.message)
           } else if (event.type === 'info') {
             if (isArray(event.message)) {
               log(...event.message)

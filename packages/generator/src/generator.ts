@@ -156,6 +156,9 @@ export default (rawOptions: Options) =>
           for (const route of metadata.routes) {
             emit({ type: 'route', route })
           }
+          for (const message of metadata.warnings) {
+            emit({ type: 'warning', message })
+          }
         }
         fs.watch(sourceFile.fileName)
         project.collectDependencies(

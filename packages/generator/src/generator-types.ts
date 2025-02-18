@@ -121,4 +121,5 @@ export interface ResolvedModuleWithFailedLookupLocations {
 
 export type Event =
   | { type: 'route'; route: AnalyzedRoute }
+  | { type: 'warning'; message: string }
   | { type: 'info'; message: string | [string, ...any[]] }
