@@ -9,7 +9,7 @@ export function isWebSocketRoute(obj: any): obj is ws.Route {
 }
 
 export function getWebSocketURL(options: ClientOptions) {
-  return joinURL(options.prefixUrl ?? location.origin, '/ws')
+  return joinURL(options.prefixUrl ?? location.origin, 'ws')
 }
 
 export function createWebSocketFunction(
