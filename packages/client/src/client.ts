@@ -138,20 +138,25 @@ function createFetchFunction(client: Client): Fetch {
 
 function createClientProxy<API extends ClientRoutes>(
   routes: API,
-  client: ClientPrototype<API>
+  client: ClientPrototype<API>,
+  keyPrefix = ''
 ): any {
   const propertyCache = new Map<keyof any, any>()
 
   return new Proxy(client, {
-    get(client, key) {
+    get(client, key: string) {
       const route = routes[key as keyof API]
       if (route) {
         let value = propertyCache.get(key)
         if (!value) {
           const protocol = resolveRouteProtocol(route)
           value = protocol
-            ? protocol.createFunction(route, client, key as string)
-            : createClientProxy(route as ClientRoutes, client)
+            ? protocol.createFunction(route, client, keyPrefix + key)
+            : createClientProxy(
+                route as ClientRoutes,
+                client,
+                keyPrefix + key + '.'
+              )
 
           propertyCache.set(key, value)
         }
