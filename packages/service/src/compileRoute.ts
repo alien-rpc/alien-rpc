@@ -1,9 +1,5 @@
 import { bodylessMethods } from '@alien-rpc/route'
-import {
-  RequestContext,
-  RequestHandler,
-  RequestHandlerStack,
-} from '@hattip/compose'
+import { RequestContext } from '@hattip/compose'
 import * as jsonQS from '@json-qs/json-qs'
 import { KindGuard, TSchema, Type } from '@sinclair/typebox'
 import { TypeCompiler } from '@sinclair/typebox/compiler'
@@ -12,6 +8,7 @@ import {
   TransformDecodeCheckError,
   ValueErrorType,
 } from '@sinclair/typebox/value'
+import { applyMiddlewares } from './applyMiddlewares.js'
 import { importRoute } from './internal/importRoute.js'
 import { supportedResponders } from './responders/index.js'
 import { Route, RouteDefinition, RouteHandler } from './types.js'
@@ -77,37 +74,6 @@ export function compileRoute(route: Route, options: CompileRouteOptions = {}) {
       return responder(def, args, ctx)
     },
   }
-}
-
-const appliedMiddlewares = new WeakMap<RequestContext, Set<RequestHandler>>()
-
-async function applyMiddlewares(
-  stack: RequestHandlerStack[],
-  ctx: RequestContext,
-  next: () => Promise<Response>
-) {
-  const applied = appliedMiddlewares.get(ctx) ?? new Set()
-  appliedMiddlewares.set(ctx, applied)
-
-  let i = 0
-  const outerNext = ctx.next
-  const middlewares = stack.flat()
-
-  return (ctx.next = async (): Promise<Response> => {
-    while (i < middlewares.length) {
-      const middleware = middlewares[i++]
-      if (!middleware || applied.has(middleware)) {
-        continue
-      }
-      applied.add(middleware)
-      const result = await middleware(ctx)
-      if (result instanceof Response) {
-        return result
-      }
-    }
-    ctx.next = outerNext
-    return next()
-  })()
 }
 
 function compileSchema<Schema extends TSchema, Output>(
