@@ -23,6 +23,7 @@ type Fetch = (
     body?: RequestInit['body']
     json?: unknown
     method?: string
+    query?: string
   }
 ) => Promise<Response>
 
@@ -97,14 +98,18 @@ function createFetchFunction(client: Client): Fetch {
     return response
   }
 
-  return (input, init) => {
-    let headers = mergeHeaders(client.options.headers, init?.headers)
-    if (init?.json) {
+  return (input, { query, headers, json, ...init } = {}) => {
+    headers = mergeHeaders(client.options.headers, headers)
+    if (json) {
       headers ??= new Headers()
       headers.set('Content-Type', 'application/json')
-      init.body = JSON.stringify(init.json)
+      init.body = JSON.stringify(json)
     }
-    const request = new Request(joinURL(prefixUrl, input), {
+    let url = joinURL(prefixUrl, input)
+    if (query) {
+      url += '?' + query
+    }
+    const request = new Request(url, {
       ...client.options,
       ...(init && shake(init)),
       headers,

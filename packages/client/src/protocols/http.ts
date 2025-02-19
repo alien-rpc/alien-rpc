@@ -43,15 +43,13 @@ export default {
 
       let path = buildPath(route.path, params ?? {})
       let body: unknown
+      let query: string | undefined
 
       if (bodylessMethods.has(route.method)) {
         if (params) {
-          const query = jsonQS.encode(params, {
+          query = jsonQS.encode(params, {
             skippedKeys: route.pathParams,
           })
-          if (query) {
-            path += '?' + query
-          }
         }
       } else if (params) {
         body = omit(params, route.pathParams)
@@ -61,6 +59,7 @@ export default {
         ...options,
         json: body,
         method: route.method,
+        query,
       })
 
       if (client.options.errorMode === 'return') {
