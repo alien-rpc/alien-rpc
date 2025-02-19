@@ -2,16 +2,13 @@ import type { Client } from '../client.js'
 import type {
   RequestOptions,
   ResponseStream,
-  ResultFormatter,
   RoutePagination,
 } from '../types.js'
 
-export default {
-  mapCachedResult,
-  parseResponse,
-} satisfies ResultFormatter<ResponseStream<any>, unknown[]>
-
-function parseResponse(promisedResponse: Promise<Response>, client: Client) {
+export default function parseResponse(
+  promisedResponse: Promise<Response>,
+  client: Client
+) {
   async function* parse() {
     const response = await promisedResponse
     if (!response.body) {
@@ -34,26 +31,6 @@ function parseResponse(promisedResponse: Promise<Response>, client: Client) {
   return responseStream
 }
 
-function mapCachedResult(values: unknown[], client: Client) {
-  let responseStream!: ResponseStream<any>
-
-  async function* parse() {
-    if (!values.length) {
-      return
-    }
-    const lastValue = values[values.length - 1]
-    if (lastValue && isRoutePagination(lastValue)) {
-      attachPageMethods(responseStream, lastValue, client)
-      values = values.slice(0, -1)
-    }
-    yield* values
-  }
-
-  responseStream = parse() as any
-  responseStream.toArray = toArray
-  return responseStream
-}
-
 async function toArray(this: AsyncIterableIterator<any>) {
   const result = []
   for await (const value of this) {
@@ -63,10 +40,7 @@ async function toArray(this: AsyncIterableIterator<any>) {
 }
 
 function requestPage(client: Client, path: string, options?: RequestOptions) {
-  const values = client.getCachedResponse(path) as any[] | undefined
-  return values
-    ? mapCachedResult(values, client)
-    : parseResponse(client.fetch(path, options), client)
+  return parseResponse(client.fetch(path, options), client)
 }
 
 function attachPageMethods(

@@ -3,7 +3,6 @@ import { isObject, isString, shake, sleep } from 'radashi'
 import { HTTPError } from './error.js'
 import http from './protocols/http.js'
 import {
-  CachedResponse,
   ClientOptions,
   ClientRoutes,
   ErrorMode,
@@ -11,7 +10,6 @@ import {
   RequestOptions,
   ResolvedClientOptions,
   RouteFunctions,
-  RoutePathname,
   RouteProtocol,
 } from './types.js'
 import { joinURL } from './utils/joinURL.js'
@@ -40,17 +38,6 @@ type ClientPrototype<
   extend<TNewErrorMode extends ErrorMode = TErrorMode>(
     defaults: ClientOptions<TNewErrorMode>
   ): Client<API, TNewErrorMode>
-
-  getCachedResponse<TPath extends RoutePathname<API>>(
-    path: TPath
-  ): CachedResponse<API, TPath> | undefined
-
-  setCachedResponse<TPath extends RoutePathname<API>>(
-    path: TPath,
-    response: CachedResponse<API, TPath>
-  ): void
-
-  unsetCachedResponse<P extends RoutePathname<API>>(path: P): void
 }
 
 export type Client<
@@ -67,7 +54,6 @@ export function defineClient<
   parent?: Client | undefined
 ): Client<API, TErrorMode> {
   const mergedOptions = mergeOptions(parent?.options, options)
-  const { resultCache } = mergedOptions
 
   let fetch: Fetch | undefined
 
@@ -81,15 +67,6 @@ export function defineClient<
     },
     extend(options) {
       return defineClient(routes, options, client)
-    },
-    getCachedResponse(path) {
-      return resultCache.get(path) as any
-    },
-    setCachedResponse(path, response) {
-      resultCache.set(path, response)
-    },
-    unsetCachedResponse(path) {
-      resultCache.delete(path)
     },
   })
 

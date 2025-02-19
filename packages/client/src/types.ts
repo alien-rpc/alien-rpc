@@ -6,32 +6,15 @@ import { RetryOptions } from './utils/retry.js'
 
 export type { RetryOptions }
 
-export type CachedResponseStream<T> =
-  | readonly T[]
-  | readonly [...T[], RoutePagination]
-
-export type CachedResponse<
-  API extends ClientRoutes,
-  TPath extends RoutePathname<API>,
-> =
-  Awaited<FindResponseForPath<API, TPath>> extends infer TResponse
-    ? TResponse extends ResponseStream<infer TValue>
-      ? CachedResponseStream<TValue>
-      : TResponse
-    : never
-
-export type ResultFormatter<
-  TResult = unknown,
-  TCachedResult = Awaited<TResult>,
-> = {
-  mapCachedResult: (value: TCachedResult, client: Client) => TResult
-  /**
-   * This must return a promise for `errorMode: 'return'` to work as
-   * expected. Notably, the json-seq response parser doesn't return a
-   * promise, and so it doesn't respect the `errorMode` setting.
-   */
-  parseResponse(promisedResponse: Promise<Response>, client: Client): TResult
-}
+/**
+ * This must return a promise for `errorMode: 'return'` to work as
+ * expected. Notably, the json-seq response parser doesn't return a
+ * promise, and so it doesn't respect the `errorMode` setting.
+ */
+export type ResponseParser<TResult = unknown> = (
+  promisedResponse: Promise<Response>,
+  client: Client
+) => TResult
 
 export type AnyRoute = Route | ws.Route
 
@@ -48,7 +31,7 @@ export type Route<
    * The result format determines how the response must be handled for the
    * caller to receive the expected type.
    */
-  format: string | ResultFormatter<Awaited<ReturnType<TCallee>>, any>
+  format: string | ResponseParser<Awaited<ReturnType<TCallee>>>
   /**
    * Equals 1 if the route has no search parameters or request body.
    */
@@ -174,7 +157,6 @@ export type { InferParams, PathTemplate } from 'pathic'
 export interface ResolvedClientOptions<TErrorMode extends ErrorMode = ErrorMode>
   extends ClientOptions<TErrorMode> {
   errorMode: TErrorMode
-  resultCache: RouteResultCache
 }
 
 // Allow undefined header values.
@@ -239,17 +221,6 @@ export interface ClientOptions<TErrorMode extends ErrorMode = ErrorMode>
    * @default 'reject'
    */
   errorMode?: TErrorMode | undefined
-  /**
-   * This cache is checked before sending a `GET` request. It remains empty
-   * until you manually call the `Client#setResponse` method.
-   *
-   * The `ResponseCache` interface is intentionally simplistic to allow use
-   * of your own caching algorithm, like one with “least recently used”
-   * eviction.
-   *
-   * @default new Map()
-   */
-  resultCache?: RouteResultCache | undefined
   /**
    * The WebSocket connection idle timeout.
    *

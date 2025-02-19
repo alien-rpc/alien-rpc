@@ -12,6 +12,5 @@ export function mergeOptions(
     retry: mergeRetryOptions(parentOptions?.retry, options.retry),
     headers: mergeHeaders(parentOptions?.headers, options.headers),
     errorMode: options.errorMode ?? parentOptions?.errorMode ?? 'reject',
-    resultCache: options.resultCache ?? parentOptions?.resultCache ?? new Map(),
   }
 }

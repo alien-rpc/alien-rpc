@@ -1,6 +1,3 @@
-import { ResultFormatter } from '../types.js'
+import { ResponseParser } from '../types.js'
 
-export default {
-  mapCachedResult: Promise.resolve,
-  parseResponse: r => r,
-} satisfies ResultFormatter<Promise<Response>>
+export default (r => r) satisfies ResponseParser<Promise<Response>>

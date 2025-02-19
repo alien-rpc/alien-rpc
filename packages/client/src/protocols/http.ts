@@ -6,7 +6,7 @@ import jsonFormat from '../formats/json.js'
 import responseFormat from '../formats/response.js'
 import {
   RequestOptions,
-  ResultFormatter,
+  ResponseParser,
   Route,
   RouteProtocol,
 } from '../types.js'
@@ -22,7 +22,7 @@ export default {
     return joinURL(prefixUrl, route.path)
   },
   createFunction(route, client) {
-    const format = resolveResultFormat(route.format)
+    const parseResponse = getResponseParser(route.format)
 
     return (
       arg: unknown,
@@ -53,12 +53,6 @@ export default {
             path += '?' + query
           }
         }
-        if (route.method === 'GET' && client.options.resultCache.has(path)) {
-          return format.mapCachedResult(
-            client.options.resultCache.get(path),
-            client
-          )
-        }
       } else if (params) {
         body = omit(params, route.pathParams)
       }
@@ -70,7 +64,7 @@ export default {
       })
 
       if (client.options.errorMode === 'return') {
-        const result = format.parseResponse(promisedResponse, client)
+        const result = parseResponse(promisedResponse, client)
         if (isPromise(result)) {
           return result.then(
             result => [undefined, result],
@@ -79,12 +73,12 @@ export default {
         }
         return result
       }
-      return format.parseResponse(promisedResponse, client)
+      return parseResponse(promisedResponse, client)
     }
   },
 } satisfies RouteProtocol<Route>
 
-function resolveResultFormat(format: Route['format']): ResultFormatter {
+function getResponseParser(format: Route['format']): ResponseParser {
   if (format === 'response') {
     return responseFormat
   }
