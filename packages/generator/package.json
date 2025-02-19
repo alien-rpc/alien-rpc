@@ -46,6 +46,6 @@
     "build": "pnpm clean && PROD=1 tsup --treeshake=smallest",
     "build:dev": "tsc -p .",
     "clean": "rimraf dist",
-    "prepublishOnly": "pnpm lint && pnpm build"
+    "prepublishOnly": "pnpm -w lint $PWD && pnpm build"
   }
 }
