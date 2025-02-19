@@ -180,8 +180,8 @@ export async function withRetry<TFunc extends () => any>(
     signal?.throwIfAborted()
     try {
       return await func()
-    } catch (error) {
-      if (retryCount >= options.limit) {
+    } catch (error: any) {
+      if (retryCount >= options.limit || error.name === 'AbortError') {
         throw error
       }
       signal?.throwIfAborted()
