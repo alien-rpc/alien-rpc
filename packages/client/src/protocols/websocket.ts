@@ -266,7 +266,7 @@ function sendRequest(
     )
 
     if (readable) {
-      readable.cancel = function (reason) {
+      readable.cancel = async function (reason) {
         if (!cancelled) {
           cancelled = true
           onRequestEnded()
@@ -280,7 +280,10 @@ function sendRequest(
 
         // Restore the original cancel method.
         this.cancel = Object.getPrototypeOf(this).cancel
-        return this.cancel(reason)
+
+        if (!this.locked) {
+          return this.cancel(reason)
+        }
       }
     }
 
