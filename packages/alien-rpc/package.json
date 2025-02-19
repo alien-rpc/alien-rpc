@@ -47,6 +47,9 @@
     "url": "https://github.com/alloc/alien-rpc.git",
     "directory": "packages/alien-rpc"
   },
+  "engines": {
+    "node": ">=18"
+  },
   "dependencies": {
     "@alien-rpc/client": "workspace:^",
     "@alien-rpc/generator": "workspace:^",
