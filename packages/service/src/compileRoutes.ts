@@ -1,10 +1,6 @@
 import type { RouteMethod } from '@alien-rpc/route'
 import type { RequestContext } from '@hattip/compose'
 import type { ValueError } from '@sinclair/typebox/errors'
-import {
-  TransformDecodeCheckError,
-  TransformDecodeError,
-} from '@sinclair/typebox/value'
 import { compilePaths } from 'pathic'
 import { mapValues } from 'radashi'
 import {
@@ -17,6 +13,11 @@ import {
   compilePreflightHandler,
   type CorsConfig,
 } from './cors.js'
+import {
+  firstLeafError,
+  isDecodeCheckError,
+  isDecodeError,
+} from './errorUtils.js'
 import { JSONCodable } from './internal/types.js'
 import { BadRequestError, InternalServerError } from './response.js'
 import type { Route, RouteList } from './types.js'
@@ -192,28 +193,4 @@ function handleRouteError(error: any, step: RequestStep) {
   return new BadRequestError(
     process.env.NODE_ENV === 'production' ? { message: error.message } : error
   )
-}
-
-function isDecodeError(error: any): error is TransformDecodeError {
-  return error instanceof TransformDecodeError
-}
-
-function isDecodeCheckError(error: any): error is TransformDecodeCheckError {
-  return error instanceof TransformDecodeCheckError
-}
-
-function firstLeafError(error: ValueError) {
-  for (const suberror of flat(error.errors)) {
-    if (suberror.errors) {
-      return firstLeafError(suberror)
-    }
-    return suberror
-  }
-  return error
-}
-
-function* flat<T>(iterables: Iterable<T>[]) {
-  for (const iterable of iterables) {
-    yield* iterable
-  }
 }

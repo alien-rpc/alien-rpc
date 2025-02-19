@@ -1,4 +1,3 @@
-import type { RequestHandlerStack } from '@hattip/compose'
 import type { TAnySchema } from '@sinclair/typebox'
 import { Decode } from '@sinclair/typebox/value'
 import type {
@@ -8,13 +7,14 @@ import type {
   WebSocketAdapterOptions,
 } from 'hattip-ws'
 import { isError } from 'radashi'
+import {
+  firstLeafError,
+  isDecodeCheckError,
+  isDecodeError,
+  type ValueError,
+} from './errorUtils.js'
 import { importRoute } from './internal/importRoute.js'
-import type {
-  InferPlatform,
-  JSONCodable,
-  Last,
-  Promisable,
-} from './internal/types.js'
+import type { JSONCodable, Promisable } from './internal/types.js'
 import type { JsonResponse } from './response.js'
 import type { RouteList } from './types.js'
 
@@ -31,11 +31,12 @@ export namespace ws {
     TPlatform,
     TRequest extends object,
     TResponse extends object,
+    TAdapter extends WebSocketAdapter<TPlatform>,
   >(
     routes: RouteList,
     createAdapter: (
       options: WebSocketAdapterOptions<TPlatform, TRequest, TResponse>
-    ) => WebSocketAdapter<TPlatform>,
+    ) => TAdapter,
     hooks?: Partial<Hooks<TPlatform, TRequest, TResponse>>
   ) {
     const wsRoutes: Record<string, ws.Route> = Object.create(null)
@@ -53,11 +54,11 @@ export namespace ws {
             await hooks.message(peer, message)
           }
 
-          let { method, params, id } = message.json() as {
+          let { method, params, id } = message.json<{
             method: string
             params: any[]
             id?: number
-          }
+          }>()
 
           if (id === undefined) {
             const route = wsRoutes[method]
@@ -71,7 +72,7 @@ export namespace ws {
               params = Decode(route.requestSchema, params)
             }
 
-            const handler = await importRoute<RouteDefinition['handler']>(route)
+            const { handler } = await importRoute<RouteDefinition>(route)
 
             const deferQueue: ((reason?: any) => void)[] = []
             const context: ws.RequestContext = {
@@ -117,12 +118,25 @@ export namespace ws {
               params = Decode(route.requestSchema, params)
             }
 
-            const handler = await importRoute<RouteDefinition['handler']>(route)
-
-            const ctrl = new AbortController()
-            pendingRequests.set(id, ctrl)
+            const { handler } = await importRoute<RouteDefinition>(route)
 
             const deferQueue: ((reason?: any) => void)[] = []
+            const flushDeferQueue = (reason?: any) => {
+              if (deferQueue.length) {
+                if (ctrl.signal.aborted) {
+                  reason = ctrl.signal.reason
+                }
+                Promise.allSettled(
+                  deferQueue.map(handler => handler(reason))
+                ).catch(console.error)
+                deferQueue.length = 0
+              }
+            }
+
+            const ctrl = new AbortController()
+            ctrl.signal.addEventListener('abort', flushDeferQueue)
+            pendingRequests.set(id, ctrl)
+
             const context: ws.RequestContext = {
               ...peer.context,
               id: peer.id,
@@ -133,7 +147,6 @@ export namespace ws {
               },
             }
 
-            let reason: any
             try {
               const result: JSONCodable | AsyncIterable<JSONCodable> =
                 await handler(...params, context)
@@ -146,27 +159,49 @@ export namespace ws {
               } else {
                 peer.send({ id, result })
               }
+              flushDeferQueue()
             } catch (error) {
-              reason = error
-              peer.send({
-                id,
-                error:
-                  error instanceof Response
-                    ? {
-                        code: error.status,
-                        message: error.statusText,
-                        ...(error as JsonResponse<any>).decodedBody,
-                      }
-                    : {
-                        code: 500,
-                        message: isError(error) ? error.message : String(error),
-                      },
-              })
+              if (error instanceof Response) {
+                peer.send({
+                  id,
+                  error: {
+                    code: error.status,
+                    message: error.statusText,
+                    ...(error as JsonResponse<any>).decodedBody,
+                  },
+                })
+              } else {
+                const checkError = isDecodeError(error) ? error.error : error
+                if (isDecodeCheckError(checkError)) {
+                  const { message, path, value } = firstLeafError(
+                    checkError.error
+                  ) as ValueError & {
+                    value: JSONCodable
+                  }
+                  peer.send({
+                    id,
+                    error: {
+                      code: 400,
+                      message,
+                      data: { path, value },
+                    },
+                  })
+                } else {
+                  if (process.env.NODE_ENV !== 'production') {
+                    console.error(error)
+                  }
+                  peer.send({
+                    id,
+                    error: {
+                      code: 500,
+                      message: isError(error) ? error.message : String(error),
+                    },
+                  })
+                }
+              }
+              flushDeferQueue(error)
             } finally {
               pendingRequests.delete(id)
-              await Promise.allSettled(
-                deferQueue.map(handler => handler(reason))
-              ).catch(console.error)
             }
           }
         },
