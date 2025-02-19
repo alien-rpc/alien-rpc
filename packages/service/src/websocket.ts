@@ -2,6 +2,7 @@ import type { TAnySchema } from '@sinclair/typebox'
 import { Decode } from '@sinclair/typebox/value'
 import type {
   Hooks,
+  Peer,
   PeerContext,
   WebSocketAdapter,
   WebSocketAdapterOptions,
@@ -24,6 +25,25 @@ export function isWebSocketRoute(route: any): route is ws.Route {
 
 function isAsyncIterable<T>(value: unknown): value is AsyncIterable<T> {
   return !!value && typeof value === 'object' && Symbol.asyncIterator in value
+}
+
+function createWebSocketContext<P = unknown>(
+  peer: Peer<P>,
+  signal: AbortSignal | null,
+  deferQueue: ((reason?: any) => void)[]
+): ws.RequestContext<P> {
+  const { request, response, ...context } = peer.context
+
+  return {
+    ...context,
+    id: peer.id,
+    ip: peer.remoteAddress,
+    signal,
+    headers: request.headers,
+    defer(handler) {
+      deferQueue.push(handler)
+    },
+  }
 }
 
 export namespace ws {
@@ -75,15 +95,7 @@ export namespace ws {
             const { handler } = await importRoute<RouteDefinition>(route)
 
             const deferQueue: ((reason?: any) => void)[] = []
-            const context: ws.RequestContext = {
-              ...peer.context,
-              id: peer.id,
-              ip: peer.remoteAddress,
-              signal: null,
-              defer(handler) {
-                deferQueue.push(handler)
-              },
-            }
+            const context = createWebSocketContext(peer, null, deferQueue)
 
             let reason: any
             try {
@@ -137,15 +149,11 @@ export namespace ws {
             ctrl.signal.addEventListener('abort', flushDeferQueue)
             pendingRequests.set(id, ctrl)
 
-            const context: ws.RequestContext = {
-              ...peer.context,
-              id: peer.id,
-              ip: peer.remoteAddress,
-              signal: ctrl.signal,
-              defer(handler) {
-                deferQueue.push(handler)
-              },
-            }
+            const context = createWebSocketContext(
+              peer,
+              ctrl.signal,
+              deferQueue
+            )
 
             try {
               const result: JSONCodable | AsyncIterable<JSONCodable> =
@@ -228,7 +236,7 @@ export namespace ws {
    * properties you add to the latter will also be available on the former.
    */
   export interface RequestContext<TPlatform = unknown>
-    extends PeerContext<TPlatform> {
+    extends Omit<PeerContext<TPlatform>, 'request' | 'response'> {
     /**
      * The IP address of the client.
      */
@@ -245,6 +253,10 @@ export namespace ws {
      * return anything (AKA “notification routes”).
      */
     readonly signal: AbortSignal | null
+    /**
+     * The headers used in the upgrade request.
+     */
+    readonly headers: Headers
     /**
      * Register a handler for when the request is either aborted by the
      * client or completed.
