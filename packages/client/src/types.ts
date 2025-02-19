@@ -227,6 +227,11 @@ export interface ClientOptions<TErrorMode extends ErrorMode = ErrorMode>
    */
   prefixUrl?: string | URL
   /**
+   * Override the `globalThis.fetch` function that sends requests. Useful
+   * for testing purposes, mostly.
+   */
+  fetch?: (request: Request) => Promise<Response>
+  /**
    * Control how errors are handled.
    *
    * - `return`: Return a tuple of `[error, undefined]`.

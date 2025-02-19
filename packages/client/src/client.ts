@@ -97,7 +97,8 @@ export function defineClient<
 }
 
 function createFetchFunction(client: Client): Fetch {
-  const { prefixUrl = location.origin } = client.options
+  const { prefixUrl = location.origin, fetch = globalThis.fetch } =
+    client.options
 
   const tryRequest = async (
     request: Request,
