@@ -29,8 +29,8 @@ function isAsyncIterable<T>(value: unknown): value is AsyncIterable<T> {
 
 function createWebSocketContext<P = unknown>(
   peer: Peer<P>,
-  signal: AbortSignal | null,
-  deferQueue: ((reason?: any) => void)[]
+  deferQueue: ((reason?: any) => void)[],
+  signal?: AbortSignal
 ): ws.RequestContext<P> {
   const { request, response, ...context } = peer.context
 
@@ -38,7 +38,7 @@ function createWebSocketContext<P = unknown>(
     ...context,
     id: peer.id,
     ip: peer.remoteAddress,
-    signal,
+    signal: signal ?? request.signal,
     headers: request.headers,
     defer(handler) {
       deferQueue.push(handler)
@@ -95,7 +95,7 @@ export namespace ws {
             const { handler } = await importRoute<RouteDefinition>(route)
 
             const deferQueue: ((reason?: any) => void)[] = []
-            const context = createWebSocketContext(peer, null, deferQueue)
+            const context = createWebSocketContext(peer, deferQueue)
 
             let reason: any
             try {
@@ -151,8 +151,8 @@ export namespace ws {
 
             const context = createWebSocketContext(
               peer,
-              ctrl.signal,
-              deferQueue
+              deferQueue,
+              ctrl.signal
             )
 
             try {
@@ -249,10 +249,9 @@ export namespace ws {
     readonly id: string
     /**
      * If the request is cancelled or the connection is lost, the signal
-     * will be aborted. Does not exist for WebSocket routes that don't
-     * return anything (AKA “notification routes”).
+     * will be aborted.
      */
-    readonly signal: AbortSignal | null
+    readonly signal: AbortSignal
     /**
      * The headers used in the upgrade request.
      */
