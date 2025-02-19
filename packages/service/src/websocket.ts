@@ -1,5 +1,5 @@
 import type { RequestHandlerStack } from '@hattip/compose'
-import type { TArray } from '@sinclair/typebox'
+import type { TAnySchema } from '@sinclair/typebox'
 import { Decode } from '@sinclair/typebox/value'
 import type {
   Hooks,
@@ -233,6 +233,6 @@ export namespace ws {
     protocol: 'ws'
     name: string
     import: () => Promise<any>
-    requestSchema?: TArray
+    requestSchema?: TAnySchema
   }
 }

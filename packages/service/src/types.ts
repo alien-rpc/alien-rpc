@@ -1,6 +1,6 @@
 import type { RouteMethod, RouteResultFormat } from '@alien-rpc/route'
 import type { RequestContext, RequestHandlerStack } from '@hattip/compose'
-import type { TObject } from '@sinclair/typebox'
+import type { TAnySchema } from '@sinclair/typebox'
 import type { InferParamNames, InferParamsArray } from 'pathic'
 import type {
   JSON,
@@ -120,8 +120,8 @@ export interface Route {
   import: () => Promise<any>
   pathParams?: readonly string[]
   format: RouteResultFormat
-  pathSchema?: TObject
-  requestSchema?: TObject
+  pathSchema?: TAnySchema
+  requestSchema?: TAnySchema
 }
 
 export type PathParams = { [key: string]: PathParam }
