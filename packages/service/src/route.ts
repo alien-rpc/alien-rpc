@@ -51,10 +51,9 @@ function defineRoute(
 }
 
 function defineWebSocketRoute(
-  handler: (...args: any[]) => any,
-  middlewares?: RequestHandlerStack<any>[]
+  handler: (...args: any[]) => any
 ): ws.RouteDefinition {
-  return { protocol: 'ws', handler, middlewares }
+  return { protocol: 'ws', handler }
 }
 
 function create<TPlatform>(
@@ -64,14 +63,8 @@ function create<TPlatform>(
     return defineRoute(path, merge(sharedMiddlewares, middlewares))
   }
 
-  route.ws = (
-    handler: (...args: any[]) => ws.RouteResult,
-    middlewares?: RequestHandlerStack<any>[]
-  ) => {
-    return defineWebSocketRoute(
-      handler,
-      merge(sharedMiddlewares, middlewares)
-    ) as any
+  route.ws = (handler: (...args: any[]) => ws.RouteResult) => {
+    return defineWebSocketRoute(handler) as any
   }
 
   route.use = (middlewares: RequestHandlerStack<any>[]) => {

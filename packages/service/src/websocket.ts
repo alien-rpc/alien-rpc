@@ -227,7 +227,6 @@ export namespace ws {
   > = {
     protocol: 'ws'
     handler: (...args: TArgs) => TResult
-    middlewares?: RequestHandlerStack<InferPlatform<Last<TArgs>>>[] | undefined
   }
 
   export interface Route {
