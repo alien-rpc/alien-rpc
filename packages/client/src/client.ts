@@ -1,16 +1,7 @@
 /// <reference lib="dom.asynciterable" />
-import { bodylessMethods } from '@alien-rpc/route'
-import * as jsonQS from '@json-qs/json-qs'
-import { buildPath } from 'pathic'
-import { isPromise, isString, omit, shake, sleep } from 'radashi'
+import { isObject, isString, shake, sleep } from 'radashi'
 import { HTTPError } from './error.js'
-import jsonFormat from './formats/json.js'
-import responseFormat from './formats/response.js'
-import {
-  createWebSocketFunction,
-  getWebSocketURL,
-  isWebSocketRoute,
-} from './formats/websocket.js'
+import http from './protocols/http.js'
 import {
   CachedResponse,
   ClientOptions,
@@ -19,10 +10,9 @@ import {
   PathsProxy,
   RequestOptions,
   ResolvedClientOptions,
-  ResultFormatter,
-  Route,
   RouteFunctions,
   RoutePathname,
+  RouteProtocol,
 } from './types.js'
 import { joinURL } from './utils/joinURL.js'
 import { mergeHeaders } from './utils/mergeHeaders.js'
@@ -157,11 +147,10 @@ function createClientProxy<API extends ClientRoutes>(
       if (route) {
         let value = propertyCache.get(key)
         if (!value) {
-          value = isRouteDefinition(route)
-            ? createRouteFunction(route, client)
-            : isWebSocketRoute(route)
-              ? createWebSocketFunction(key as string, route, client)
-              : createClientProxy(route, client)
+          const protocol = resolveRouteProtocol(route)
+          value = protocol
+            ? protocol.createFunction(route, client, key as string)
+            : createClientProxy(route as ClientRoutes, client)
 
           propertyCache.set(key, value)
         }
@@ -174,85 +163,6 @@ function createClientProxy<API extends ClientRoutes>(
   })
 }
 
-function createRouteFunction(route: Route, client: Client) {
-  const format = resolveResultFormat(route.format)
-
-  return (
-    arg: unknown,
-    options = route.arity === 1
-      ? (arg as RequestOptions | undefined)
-      : undefined
-  ) => {
-    let params: Record<string, any> | undefined
-    if (route.arity === 2 && arg != null) {
-      if (Object.getPrototypeOf(arg) === Object.prototype) {
-        params = arg
-      } else if (route.pathParams.length) {
-        params = { [route.pathParams[0]]: arg }
-      } else {
-        throw new Error('No path parameters found for route: ' + route.path)
-      }
-    }
-
-    let path = buildPath(route.path, params ?? {})
-    let body: unknown
-
-    if (bodylessMethods.has(route.method)) {
-      if (params) {
-        const query = jsonQS.encode(params, {
-          skippedKeys: route.pathParams,
-        })
-        if (query) {
-          path += '?' + query
-        }
-      }
-      if (route.method === 'GET' && client.options.resultCache.has(path)) {
-        return format.mapCachedResult(
-          client.options.resultCache.get(path),
-          client
-        )
-      }
-    } else if (params) {
-      body = omit(params, route.pathParams)
-    }
-
-    const promisedResponse = client.fetch(path, {
-      ...options,
-      json: body,
-      method: route.method,
-    })
-
-    if (client.options.errorMode === 'return') {
-      const result = format.parseResponse(promisedResponse, client)
-      if (isPromise(result)) {
-        return result.then(
-          result => [undefined, result],
-          error => [error, undefined]
-        )
-      }
-      return result
-    }
-    return format.parseResponse(promisedResponse, client)
-  }
-}
-
-function resolveResultFormat(format: Route['format']): ResultFormatter {
-  if (format === 'response') {
-    return responseFormat
-  }
-  if (format === 'json') {
-    return jsonFormat
-  }
-  if (isString(format)) {
-    throw new Error('Unsupported route format: ' + format)
-  }
-  return format
-}
-
-function isRouteDefinition(obj: any): obj is Route {
-  return !!obj && isString(obj.method) && isString(obj.path)
-}
-
 function createPathsProxy<API extends ClientRoutes>(
   routes: API,
   options: ClientOptions
@@ -261,19 +171,26 @@ function createPathsProxy<API extends ClientRoutes>(
     get(routes, key) {
       const route = routes[key as keyof API]
       if (route) {
-        if (isRouteDefinition(route)) {
-          const { prefixUrl = location.origin } = options
-          if (route.pathParams.length) {
-            return (params: {}) =>
-              joinURL(prefixUrl, buildPath(route.path, params))
-          }
-          return joinURL(prefixUrl, route.path)
-        }
-        if (isWebSocketRoute(route)) {
-          return getWebSocketURL(options)
-        }
-        return createPathsProxy(route, options)
+        const protocol = resolveRouteProtocol(route)
+        return protocol
+          ? protocol.getURL(route, options)
+          : createPathsProxy(route as ClientRoutes, options)
       }
     },
   })
+}
+
+function resolveRouteProtocol(
+  route: ClientRoutes[string]
+): RouteProtocol<any> | undefined {
+  if ('method' in route && isString(route.method)) {
+    return http
+  }
+  if (
+    'protocol' in route &&
+    isObject(route.protocol) &&
+    'createFunction' in route.protocol
+  ) {
+    return route.protocol
+  }
 }

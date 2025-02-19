@@ -58,9 +58,18 @@ export type Route<
   callee: TCallee
 }
 
+export type RouteProtocol<TRoute> = {
+  name: string
+  getURL: (
+    route: TRoute,
+    options: ClientOptions
+  ) => string | ((params: {}) => string)
+  createFunction: (route: TRoute, client: Client, routeName: string) => AnyFn
+}
+
 export declare namespace ws {
   export type Route<TCallee extends AnyFn = AnyFn> = {
-    protocol: 'ws'
+    protocol: RouteProtocol<Route>
     /**
      * The route's messaging pattern.
      *
@@ -96,7 +105,10 @@ export declare namespace ws {
  * import * as api from './client/generated/api.ts'
  * ```
  */
-export type ClientRoutes = Record<string, Route | Record<string, Route>>
+export type ClientRoutes = Record<
+  string,
+  Route | ws.Route | Record<string, Route | ws.Route>
+>
 
 /**
  * Any valid URI pathname for the given set of client routes.
@@ -234,6 +246,12 @@ export interface ClientOptions<TErrorMode extends ErrorMode = ErrorMode>
    * @default new Map()
    */
   resultCache?: RouteResultCache | undefined
+  /**
+   * The WebSocket connection idle timeout.
+   *
+   * @default 10_000 (10 seconds)
+   */
+  wsIdleTimeout?: number | undefined
 }
 
 export type RequestParams<
@@ -336,19 +354,27 @@ export type RouteFunctions<
   ? unknown
   : {
       [K in keyof API]: API[K] extends infer TRoute
-        ? TRoute extends Route<string, infer TCallee>
-          ? (
-              ...args: Parameters<TCallee>
-            ) => RouteFunctionResult<ReturnType<TCallee>, TErrorMode>
-          : TRoute extends Record<string, Route>
-            ? RouteFunctions<TRoute, TErrorMode>
-            : never
+        ? TRoute extends Record<string, Route>
+          ? RouteFunctions<TRoute, TErrorMode>
+          : RouteFunction<TRoute, TErrorMode>
         : never
     }
 
-type RouteFunctionResult<TResult, TErrorMode extends ErrorMode> =
-  TResult extends ResponseStream<any>
-    ? TResult
-    : TErrorMode extends 'return'
-      ? Promise<[Error, undefined] | [undefined, Awaited<TResult>]>
-      : TResult
+type RouteFunction<TRoute, TErrorMode extends ErrorMode> =
+  TRoute extends Route<string, (...args: infer TArgs) => infer TResult>
+    ? (
+        ...args: TArgs
+      ) => TResult extends ResponseStream<any>
+        ? TResult
+        : TErrorMode extends 'return'
+          ? Promise<[Error, undefined] | [undefined, Awaited<TResult>]>
+          : TResult
+    : TRoute extends ws.Route<(...args: infer TArgs) => infer TResult>
+      ? (
+          ...args: TArgs
+        ) => TRoute['pattern'] extends 'r'
+          ? TErrorMode extends 'return'
+            ? Promise<[Error, undefined] | [undefined, Awaited<TResult>]>
+            : TResult
+          : TResult
+      : never

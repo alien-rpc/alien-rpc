@@ -201,6 +201,7 @@ export default (rawOptions: Options) =>
 
     const clientDefinitions: Record<string, string[]> = {}
     const clientTypeImports = new Set<string>(['RequestOptions', 'Route'])
+    const clientProtocols = new Set<string>()
     const clientFormats = new Set<string>()
 
     const serverDefinitions: string[] = []
@@ -393,7 +394,11 @@ export default (rawOptions: Options) =>
         ]).join(', ')}}`
       )
 
-      const clientProperties = [`protocol: "ws"`, `pattern: "${route.pattern}"`]
+      clientProtocols.add('websocket')
+      const clientProperties = [
+        `protocol: websocket`,
+        `pattern: "${route.pattern}"`,
+      ]
 
       const clientArgs = route.argumentNames
         .map((name, index) => `${name}: ${route.argumentTypes[index]}`)
@@ -479,6 +484,14 @@ export default (rawOptions: Options) =>
           clientFormats,
           format =>
             `\nimport ${camel(format)} from "${store.clientModuleId}/formats/${format}"`
+        ).join('')
+      }
+
+      if (clientProtocols.size > 0) {
+        imports += Array.from(
+          clientProtocols,
+          protocol =>
+            `\nimport ${camel(protocol)} from "${store.clientModuleId}/protocols/${protocol}"`
         ).join('')
       }
 
