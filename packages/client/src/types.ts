@@ -33,6 +33,8 @@ export type ResultFormatter<
   parseResponse(promisedResponse: Promise<Response>, client: Client): TResult
 }
 
+export type AnyRoute = Route | ws.Route
+
 type AnyFn = (...args: any) => any
 
 export type Route<
@@ -105,10 +107,7 @@ export declare namespace ws {
  * import * as api from './client/generated/api.ts'
  * ```
  */
-export type ClientRoutes = Record<
-  string,
-  Route | ws.Route | Record<string, Route | ws.Route>
->
+export type ClientRoutes = Record<string, AnyRoute | Record<string, AnyRoute>>
 
 /**
  * Any valid URI pathname for the given set of client routes.
@@ -359,7 +358,7 @@ export type RouteFunctions<
   ? unknown
   : {
       [K in keyof API]: API[K] extends infer TRoute
-        ? TRoute extends Record<string, Route>
+        ? TRoute extends Record<string, AnyRoute>
           ? RouteFunctions<TRoute, TErrorMode>
           : RouteFunction<TRoute, TErrorMode>
         : never
