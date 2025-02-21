@@ -25,6 +25,10 @@ export class JsonStream<T extends JSONCodable | undefined>
     this.#writer.close()
   }
 
+  abort(reason?: any) {
+    this.#writer.abort(reason)
+  }
+
   [Symbol.asyncIterator]() {
     return this.#readable[Symbol.asyncIterator]()
   }
