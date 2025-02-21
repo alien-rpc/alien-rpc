@@ -222,9 +222,11 @@ export interface ClientOptions<TErrorMode extends ErrorMode = ErrorMode>
    */
   errorMode?: TErrorMode | undefined
   /**
-   * The WebSocket connection idle timeout.
+   * The WebSocket connection idle timeout (in seconds).
    *
-   * @default 10_000 (10 seconds)
+   * Disabled by default and when equal to `0` or less.
+   *
+   * @default 0 (disabled)
    */
   wsIdleTimeout?: number | undefined
 }

@@ -318,12 +318,12 @@ function sendRequest(
 }
 
 function setIdleTimeout(ws: WebSocket, state = connectionStates.get(ws)!) {
-  if (state.activeRequests === 0) {
+  const { wsIdleTimeout = 0 } = state.options
+  if (wsIdleTimeout > 0 && state.activeRequests === 0) {
     clearTimeout(state.idleTimeout)
-    state.idleTimeout = setTimeout(
-      () => ws.close(),
-      state.options.wsIdleTimeout ?? 10_000
-    )
+    state.idleTimeout = setTimeout(() => {
+      ws.close()
+    }, wsIdleTimeout * 1000)
   }
 }
 
