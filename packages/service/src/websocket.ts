@@ -80,6 +80,10 @@ export namespace ws {
             id?: number
           }>()
 
+          if (method === '.ping') {
+            return void peer.send({ pong: true })
+          }
+
           if (id === undefined) {
             const route = wsRoutes[method]
             if (!route) {

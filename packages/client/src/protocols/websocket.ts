@@ -1,3 +1,4 @@
+import { noop } from 'radashi'
 import type { Client } from '../client.js'
 import { NetworkError } from '../error.js'
 import type { ClientOptions, HeadersInit, RouteProtocol, ws } from '../types.js'
@@ -41,10 +42,8 @@ export default {
             reject = error => wrappedReject([error, undefined])
           }
 
-          const onMessage: OnMessageFactory = (id, done) => message => {
-            const response = ((message as any).json ??= JSON.parse(
-              message.data
-            )) as Response
+          const onMessage: OnMessageFactory = (id, parse, done) => message => {
+            const response = parse(message)
             if (response.id !== id) {
               return
             }
@@ -65,10 +64,8 @@ export default {
       const stream = new TransformStream()
       const writer = stream.writable.getWriter()
 
-      const onMessage: OnMessageFactory = (id, done) => message => {
-        const response = ((message as any).json ??= JSON.parse(
-          message.data
-        )) as Response
+      const onMessage: OnMessageFactory = (id, parse, done) => message => {
+        const response = parse(message)
         if (response.id !== id) {
           return
         }
@@ -116,6 +113,9 @@ type ConnectionState = {
   options: ClientOptions
   nextId: number
   activeRequests: number
+  parsedMessages: WeakMap<MessageEvent, Response>
+  pingTimeout: any
+  pong: () => void
   idleTimeout: any
   onceConnected: (callback: (error?: Error) => void) => void
 }
@@ -169,6 +169,9 @@ function connect(client: Client) {
     options: client.options,
     nextId: 1,
     activeRequests: 0,
+    parsedMessages: new WeakMap(),
+    pingTimeout: null,
+    pong: noop,
     idleTimeout: null,
     onceConnected(callback) {
       if (ws.readyState === WebSocket.OPEN) {
@@ -189,8 +192,14 @@ function onceConnected(ws: WebSocket, callback: (error?: Error) => void) {
   }
 }
 
-function createMessage(method: string, params: any[], id?: number) {
-  return JSON.stringify({ method, params, id })
+function sendMessage(
+  ws: WebSocket,
+  method: string,
+  params: any[],
+  id?: number
+) {
+  ws.send(JSON.stringify({ method, params, id }))
+  setPingTimeout(ws)
 }
 
 function sendNotification(ws: WebSocket, method: string, params: any[]) {
@@ -199,7 +208,7 @@ function sendNotification(ws: WebSocket, method: string, params: any[]) {
       if (error) {
         reject(error)
       } else {
-        ws.send(createMessage(method, params))
+        sendMessage(ws, method, params)
         setIdleTimeout(ws)
         resolve()
       }
@@ -209,7 +218,8 @@ function sendNotification(ws: WebSocket, method: string, params: any[]) {
 
 type OnMessageFactory = (
   id: number,
-  end: () => void
+  parse: (message: MessageEvent) => Response,
+  done: () => void
 ) => (message: MessageEvent) => void
 
 function sendRequest(
@@ -255,7 +265,7 @@ function sendRequest(
 
           // Attempt to notify the server that the request was cancelled.
           if (ws.readyState === WebSocket.OPEN) {
-            ws.send(createMessage('.cancel', [id]))
+            sendMessage(ws, '.cancel', [id])
           }
         }
       })
@@ -270,7 +280,7 @@ function sendRequest(
 
           // Attempt to notify the server that the request was cancelled.
           if (ws.readyState === WebSocket.OPEN) {
-            ws.send(createMessage('.cancel', [id]))
+            sendMessage(ws, '.cancel', [id])
           }
         }
 
@@ -286,10 +296,26 @@ function sendRequest(
     const id = state.nextId++
     state.activeRequests++
 
-    const onMessage = getListener(id, () => {
-      onRequestEnded()
-      resolve()
-    })
+    const onMessage = getListener(
+      id,
+      message => {
+        let response = state.parsedMessages.get(message)
+        if (!response) {
+          response = JSON.parse(message.data) as Response
+          state.parsedMessages.set(message, response)
+
+          // When a new message is received, clear the pong timeout and set
+          // a new ping timeout.
+          state.pong()
+          setPingTimeout(ws, state)
+        }
+        return response
+      },
+      () => {
+        onRequestEnded()
+        resolve()
+      }
+    )
 
     const onClose = (event: CloseEvent) => {
       onRequestEnded()
@@ -311,10 +337,33 @@ function sendRequest(
         onRequestEnded()
         reject(error)
       } else {
-        ws.send(createMessage(method, params, id))
+        sendMessage(ws, method, params, id)
       }
     })
   })
+}
+
+function setPingTimeout(ws: WebSocket, state = connectionStates.get(ws)!) {
+  const { wsPingInterval = 20, wsPongTimeout } = state.options
+  if (wsPingInterval > 0) {
+    clearTimeout(state.pingTimeout)
+    state.pingTimeout = setTimeout(
+      () => {
+        const pongTimeout = setTimeout(
+          () => {
+            ws.close()
+          },
+          (wsPongTimeout ?? 20) * 1000
+        )
+        state.pong = () => {
+          clearTimeout(pongTimeout)
+          state.pong = noop
+        }
+        ws.send(JSON.stringify({ method: '.ping' }))
+      },
+      (wsPingInterval ?? 20) * 1000
+    )
+  }
 }
 
 function setIdleTimeout(ws: WebSocket, state = connectionStates.get(ws)!) {

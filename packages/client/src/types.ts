@@ -222,6 +222,23 @@ export interface ClientOptions<TErrorMode extends ErrorMode = ErrorMode>
    */
   errorMode?: TErrorMode | undefined
   /**
+   * The WebSocket connection ping interval (in seconds). Pings are only
+   * sent if enough time has passed between messages, either sent or
+   * received.
+   *
+   * Disabled when equal to `0` or less.
+   *
+   * @default 20
+   */
+  wsPingInterval?: number | undefined
+  /**
+   * The WebSocket connection pong timeout (in seconds). If a pong is not
+   * received within this time, the connection will be closed.
+   *
+   * @default 20
+   */
+  wsPongTimeout?: number | undefined
+  /**
    * The WebSocket connection idle timeout (in seconds).
    *
    * Disabled by default and when equal to `0` or less.
