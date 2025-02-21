@@ -16,22 +16,9 @@ export default {
   createFunction(route, client, method) {
     if (route.pattern === 'n') {
       return (...params: any[]) =>
-        withRetry(
-          client.options.retry,
-          () =>
-            new Promise<void>((resolve, reject) => {
-              const ws = getConnection(client)
-              onceConnected(ws, error => {
-                if (error) {
-                  reject(error)
-                } else {
-                  ws.send(createMessage(method, params))
-                  setIdleTimeout(ws)
-                  resolve()
-                }
-              })
-            })
-        )
+        withRetry(client.options.retry, () => {
+          return sendNotification(getConnection(client), method, params)
+        })
     }
     return (...params: any[]) => {
       // The last parameter may contain an abort signal.
@@ -70,13 +57,7 @@ export default {
           }
 
           withRetry(client.options.retry, () => {
-            return sendRequest(
-              getConnection(client),
-              method,
-              params,
-              onMessage,
-              signal
-            )
+            return sendRequest(client, method, params, onMessage, signal)
           }).catch(reject)
         })
       }
@@ -103,7 +84,7 @@ export default {
 
       withRetry(client.options.retry, () => {
         return sendRequest(
-          getConnection(client),
+          client,
           method,
           params,
           onMessage,
@@ -139,7 +120,7 @@ type ConnectionState = {
   onceConnected: (callback: (error?: Error) => void) => void
 }
 
-const connections = new WeakMap<WebSocket, ConnectionState>()
+const connectionStates = new WeakMap<WebSocket, ConnectionState>()
 
 function getConnection(client: Client) {
   const { ws } = client
@@ -184,7 +165,7 @@ function connect(client: Client) {
     callbacks.forEach(callback => callback())
     callbacks.length = 0
   })
-  connections.set(ws, {
+  connectionStates.set(ws, {
     options: client.options,
     nextId: 1,
     activeRequests: 0,
@@ -204,12 +185,26 @@ function onceConnected(ws: WebSocket, callback: (error?: Error) => void) {
   if (ws.readyState === WebSocket.OPEN) {
     callback()
   } else {
-    connections.get(ws)!.onceConnected(callback)
+    connectionStates.get(ws)!.onceConnected(callback)
   }
 }
 
 function createMessage(method: string, params: any[], id?: number) {
   return JSON.stringify({ method, params, id })
+}
+
+function sendNotification(ws: WebSocket, method: string, params: any[]) {
+  return new Promise<void>((resolve, reject) => {
+    onceConnected(ws, error => {
+      if (error) {
+        reject(error)
+      } else {
+        ws.send(createMessage(method, params))
+        setIdleTimeout(ws)
+        resolve()
+      }
+    })
+  })
 }
 
 type OnMessageFactory = (
@@ -218,7 +213,7 @@ type OnMessageFactory = (
 ) => (message: MessageEvent) => void
 
 function sendRequest(
-  ws: WebSocket,
+  client: Client,
   method: string,
   params: any[],
   getListener: OnMessageFactory,
@@ -227,7 +222,8 @@ function sendRequest(
 ) {
   signal?.throwIfAborted()
   return new Promise<void>((resolve, reject) => {
-    const conn = connections.get(ws)!
+    const ws = getConnection(client)
+    const state = connectionStates.get(ws)!
 
     // This flag is only used when the websocket is still connecting. Once
     // it's finally connected, this flag ensures no message is sent if the
@@ -243,8 +239,8 @@ function sendRequest(
         ws.removeEventListener('message', onMessage)
         ws.removeEventListener('close', onClose)
 
-        if (--conn.activeRequests === 0) {
-          setIdleTimeout(ws, conn)
+        if (--state.activeRequests === 0) {
+          setIdleTimeout(ws, state)
         }
       }
     }
@@ -287,8 +283,8 @@ function sendRequest(
       }
     }
 
-    const id = conn.nextId++
-    conn.activeRequests++
+    const id = state.nextId++
+    state.activeRequests++
 
     const onMessage = getListener(id, () => {
       onRequestEnded()
@@ -307,7 +303,7 @@ function sendRequest(
     ws.addEventListener('message', onMessage)
     ws.addEventListener('close', onClose)
 
-    conn.onceConnected(error => {
+    state.onceConnected(error => {
       if (cancelled) {
         return
       }
@@ -321,12 +317,12 @@ function sendRequest(
   })
 }
 
-function setIdleTimeout(ws: WebSocket, conn = connections.get(ws)!) {
-  if (conn.activeRequests === 0) {
-    clearTimeout(conn.idleTimeout)
-    conn.idleTimeout = setTimeout(
+function setIdleTimeout(ws: WebSocket, state = connectionStates.get(ws)!) {
+  if (state.activeRequests === 0) {
+    clearTimeout(state.idleTimeout)
+    state.idleTimeout = setTimeout(
       () => ws.close(),
-      conn.options.wsIdleTimeout ?? 10_000
+      state.options.wsIdleTimeout ?? 10_000
     )
   }
 }
