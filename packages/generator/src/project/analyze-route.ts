@@ -376,6 +376,10 @@ function resolveResultFormat(
       declaration
     )
   }
+  // Prevent infinite recursion.
+  if (ts.isNeverType(type)) {
+    return 'json'
+  }
   if (isAssignableTo(typeChecker, type, types.Promise)) {
     const awaitedType =
       typeChecker.getAwaitedType(type) ?? typeChecker.getAnyType()

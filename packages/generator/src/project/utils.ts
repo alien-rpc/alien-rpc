@@ -78,6 +78,10 @@ export function createUtils(ts: typeof import('typescript')) {
       return Boolean(type.flags & ts.TypeFlags.Any)
     },
 
+    isNeverType(type: ts.Type): boolean {
+      return Boolean(type.flags & ts.TypeFlags.Never)
+    },
+
     isObjectType(type: ts.Type): type is ts.ObjectType {
       return Boolean(type.flags & ts.TypeFlags.Object)
     },
