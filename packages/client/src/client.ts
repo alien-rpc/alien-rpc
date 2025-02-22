@@ -105,9 +105,15 @@ function createFetchFunction(client: Client): Fetch {
       headers.set('Content-Type', 'application/json')
       init.body = JSON.stringify(json)
     }
-    const url = urlWithPathname(prefixUrl, input)
+    const queryIndex = input.indexOf('?')
+    const url = urlWithPathname(
+      prefixUrl,
+      queryIndex === -1 ? input : input.slice(0, queryIndex)
+    )
     if (query) {
       url.search = query
+    } else if (queryIndex !== -1) {
+      url.search = input.slice(queryIndex + 1)
     }
     const request = new Request(url.href, {
       ...client.options,
