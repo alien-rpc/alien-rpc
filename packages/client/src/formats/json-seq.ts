@@ -88,33 +88,51 @@ function hasExactKeyCount(object: {}, count: number) {
 function parseJSONSequence(): Transformer<Uint8Array, object> {
   const decoder = new TextDecoder()
   const separator = 0x1e // ASCII code for Record Separator
+  const lineFeed = 0x0a // ASCII code for Line Feed
 
   let buffer = new Uint8Array(0)
+
+  const parse = (controller: TransformStreamDefaultController) => {
+    let startIndex = 0
+    let endIndex: number
+
+    // Verify that the first byte is a record separator.
+    if (buffer.at(0) !== separator) {
+      startIndex = buffer.indexOf(separator)
+      if (startIndex === -1) {
+        return -1
+      }
+    }
+
+    while (startIndex < buffer.length) {
+      endIndex = buffer.indexOf(separator, startIndex + 1)
+      if (endIndex === -1) {
+        endIndex = buffer.length
+      }
+      if (buffer.at(endIndex - 1) === lineFeed) {
+        // Decode the text between the record separator and the line feed.
+        const text = decoder.decode(
+          buffer.subarray(startIndex + 1, endIndex - 1)
+        )
+        controller.enqueue(JSON.parse(text))
+        startIndex = endIndex
+      }
+    }
+
+    return startIndex
+  }
 
   return {
     transform(chunk: Uint8Array, controller) {
       buffer = concatUint8Arrays(buffer, chunk)
-
-      // Assume the first byte is always a record separator.
-      let startIndex = 1
-      let endIndex: number
-
-      while ((endIndex = buffer.indexOf(separator, startIndex)) !== -1) {
-        const text = decoder.decode(buffer.subarray(startIndex, endIndex))
-        controller.enqueue(JSON.parse(text))
-
-        // Skip the next record separator.
-        startIndex = endIndex + 1
-      }
-
-      if (startIndex > 1) {
-        buffer = buffer.subarray(startIndex - 1)
+      const endIndex = parse(controller)
+      if (endIndex > 0) {
+        buffer = buffer.subarray(endIndex)
       }
     },
     flush(controller) {
       if (buffer.length) {
-        const text = decoder.decode(buffer.subarray(1))
-        controller.enqueue(JSON.parse(text))
+        parse(controller)
       }
     },
   }
