@@ -16,10 +16,6 @@ export const createTypePrinter = (
       collectReferencedTypes(type, project as any, referencedTypes, symbolStack)
     }
 
-    if (type.aliasSymbol && !symbolStack.includes(type.aliasSymbol.name)) {
-      return type.aliasSymbol.name
-    }
-
     const typeChecker = project.getTypeChecker()
 
     if (utils.isTypeReference(type)) {
@@ -48,6 +44,14 @@ export const createTypePrinter = (
       if (typeArguments.length > 0) {
         return typeChecker.typeToString(type)
       }
+    }
+
+    if (utils.isLibSymbol(type.symbol)) {
+      return typeChecker.typeToString(type)
+    }
+
+    if (type.aliasSymbol && !symbolStack.includes(type.aliasSymbol.name)) {
+      return type.aliasSymbol.name
     }
 
     const { TypeFormatFlags } = utils
