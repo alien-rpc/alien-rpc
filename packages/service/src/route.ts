@@ -96,8 +96,8 @@ export interface RouteFactory<P = unknown> {
    * [crossws]: https://crossws.unjs.io/
    */
   ws: <
-    TArgs extends [...any[], ws.RequestContext<P>],
-    const TResult extends ws.RouteResult,
+    TArgs extends [...any[], ws.RequestContext<P>] = [ws.RequestContext<P>],
+    const TResult extends ws.RouteResult = any,
   >(
     handler: (...args: TArgs) => TResult,
     middlewares?: RequestHandlerStack<InferPlatform<Last<TArgs>>>[]
@@ -127,7 +127,7 @@ type MultiParamRouteBuilder<
     TPath,
     string
   >,
-  TData extends object = any,
+  TData extends object = Record<string, never>,
   TPlatform extends Platform = Platform,
   const TResult extends RouteResult = any,
 >(
@@ -147,7 +147,7 @@ type SingleParamRouteBuilder<
   Platform = unknown,
 > = <
   TPathParam extends PathParam = string,
-  TData extends object = any,
+  TData extends object = Record<string, never>,
   TPlatform extends Platform = Platform,
   const TResult extends RouteResult = any,
 >(
@@ -166,7 +166,7 @@ type FixedRouteBuilder<
   TMethod extends RouteMethod,
   Platform = unknown,
 > = <
-  TData extends object = any,
+  TData extends object = Record<string, never>,
   TPlatform extends Platform = Platform,
   const TResult extends RouteResult = any,
 >(
