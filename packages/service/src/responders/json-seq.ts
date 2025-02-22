@@ -7,7 +7,7 @@ import type {
   RouteResponder,
 } from '../types.js'
 
-const responder: RouteResponder = async (route, args, ctx) => {
+const responder: RouteResponder = (route, args, ctx) => {
   const stream = ReadableStream.from(
     generateJsonTextSequence(route, args, ctx.url)
   )

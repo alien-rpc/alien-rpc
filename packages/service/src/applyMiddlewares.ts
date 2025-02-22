@@ -3,13 +3,14 @@ import {
   RequestHandler,
   RequestHandlerStack,
 } from '@hattip/compose'
+import { Promisable } from './internal/types.js'
 
 const appliedMiddlewares = new WeakMap<RequestContext, Set<RequestHandler>>()
 
 export async function applyMiddlewares(
   stack: RequestHandlerStack[],
   ctx: RequestContext,
-  next: () => Promise<Response>
+  next: () => Promisable<Response>
 ) {
   const applied = appliedMiddlewares.get(ctx) ?? new Set()
   appliedMiddlewares.set(ctx, applied)

@@ -183,7 +183,7 @@ export type RouteResponder = (
   route: RouteDefinition,
   args: Parameters<RouteHandler>,
   ctx: RequestContext
-) => Promise<Response>
+) => Promisable<Response>
 
 /**
  * Both the Node.js and Cloudflare workers environments have a `Response`
