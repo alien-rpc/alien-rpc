@@ -34,5 +34,6 @@ export default [
     name: "streamNumbers",
     import: () => import("../../routes.js"),
     format: "json-seq",
+    requestSchema: Type.Record(Type.String(), Type.Never()),
   },
 ] as const;

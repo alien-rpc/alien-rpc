@@ -45,8 +45,12 @@ export default [
     name: "getUserById",
     import: () => import("../../routes.js"),
     format: "json",
-    pathSchema: Type.Object({
-      id: NumberParam(),
-    }),
+    pathSchema: Type.Object(
+      {
+        id: NumberParam(),
+      },
+      { additionalProperties: false },
+    ),
+    requestSchema: Type.Record(Type.String(), Type.Never()),
   },
 ] as const;

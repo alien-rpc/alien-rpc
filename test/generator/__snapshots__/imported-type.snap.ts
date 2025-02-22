@@ -73,5 +73,6 @@ export default [
     name: "getPost",
     import: () => import("../../routes.js"),
     format: "json",
+    requestSchema: Type.Record(Type.String(), Type.Never()),
   },
 ] as const;

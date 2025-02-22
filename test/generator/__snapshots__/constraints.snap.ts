@@ -69,46 +69,52 @@ export default [
     name: "testConstraints",
     import: () => import("../../routes.js"),
     format: "json",
-    pathSchema: Type.Object({
-      id: Type.String({ format: "uuid" }),
-    }),
-    requestSchema: Type.Object({
-      tuple: Type.Optional(
-        Type.Union([
-          Type.Tuple([Type.String(), Type.String()]),
-          Type.Undefined(),
-        ]),
-      ),
-      array: Type.Optional(
-        Type.Union([
-          Type.Array(Type.String(), { minItems: 1, maxItems: 2 }),
-          Type.Undefined(),
-        ]),
-      ),
-      object: Type.Optional(
-        Type.Union([
-          Type.Record(Type.String(), Type.String(), {
-            minProperties: 1,
-            maxProperties: 2,
-          }),
-          Type.Undefined(),
-        ]),
-      ),
-      email: Type.Optional(
-        Type.Union([Type.String({ format: "email" }), Type.Undefined()]),
-      ),
-      month: Type.Optional(
-        Type.Union([
-          Type.String({ pattern: "^[0-9]{4}-(0[1-9]|1[0-2])$" }),
-          Type.Undefined(),
-        ]),
-      ),
-      date: Type.Optional(
-        Type.Union([
-          Type.Date({ minimumTimestamp: 1704067200000 }),
-          Type.Undefined(),
-        ]),
-      ),
-    }),
+    pathSchema: Type.Object(
+      {
+        id: Type.String({ format: "uuid" }),
+      },
+      { additionalProperties: false },
+    ),
+    requestSchema: Type.Object(
+      {
+        tuple: Type.Optional(
+          Type.Union([
+            Type.Tuple([Type.String(), Type.String()]),
+            Type.Undefined(),
+          ]),
+        ),
+        array: Type.Optional(
+          Type.Union([
+            Type.Array(Type.String(), { minItems: 1, maxItems: 2 }),
+            Type.Undefined(),
+          ]),
+        ),
+        object: Type.Optional(
+          Type.Union([
+            Type.Record(Type.String(), Type.String(), {
+              minProperties: 1,
+              maxProperties: 2,
+            }),
+            Type.Undefined(),
+          ]),
+        ),
+        email: Type.Optional(
+          Type.Union([Type.String({ format: "email" }), Type.Undefined()]),
+        ),
+        month: Type.Optional(
+          Type.Union([
+            Type.String({ pattern: "^[0-9]{4}-(0[1-9]|1[0-2])$" }),
+            Type.Undefined(),
+          ]),
+        ),
+        date: Type.Optional(
+          Type.Union([
+            Type.Date({ minimumTimestamp: 1704067200000 }),
+            Type.Undefined(),
+          ]),
+        ),
+      },
+      { additionalProperties: false },
+    ),
   },
 ] as const;

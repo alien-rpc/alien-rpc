@@ -43,5 +43,6 @@ export default [
     name: "foo",
     import: () => import("../../routes.js"),
     format: "json",
+    requestSchema: Type.Record(Type.String(), Type.Never()),
   },
 ] as const;

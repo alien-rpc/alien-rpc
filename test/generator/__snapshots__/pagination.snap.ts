@@ -47,8 +47,6 @@ import type {
 } from "@alien-rpc/client";
 import jsonSeq from "@alien-rpc/client/formats/json-seq";
 
-export type Post = { id: number; title: string; content: string };
-
 export const listPosts: Route<
   "posts",
   (
@@ -57,19 +55,13 @@ export const listPosts: Route<
       { page?: number | undefined; limit?: number | undefined }
     > | null,
     requestOptions?: RequestOptions,
-  ) => ResponseStream<Post>
+  ) => ResponseStream<{ id: number; title: string; content: string }>
 > = { path: "posts", method: "GET", arity: 2, format: jsonSeq } as any;
 
 /**
  * server/generated/api.ts
  */
 import * as Type from "@sinclair/typebox/type";
-
-export const Post = Type.Object({
-  id: Type.Number(),
-  title: Type.String(),
-  content: Type.String(),
-});
 
 export default [
   {
@@ -78,9 +70,12 @@ export default [
     name: "listPosts",
     import: () => import("../../routes.js"),
     format: "json-seq",
-    requestSchema: Type.Object({
-      page: Type.Optional(Type.Union([Type.Number(), Type.Undefined()])),
-      limit: Type.Optional(Type.Union([Type.Number(), Type.Undefined()])),
-    }),
+    requestSchema: Type.Object(
+      {
+        page: Type.Optional(Type.Union([Type.Number(), Type.Undefined()])),
+        limit: Type.Optional(Type.Union([Type.Number(), Type.Undefined()])),
+      },
+      { additionalProperties: false },
+    ),
   },
 ] as const;

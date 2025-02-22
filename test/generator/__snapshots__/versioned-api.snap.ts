@@ -38,5 +38,6 @@ export default [
     name: "funFact",
     import: () => import("../../routes.js"),
     format: "json",
+    requestSchema: Type.Record(Type.String(), Type.Never()),
   },
 ] as const;

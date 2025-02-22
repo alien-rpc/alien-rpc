@@ -44,5 +44,6 @@ export default [
     name: "getBookByAuthor",
     import: () => import("../../routes.js"),
     format: "json",
+    requestSchema: Type.Record(Type.String(), Type.Never()),
   },
 ] as const;

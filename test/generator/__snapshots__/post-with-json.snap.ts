@@ -39,8 +39,11 @@ export default [
     name: "createUser",
     import: () => import("../../routes.js"),
     format: "json",
-    requestSchema: Type.Object({
-      name: Type.String(),
-    }),
+    requestSchema: Type.Object(
+      {
+        name: Type.String(),
+      },
+      { additionalProperties: false },
+    ),
   },
 ] as const;
