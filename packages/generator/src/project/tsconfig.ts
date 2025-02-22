@@ -40,6 +40,7 @@ export function createTsConfigCache(fs: JumpgenFS, project: Project) {
         if (config.directories.includes(fromDirectory)) {
           return config
         }
+        // a/b/c/tsconfig.json -> a/b/
         cwd = path.resolve(configFilePath, '../..')
       }
     },
