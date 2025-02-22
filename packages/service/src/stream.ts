@@ -1,4 +1,4 @@
-import { JSONCodable } from './internal/types.js'
+import type { JSONCodable } from './internal/types.js'
 
 /**
  * Using `JsonStream` makes it easy to push JSON-serializable values to the
@@ -18,15 +18,15 @@ export class JsonStream<T extends JSONCodable | undefined>
   }
 
   write(value: T) {
-    this.#writer.write(value)
+    return this.#writer.write(value)
   }
 
   close() {
-    this.#writer.close()
+    return this.#writer.close()
   }
 
   abort(reason?: any) {
-    this.#writer.abort(reason)
+    return this.#writer.abort(reason)
   }
 
   [Symbol.asyncIterator]() {
