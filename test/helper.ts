@@ -30,6 +30,7 @@ export function createTestContext(config: { tempDir?: boolean } = {}) {
     const options: Options = {
       include: ['routes.ts'],
       outDir: '.',
+      noFormat: true,
       ...overrides,
     }
 
