@@ -12,10 +12,10 @@ import {
   RouteFunctions,
   RouteProtocol,
 } from './types.js'
-import { joinURL } from './utils/joinURL.js'
 import { mergeHeaders } from './utils/mergeHeaders.js'
 import { mergeOptions } from './utils/mergeOptions.js'
 import { getShouldRetry, ShouldRetryFunction } from './utils/retry.js'
+import { urlWithPathname } from './utils/url.js'
 
 type Fetch = (
   path: string,
@@ -105,11 +105,11 @@ function createFetchFunction(client: Client): Fetch {
       headers.set('Content-Type', 'application/json')
       init.body = JSON.stringify(json)
     }
-    let url = joinURL(prefixUrl, input)
+    const url = urlWithPathname(prefixUrl, input)
     if (query) {
-      url += '?' + query
+      url.search = query
     }
-    const request = new Request(url, {
+    const request = new Request(url.href, {
       ...client.options,
       ...(init && shake(init)),
       headers,

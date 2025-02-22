@@ -10,16 +10,17 @@ import {
   Route,
   RouteProtocol,
 } from '../types.js'
-import { joinURL } from '../utils/joinURL.js'
+import { urlWithPathname } from '../utils/url.js'
 
 // The default protocol
 export default {
   name: 'http',
   getURL(route, { prefixUrl = location.origin }) {
     if (route.pathParams.length) {
-      return params => joinURL(prefixUrl, buildPath(route.path, params))
+      return params =>
+        urlWithPathname(prefixUrl, buildPath(route.path, params)).href
     }
-    return joinURL(prefixUrl, route.path)
+    return urlWithPathname(prefixUrl, route.path).href
   },
   createFunction(route, client) {
     const parseResponse = getResponseParser(route.format)

@@ -2,11 +2,13 @@ import { noop } from 'radashi'
 import type { Client } from '../client.js'
 import { NetworkError } from '../error.js'
 import type { ClientOptions, HeadersInit, RouteProtocol, ws } from '../types.js'
-import { joinURL } from '../utils/joinURL.js'
 import { withRetry } from '../utils/retry.js'
+import { urlWithPathname } from '../utils/url.js'
 
 function getWebSocketURL(options: ClientOptions) {
-  return joinURL(options.prefixUrl ?? location.origin, 'ws')
+  const url = urlWithPathname(options.prefixUrl ?? location.origin, 'ws')
+  url.protocol = url.protocol.replace('http', 'ws')
+  return url.href
 }
 
 export default {
