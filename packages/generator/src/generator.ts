@@ -224,6 +224,10 @@ export default (rawOptions: Options) =>
       argumentType: string,
       contentType: 'json' | 'json-qs'
     ) => {
+      // Treat {} as an empty object.
+      if (argumentType === '{}') {
+        argumentType = 'Record<string, never>'
+      }
       let schema = await project.generateRuntimeValidator(
         `type Request = ${argumentType}`
       )
