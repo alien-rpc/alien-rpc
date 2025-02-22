@@ -31,6 +31,8 @@ async function* generateJsonTextSequence(
   url: URL
 ) {
   const encoder = new TextEncoder()
+  const separator = new Uint8Array([0x1e]) // ASCII record separator
+  const lineFeed = new Uint8Array([0x0a]) // ASCII line feed
 
   let iterator: RouteIterator | undefined
   let done: boolean | undefined
@@ -67,8 +69,8 @@ async function* generateJsonTextSequence(
       }
     }
 
-    yield encoder.encode('\u001E') // ASCII record separator
+    yield separator
     yield encoder.encode(JSON.stringify(value))
-    yield encoder.encode('\n')
+    yield lineFeed
   } while (!done)
 }
