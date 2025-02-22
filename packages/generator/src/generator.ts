@@ -2,6 +2,7 @@ import { bodylessMethods } from '@alien-rpc/route'
 import { formatly } from '@alloc/formatly'
 import { resolve } from 'import-meta-resolve'
 import { FileChange, jumpgen } from 'jumpgen'
+import { S_IFREG } from 'node:constants'
 import path from 'path'
 import { parsePathParams } from 'pathic'
 import { camel, dedent, guard, pascal, sift } from 'radashi'
@@ -87,6 +88,10 @@ export default (rawOptions: Options) =>
       })
 
       for (const change of changes) {
+        if (change.type !== S_IFREG) {
+          continue
+        }
+
         const affectedFilePath = path.join(root, change.file)
 
         if (change.event === 'add') {
