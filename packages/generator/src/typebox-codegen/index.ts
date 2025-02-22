@@ -277,8 +277,8 @@ function processSourceFile(
       const members = renderTypeProperties(node.members)
 
       const rawTypeExpression = recursiveDeclaration
-        ? `Type.Recursive(This => Type.Object(${members}))`
-        : `Type.Object(${members})`
+        ? `Type.Recursive(This => Type.Object(${members}, { additionalProperties: false }))`
+        : `Type.Object(${members}, { additionalProperties: false })`
 
       yield renderPotentiallyGenericType(
         node,
@@ -409,7 +409,7 @@ function processSourceFile(
     // Type.Object
     else if (ts.isTypeLiteralNode(node)) {
       const members = renderTypeProperties(node.members)
-      yield* `Type.Object(${members})`
+      yield* `Type.Object(${members}, { additionalProperties: false })`
     }
 
     // Type.KeyOf, Type.Readonly
