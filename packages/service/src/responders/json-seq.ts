@@ -1,10 +1,16 @@
 import type { JSON } from '../internal/types.js'
 import { resolvePaginationLink } from '../pagination.js'
-import type { RouteIterator, RouteResponder } from '../types.js'
+import type {
+  RouteDefinition,
+  RouteHandler,
+  RouteIterator,
+  RouteResponder,
+} from '../types.js'
 
 const responder: RouteResponder = async (route, args, ctx) => {
-  const result = await route.handler.apply(route, args)
-  const stream = ReadableStream.from(generateJsonTextSequence(result, ctx.url))
+  const stream = ReadableStream.from(
+    generateJsonTextSequence(route, args, ctx.url)
+  )
 
   // Don't use "application/json-seq" until it's been standardized.
   ctx.response.headers.set('Content-Type', 'text/plain; charset=utf-8')
@@ -19,13 +25,21 @@ export default responder
  *
  * @see https://datatracker.ietf.org/doc/html/rfc7464
  */
-async function* generateJsonTextSequence(iterator: RouteIterator, url: URL) {
+async function* generateJsonTextSequence(
+  route: RouteDefinition,
+  args: Parameters<RouteHandler>,
+  url: URL
+) {
   const encoder = new TextEncoder()
 
+  let iterator: RouteIterator | undefined
   let done: boolean | undefined
   let value: JSON
   do {
     try {
+      if (!iterator) {
+        iterator = (await route.handler.apply(route, args)) as RouteIterator
+      }
       const iteration = await iterator.next()
       if (iteration.done) {
         const links = iteration.value
