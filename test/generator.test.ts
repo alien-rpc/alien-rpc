@@ -41,7 +41,7 @@ describe.concurrent('generator', () => {
           watch: true,
         })
 
-        await generator.instance.waitForStart(5000)
+        await generator.instance.waitForStart(3000)
         await generator.instance
 
         const outputFiles = globSync('**/*.ts', {
