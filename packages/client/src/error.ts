@@ -4,7 +4,10 @@ export class HTTPError extends Error {
     readonly request: Request,
     readonly response: Response
   ) {
-    super(response.statusText)
+    super(
+      response.statusText ||
+        `Server responded with ${response.status} status code`
+    )
   }
 }
 
