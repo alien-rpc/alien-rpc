@@ -98,7 +98,7 @@ describe.concurrent('generator', () => {
       const testDir = join(__dirname, '.tmp', uid(10))
 
       mkdirSync(testDir, { recursive: true })
-      // defer(() => rmSync(testDir, { recursive: true, force: true }))
+      defer(() => rmSync(testDir, { recursive: true, force: true }))
 
       const files = {
         'server/api/types.ts': dedent`
