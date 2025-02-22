@@ -39,6 +39,7 @@ app
     '--versionPrefix <version>',
     'The current version of your API, prefixed to each route path'
   )
+  .option('--no-format', 'Do not format the generated files')
   .option('--verbose', 'Print diagnostics for node_modules')
   .action(
     async (
@@ -55,6 +56,7 @@ app
         serverOutFile: string
         clientOutFile: string
         versionPrefix?: string
+        noFormat?: boolean
         verbose?: boolean
       }
     ) => {
