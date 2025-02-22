@@ -3,7 +3,11 @@ import cac from 'cac'
 import path from 'node:path'
 import { isArray } from 'radashi'
 import { log } from './common/log.js'
-import { registerConsoleShortcuts, Shortcut } from './common/stdin.js'
+import {
+  printShortcutsHelp,
+  registerConsoleShortcuts,
+  Shortcut,
+} from './common/stdin.js'
 
 const app = cac('alien-rpc')
 
@@ -123,6 +127,7 @@ app
       await generator
       if (watch) {
         log.comment('Watching for changes...')
+        printShortcutsHelp(shortcuts!)
       }
     }
   )
