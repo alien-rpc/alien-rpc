@@ -36,7 +36,8 @@
     "dev": "pnpm --parallel run clean && pnpm --stream m run build:dev && pnpm --parallel run build:dev --watch --preserveWatchOutput",
     "build": "pnpm --stream m run build",
     "lint": "tsc-lint",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "test": "vitest"
   },
   "pnpm": {
     "overrides": {
