@@ -10,7 +10,7 @@ class TracedResponse extends Response {
    */
   stack =
     process.env.NODE_ENV !== 'production'
-      ? getStackTrace(new Error(), 3)
+      ? getStackTrace(new Error(), this.constructor)
       : undefined
 }
 
