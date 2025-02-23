@@ -1,4 +1,4 @@
-import { createError, getStackTrace } from '../errorUtils.js'
+import { getErrorFromResponse, getStackTrace } from '../errorUtils.js'
 import type { JSON } from '../internal/types.js'
 import { resolvePaginationLink } from '../pagination.js'
 import type {
@@ -62,7 +62,7 @@ async function* generateJsonTextSequence(
     } catch (error: any) {
       if (error instanceof Response) {
         if (!process.env.TEST && process.env.NODE_ENV !== 'production') {
-          console.error(createError('Thrown response', error))
+          console.error(getErrorFromResponse(error))
         }
         error = {
           code: error.status,
