@@ -14,6 +14,7 @@ import {
   type CorsConfig,
 } from './cors.js'
 import {
+  createError,
   firstLeafError,
   getStackTrace,
   isDecodeCheckError,
@@ -159,6 +160,9 @@ function handleRouteError(error: any, step: RequestStep) {
     // An HttpError is thrown by the application code to indicate a
     // failed request, as opposed to an unexpected error.
     if (error instanceof Response) {
+      if (!process.env.TEST && process.env.NODE_ENV !== 'production') {
+        console.error(createError('Thrown response', error))
+      }
       return error
     }
     if (!process.env.TEST) {

@@ -36,3 +36,12 @@ export function getStackTrace(error: Error, skip = 0) {
   const stack = error.stack?.replace(/^.*(?<! *at\b.*)\n/gm, '')
   return stack && skip > 0 ? stack.split('\n').slice(skip).join('\n') : stack
 }
+
+export function createError(message: string, props: any) {
+  const error = new Error(message)
+  Object.assign(error, props)
+  if ('stack' in props) {
+    error.stack = 'Error: ' + message + '\n' + props.stack
+  }
+  return error
+}

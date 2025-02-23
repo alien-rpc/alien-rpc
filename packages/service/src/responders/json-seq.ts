@@ -1,4 +1,4 @@
-import { getStackTrace } from '../errorUtils.js'
+import { createError, getStackTrace } from '../errorUtils.js'
 import type { JSON } from '../internal/types.js'
 import { resolvePaginationLink } from '../pagination.js'
 import type {
@@ -61,15 +61,21 @@ async function* generateJsonTextSequence(
       }
     } catch (error: any) {
       if (error instanceof Response) {
+        if (!process.env.TEST && process.env.NODE_ENV !== 'production') {
+          console.error(createError('Thrown response', error))
+        }
         error = {
-          message: error.status + ' ' + error.statusText,
+          code: error.status,
+          message: error.statusText,
           stack:
             process.env.NODE_ENV !== 'production' && 'stack' in error
               ? error.stack
               : undefined,
         }
       } else {
-        console.error(error)
+        if (!process.env.TEST) {
+          console.error(error)
+        }
         error = {
           ...error,
           message: error.message || 'An unknown error occurred',
