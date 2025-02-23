@@ -10,13 +10,14 @@ import type {
 import { isError } from 'radashi'
 import {
   firstLeafError,
+  getStackTrace,
   isDecodeCheckError,
   isDecodeError,
   type ValueError,
 } from './errorUtils.js'
 import { importRoute } from './internal/importRoute.js'
 import type { JSONCodable, Promisable } from './internal/types.js'
-import type { JsonResponse } from './response.js'
+import { JsonResponse } from './response.js'
 import type { RouteList } from './types.js'
 
 export function isWebSocketRoute(route: any): route is ws.Route {
@@ -174,12 +175,22 @@ export namespace ws {
               flushDeferQueue()
             } catch (error) {
               if (error instanceof Response) {
+                const {
+                  code = error.status,
+                  message = error.statusText,
+                  ...data
+                } = error instanceof JsonResponse ? error.decodedBody : {}
+
                 peer.send({
                   id,
                   error: {
-                    code: error.status,
-                    message: error.statusText,
-                    ...(error as JsonResponse<any>).decodedBody,
+                    code,
+                    message,
+                    data: Object.keys(data).length ? data : undefined,
+                    stack:
+                      process.env.NODE_ENV !== 'production' && 'stack' in error
+                        ? error.stack
+                        : undefined,
                   },
                 })
               } else {
@@ -196,6 +207,10 @@ export namespace ws {
                       code: 400,
                       message,
                       data: { path, value },
+                      stack:
+                        process.env.NODE_ENV !== 'production'
+                          ? getStackTrace(checkError)
+                          : undefined,
                     },
                   })
                 } else {
@@ -207,6 +222,10 @@ export namespace ws {
                     error: {
                       code: 500,
                       message: isError(error) ? error.message : String(error),
+                      stack:
+                        process.env.NODE_ENV !== 'production' && isError(error)
+                          ? getStackTrace(error)
+                          : undefined,
                     },
                   })
                 }
