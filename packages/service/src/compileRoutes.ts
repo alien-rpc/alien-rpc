@@ -15,6 +15,7 @@ import {
 } from './cors.js'
 import {
   firstLeafError,
+  getStackTrace,
   isDecodeCheckError,
   isDecodeError,
 } from './errorUtils.js'
@@ -169,7 +170,7 @@ function handleRouteError(error: any, step: RequestStep) {
     return new InternalServerError({
       ...error,
       message: error.message ?? 'Internal server error',
-      stack: error.stack,
+      stack: getStackTrace(error),
     })
   }
 

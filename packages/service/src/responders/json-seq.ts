@@ -1,3 +1,4 @@
+import { getStackTrace } from '../errorUtils.js'
 import type { JSON } from '../internal/types.js'
 import { resolvePaginationLink } from '../pagination.js'
 import type {
@@ -59,15 +60,27 @@ async function* generateJsonTextSequence(
         value = iteration.value as any
       }
     } catch (error: any) {
-      done = true
-      value = {
-        $error: {
-          ...error,
-          message: error.message,
+      if (error instanceof Response) {
+        error = {
+          message: error.status + ' ' + error.statusText,
           stack:
-            process.env.NODE_ENV !== 'production' ? error.stack : undefined,
-        },
+            process.env.NODE_ENV !== 'production' && 'stack' in error
+              ? error.stack
+              : undefined,
+        }
+      } else {
+        console.error(error)
+        error = {
+          ...error,
+          message: error.message || 'An unknown error occurred',
+          stack:
+            process.env.NODE_ENV !== 'production'
+              ? getStackTrace(error)
+              : undefined,
+        }
       }
+      done = true
+      value = { $error: error }
     }
 
     yield separator

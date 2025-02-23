@@ -31,3 +31,8 @@ function* flat<T>(iterables: Iterable<T>[]) {
     yield* iterable
   }
 }
+
+export function getStackTrace(error: Error, skip = 0) {
+  const stack = error.stack?.replace(/^.*(?<! *at\b.*)\n/gm, '')
+  return stack && skip > 0 ? stack.split('\n').slice(skip).join('\n') : stack
+}

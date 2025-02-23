@@ -1,11 +1,24 @@
+import { getStackTrace } from './errorUtils.js'
 import { Headers } from './headers.js'
 import { JSONCodable } from './internal/types.js'
+
+class TracedResponse extends Response {
+  /**
+   * Record a stack trace in case this response is thrown. The responder
+   * will forward this trace to the client during development, so the
+   * source of the response can be found.
+   */
+  stack =
+    process.env.NODE_ENV !== 'production'
+      ? getStackTrace(new Error(), 2)
+      : undefined
+}
 
 /**
  * Stringify the `body` argument with `JSON.stringify` and set the
  * `Content-Type` header to `application/json`.
  */
-export class JsonResponse<T extends JSONCodable> extends Response {
+export class JsonResponse<T extends JSONCodable> extends TracedResponse {
   constructor(
     readonly decodedBody: T,
     options?: { status?: number; headers?: Headers }
@@ -47,7 +60,7 @@ export class BadRequestError extends JsonResponse<ErrorDetails> {
 /**
  * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/401
  */
-export class UnauthorizedError extends Response {
+export class UnauthorizedError extends TracedResponse {
   constructor(headers?: Headers) {
     super(null, { status: 401, headers })
   }
@@ -56,7 +69,7 @@ export class UnauthorizedError extends Response {
 /**
  * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403
  */
-export class ForbiddenError extends Response {
+export class ForbiddenError extends TracedResponse {
   constructor(headers?: Headers) {
     super(null, { status: 403, headers })
   }
@@ -65,7 +78,7 @@ export class ForbiddenError extends Response {
 /**
  * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/409
  */
-export class ConflictError extends Response {
+export class ConflictError extends TracedResponse {
   constructor(headers?: Headers) {
     super(null, { status: 409, headers })
   }
@@ -74,7 +87,7 @@ export class ConflictError extends Response {
 /**
  * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/410
  */
-export class GoneError extends Response {
+export class GoneError extends TracedResponse {
   constructor(headers?: Headers) {
     super(null, { status: 410, headers })
   }
@@ -83,7 +96,7 @@ export class GoneError extends Response {
 /**
  * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/411
  */
-export class LengthRequiredError extends Response {
+export class LengthRequiredError extends TracedResponse {
   constructor(headers?: Headers) {
     super(null, { status: 411, headers })
   }
@@ -92,7 +105,7 @@ export class LengthRequiredError extends Response {
 /**
  * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/412
  */
-export class PreconditionFailedError extends Response {
+export class PreconditionFailedError extends TracedResponse {
   constructor(headers?: Headers) {
     super(null, { status: 412, headers })
   }
@@ -101,7 +114,7 @@ export class PreconditionFailedError extends Response {
 /**
  * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/413
  */
-export class PayloadTooLargeError extends Response {
+export class PayloadTooLargeError extends TracedResponse {
   constructor(headers?: Headers) {
     super(null, { status: 413, headers })
   }
@@ -110,7 +123,7 @@ export class PayloadTooLargeError extends Response {
 /**
  * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/415
  */
-export class UnsupportedMediaTypeError extends Response {
+export class UnsupportedMediaTypeError extends TracedResponse {
   constructor(headers?: Headers) {
     super(null, { status: 415, headers })
   }
@@ -119,7 +132,7 @@ export class UnsupportedMediaTypeError extends Response {
 /**
  * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/416
  */
-export class RangeNotSatisfiableError extends Response {
+export class RangeNotSatisfiableError extends TracedResponse {
   constructor(headers?: Headers) {
     super(null, { status: 416, headers })
   }
@@ -128,7 +141,7 @@ export class RangeNotSatisfiableError extends Response {
 /**
  * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/417
  */
-export class ExpectationFailedError extends Response {
+export class ExpectationFailedError extends TracedResponse {
   constructor(headers?: Headers) {
     super(null, { status: 417, headers })
   }
@@ -137,7 +150,7 @@ export class ExpectationFailedError extends Response {
 /**
  * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/421
  */
-export class MisdirectedRequestError extends Response {
+export class MisdirectedRequestError extends TracedResponse {
   constructor(headers?: Headers) {
     super(null, { status: 421, headers })
   }
@@ -146,7 +159,7 @@ export class MisdirectedRequestError extends Response {
 /**
  * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/422
  */
-export class UnprocessableContentError extends Response {
+export class UnprocessableContentError extends TracedResponse {
   constructor(headers?: Headers) {
     super(null, { status: 422, headers })
   }
@@ -155,7 +168,7 @@ export class UnprocessableContentError extends Response {
 /**
  * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/428
  */
-export class PreconditionRequiredError extends Response {
+export class PreconditionRequiredError extends TracedResponse {
   constructor(headers?: Headers) {
     super(null, { status: 428, headers })
   }
@@ -164,7 +177,7 @@ export class PreconditionRequiredError extends Response {
 /**
  * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/429
  */
-export class TooManyRequestsError extends Response {
+export class TooManyRequestsError extends TracedResponse {
   constructor(headers?: Headers) {
     super(null, { status: 429, headers })
   }
@@ -173,7 +186,7 @@ export class TooManyRequestsError extends Response {
 /**
  * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/451
  */
-export class UnavailableForLegalReasonsError extends Response {
+export class UnavailableForLegalReasonsError extends TracedResponse {
   constructor(headers?: Headers) {
     super(null, { status: 451, headers })
   }
@@ -182,7 +195,7 @@ export class UnavailableForLegalReasonsError extends Response {
 /**
  * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/307
  */
-export class TemporaryRedirect extends Response {
+export class TemporaryRedirect extends TracedResponse {
   constructor(location: string) {
     super(null, { status: 307, headers: { location } })
   }
@@ -191,7 +204,7 @@ export class TemporaryRedirect extends Response {
 /**
  * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/308
  */
-export class PermanentRedirect extends Response {
+export class PermanentRedirect extends TracedResponse {
   constructor(location: string) {
     super(null, { status: 308, headers: { location } })
   }
