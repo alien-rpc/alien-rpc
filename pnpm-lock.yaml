@@ -122,8 +122,8 @@ importers:
         specifier: ^4.1.0
         version: 4.1.0
       jumpgen:
-        specifier: ^0.2.4
-        version: 0.2.4
+        specifier: ^0.2.5
+        version: 0.2.5
       minimatch:
         specifier: ^9.0.4
         version: 9.0.5
@@ -902,8 +902,8 @@ packages:
     resolution: {integrity: sha512-34wB/Y7MW7bzjKRjUKTa46I2Z7eV62Rkhva+KkopW7Qvv/OSWBqvkSY7vusOPrNuZcUG3tApvdVgNB8POj3SPw==}
     engines: {node: '>=10'}
 
-  jumpgen@0.2.4:
-    resolution: {integrity: sha512-DMkSsgSv60X+OntZi73BZBjzrsatAnT6CHBJXUNxCAnZGfBRY8hcF8WixzyRM6K7iUl27PMab4e8V4+cP5HM7Q==}
+  jumpgen@0.2.5:
+    resolution: {integrity: sha512-ErP3VjebzJw8PVkE/oTcZrRE0Gibmw6YDpfUDOugv/DpP4C4gKhYjfh7es3UWZnijfO60Kc5ZWN53G9HfgGdJA==}
     engines: {node: '>=22'}
 
   kleur@4.1.5:
@@ -1813,7 +1813,7 @@ snapshots:
 
   joycon@3.1.1: {}
 
-  jumpgen@0.2.4:
+  jumpgen@0.2.5:
     dependencies:
       chokidar: 4.0.3
       debug: 4.4.0

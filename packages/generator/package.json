@@ -24,7 +24,7 @@
     "@alloc/formatly": "^0.1.2",
     "debug": "^4.3.7",
     "import-meta-resolve": "^4.1.0",
-    "jumpgen": "^0.2.4",
+    "jumpgen": "^0.2.5",
     "minimatch": "^9.0.4",
     "option-types": "^1.1.0",
     "pathic": "workspace:^",
