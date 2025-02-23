@@ -93,27 +93,26 @@ function parseJSONSequence(): Transformer<Uint8Array, object> {
   let buffer = new Uint8Array(0)
 
   const parse = (controller: TransformStreamDefaultController) => {
-    let nextIndex = 0
-    let endIndex: number
-
     // Verify that the first byte is a record separator.
     if (buffer.at(0) !== separator) {
       throw new Error('Invalid JSON sequence')
     }
+
+    let nextIndex = 0
+    let endIndex: number
 
     while (nextIndex < buffer.length) {
       endIndex = buffer.indexOf(separator, nextIndex + 1)
       if (endIndex === -1) {
         endIndex = buffer.length
       }
-      if (buffer.at(endIndex - 1) === lineFeed) {
-        // Decode the text between the record separator and the line feed.
-        const text = decoder.decode(
-          buffer.subarray(nextIndex + 1, endIndex - 1)
-        )
-        controller.enqueue(JSON.parse(text))
-        nextIndex = endIndex
+      if (buffer.at(endIndex - 1) !== lineFeed) {
+        break
       }
+      // Decode the text between the record separator and the line feed.
+      const text = decoder.decode(buffer.subarray(nextIndex + 1, endIndex - 1))
+      controller.enqueue(JSON.parse(text))
+      nextIndex = endIndex
     }
 
     return nextIndex
