@@ -52,7 +52,7 @@ export function getErrorFromResponse(response: Response) {
     response instanceof JsonResponse ? response.decodedBody : {}
   const error = new Error(message)
   Object.assign(error, props)
-  if ('stack' in response) {
+  if (process.env.NODE_ENV !== 'production' && 'stack' in response) {
     error.stack = 'Error: ' + message + '\n' + response.stack
   }
   return error

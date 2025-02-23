@@ -61,29 +61,18 @@ async function* generateJsonTextSequence(
       }
     } catch (error: any) {
       if (error instanceof Response) {
-        if (!process.env.TEST && process.env.NODE_ENV !== 'production') {
-          console.error(getErrorFromResponse(error))
-        }
-        error = {
-          code: error.status,
-          message: error.statusText,
-          stack:
-            process.env.NODE_ENV !== 'production' && 'stack' in error
-              ? error.stack
-              : undefined,
-        }
-      } else {
-        if (!process.env.TEST) {
-          console.error(error)
-        }
-        error = {
-          ...error,
-          message: error.message || 'An unknown error occurred',
-          stack:
-            process.env.NODE_ENV !== 'production'
-              ? getStackTrace(error)
-              : undefined,
-        }
+        error = getErrorFromResponse(error)
+      }
+      if (!process.env.TEST) {
+        console.error(error)
+      }
+      error = {
+        ...error,
+        message: error.message || 'An unknown error occurred',
+        stack:
+          process.env.NODE_ENV !== 'production'
+            ? '\n' + getStackTrace(error)
+            : undefined,
       }
       done = true
       value = { $error: error }
