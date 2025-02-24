@@ -12,6 +12,7 @@ import {
   RouteFunctions,
   RouteProtocol,
 } from './types.js'
+import { iterateHooks } from './utils/callHook.js'
 import { mergeHeaders } from './utils/mergeHeaders.js'
 import { mergeOptions } from './utils/mergeOptions.js'
 import { getShouldRetry, ShouldRetryFunction } from './utils/retry.js'
@@ -75,14 +76,23 @@ export function defineClient<
 }
 
 function createFetchFunction(client: Client): Fetch {
-  const { prefixUrl = location.origin, fetch = globalThis.fetch } =
-    client.options
+  const {
+    prefixUrl = location.origin,
+    fetch = globalThis.fetch,
+    hooks,
+  } = client.options
 
   const tryRequest = async (
     request: Request,
     shouldRetry: ShouldRetryFunction
   ) => {
-    const response = await fetch(request)
+    let response = await fetch(request)
+    for (const afterResponse of iterateHooks(hooks, 'afterResponse')) {
+      const newResponse = await afterResponse({ request, response })
+      if (newResponse instanceof Response) {
+        response = newResponse
+      }
+    }
     if (response.status >= 400) {
       const retryDelay = shouldRetry(response)
       if (retryDelay !== false) {
@@ -90,10 +100,14 @@ function createFetchFunction(client: Client): Fetch {
         await sleep(retryDelay)
         return tryRequest(request, shouldRetry)
       }
-      const error = new HTTPError(request, response)
-      throw response.headers.get('Content-Type') === 'application/json'
-        ? Object.assign(error, await response.json())
-        : error
+      let error = new HTTPError(request, response)
+      if (response.headers.get('Content-Type') === 'application/json') {
+        Object.assign(error, await response.json())
+      }
+      for (const beforeError of iterateHooks(hooks, 'beforeError')) {
+        error = await beforeError(error)
+      }
+      throw error
     }
     return response
   }

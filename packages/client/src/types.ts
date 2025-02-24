@@ -2,6 +2,7 @@ import type { RouteMethod } from '@alien-rpc/route'
 import type { InferParams, PathTemplate } from 'pathic'
 import type { Any } from 'radashi'
 import type { Client } from './client.js'
+import { HTTPError } from './error.js'
 import { RetryOptions } from './utils/retry.js'
 
 export type { RetryOptions }
@@ -222,6 +223,10 @@ export interface ClientOptions<TErrorMode extends ErrorMode = ErrorMode>
    */
   errorMode?: TErrorMode | undefined
   /**
+   * Called with the response and its request.
+   */
+  hooks?: RequestHooks | readonly RequestHooks[] | undefined
+  /**
    * The WebSocket connection ping interval (in seconds). Pings are only
    * sent if enough time has passed between messages, either sent or
    * received.
@@ -246,6 +251,33 @@ export interface ClientOptions<TErrorMode extends ErrorMode = ErrorMode>
    * @default 0 (disabled)
    */
   wsIdleTimeout?: number | undefined
+}
+
+type Promisable<T> = T | Promise<T>
+
+export type BeforeErrorHook = (error: HTTPError) => Promisable<HTTPError>
+
+export type AfterResponseHook = (args: {
+  request: Request
+  response: Response
+}) => Promisable<Response | void>
+
+export type RequestHooks = {
+  /**
+   * Called before a `HTTPError` is thrown. You can modify the error or
+   * return a new error.
+   */
+  beforeError?: BeforeErrorHook | readonly BeforeErrorHook[] | undefined
+  /**
+   * Called after a response is received. You can modify the response or
+   * return a new response. This runs before `beforeError` hooks.
+   */
+  afterResponse?: AfterResponseHook | readonly AfterResponseHook[] | undefined
+}
+
+export type RequestHookByName = {
+  beforeError: BeforeErrorHook
+  afterResponse: AfterResponseHook
 }
 
 export type RequestParams<
