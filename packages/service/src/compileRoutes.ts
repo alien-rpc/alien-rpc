@@ -97,7 +97,7 @@ export function compileRoutes(
     // and headers. Note that each “responder format” is responsible for
     // using these properties when creating its Response object.
     ctx.response = {
-      status: 200,
+      status: undefined,
       headers: new Headers(corsHeaders),
     }
 

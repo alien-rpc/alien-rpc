@@ -20,9 +20,10 @@ declare module '@hattip/compose' {
       /**
        * Set the HTTP status code.
        *
-       * @default 200
+       * Note: If this remains `undefined` by the end of the response, a
+       * default status of `200` will be used.
        */
-      status: number
+      status: number | undefined
       /**
        * Add your own HTTP response headers.
        *
