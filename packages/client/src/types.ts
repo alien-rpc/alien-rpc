@@ -345,6 +345,8 @@ export interface ResponseStream<T> extends AsyncIterableIterator<T> {
   previousPage?: (options?: RequestOptions) => ResponseStream<T>
 }
 
+export type ResponseStreamDirective = RoutePagination | { $error: object }
+
 export interface RouteResultCache {
   has: (path: string) => boolean
   get: (path: string) => unknown | undefined
