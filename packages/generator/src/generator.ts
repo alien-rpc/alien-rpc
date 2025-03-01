@@ -205,7 +205,7 @@ export default (rawOptions: Options) =>
     }
 
     const clientDefinitions: Record<string, string[]> = {}
-    const clientTypeImports = new Set<string>(['RequestOptions', 'Route'])
+    const clientTypeImports = new Set<string>(['Route'])
     const clientProtocols = new Set<string>()
     const clientFormats = new Set<string>()
 
@@ -229,10 +229,6 @@ export default (rawOptions: Options) =>
       argumentType: string,
       contentType: 'json' | 'json-qs'
     ) => {
-      // Treat {} as an empty object.
-      if (argumentType === '{}') {
-        argumentType = 'Record<string, never>'
-      }
       let schema = await project.generateRuntimeValidator(
         `type Request = ${argumentType}`
       )
@@ -314,31 +310,29 @@ export default (rawOptions: Options) =>
 
       serverDefinitions.push(`{${serverProperties.join(', ')}}`)
 
-      const resolvedPathParams = route.pathParams
-        ? stripTypeConstraints(route.pathParams)
-        : 'Record<string, never>'
+      const pathParamsType = resolveObjectType(route.pathParams)
+      const searchParamsType = bodylessMethods.has(route.method)
+        ? resolveObjectType(dataArgument)
+        : unknownType
+      const requestBodyType = !bodylessMethods.has(route.method)
+        ? resolveObjectType(dataArgument)
+        : unknownType
 
-      const resolvedRequestData =
-        dataArgument && dataArgument !== 'any' && dataArgument !== '{}'
-          ? stripTypeConstraints(dataArgument)
-          : 'Record<string, never>'
+      const clientArgs: string[] = []
+      if (requestBodyType !== unknownType) {
+        clientArgs.unshift(`body: ${requestBodyType}`)
+      }
+      if (clientArgs.length || searchParamsType !== unknownType) {
+        clientArgs.unshift(`searchParams: ${searchParamsType}`)
+      }
+      if (clientArgs.length || pathParamsType !== unknownType) {
+        clientArgs.unshift(`pathParams: ${pathParamsType}`)
+      }
 
       const clientParamsExist =
-        resolvedPathParams !== 'Record<string, never>' ||
-        resolvedRequestData !== 'Record<string, never>'
-
-      const clientParamsAreOptional =
-        !clientParamsExist ||
-        (utils.arePropertiesOptional(resolvedPathParams) &&
-          utils.arePropertiesOptional(resolvedRequestData))
-
-      const clientArgs: string[] = ['requestOptions?: RequestOptions']
-      if (clientParamsExist) {
-        clientTypeImports.add('RequestParams')
-        clientArgs.unshift(
-          `params${clientParamsAreOptional ? '?' : ''}: RequestParams<${resolvedPathParams}, ${resolvedRequestData}>${clientParamsAreOptional ? ' | null' : ''}`
-        )
-      }
+        pathParamsType !== unknownType ||
+        searchParamsType !== unknownType ||
+        requestBodyType !== unknownType
 
       let clientReturn = route.resultType
       if (route.format === 'json-seq') {
@@ -369,7 +363,7 @@ export default (rawOptions: Options) =>
       clientFormats.add(route.format)
       scopeDefinitions.push(
         (description || '') +
-          `export const ${methodName}: Route<"${clientPathname}", (${clientArgs.join(', ')}) => ${clientReturn}> = {${clientProperties.join(', ')}} as any`
+          `export const ${methodName}: Route<(${clientArgs.join(', ')}) => ${clientReturn}> = {${clientProperties.join(', ')}} as any`
       )
     }
 
@@ -567,6 +561,15 @@ function resolveImportPath(
     result = './' + result
   }
   return result
+}
+
+const unknownType = 'unknown'
+
+function resolveObjectType(type: string) {
+  if (type && type !== 'Record<string, never>') {
+    return stripTypeConstraints(type)
+  }
+  return unknownType
 }
 
 function stripTypeConstraints(type: string) {

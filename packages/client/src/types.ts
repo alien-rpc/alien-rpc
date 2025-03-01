@@ -1,9 +1,8 @@
 import type { RouteMethod } from '@alien-rpc/route'
-import type { InferParams, PathTemplate } from 'pathic'
-import type { Any } from 'radashi'
+import type { Any, Simplify } from 'radashi'
 import type { Client } from './client.js'
-import { HTTPError } from './error.js'
-import { RetryOptions } from './utils/retry.js'
+import type { HTTPError } from './error.js'
+import type { RetryOptions } from './utils/retry.js'
 
 export type { RetryOptions }
 
@@ -14,42 +13,78 @@ export type { RetryOptions }
  */
 export type ResponseParser<TResult = unknown> = (
   promisedResponse: Promise<Response>,
-  client: Client
+  client: Client,
 ) => TResult
+
+export type ResponseFormat<TResult = unknown> = {
+  name: string
+  parse: ResponseParser<TResult>
+}
 
 export type AnyRoute = Route | ws.Route
 
 type AnyFn = (...args: any) => any
 
-export type Route<
-  TPath extends string = string,
-  TCallee extends AnyFn = AnyFn,
-> = {
+export type Route<T extends AnyFn = AnyFn> = {
   method: RouteMethod
-  path: TPath
-  pathParams: string[]
+  path: string
+  pathParams?: string[]
   /**
    * The result format determines how the response must be handled for the
    * caller to receive the expected type.
    */
-  format: string | ResponseParser<Awaited<ReturnType<TCallee>>>
+  format: 'json' | 'response' | ResponseFormat<Awaited<ReturnType<T>>>
   /**
    * Equals 1 if the route has no search parameters or request body.
    */
   arity: 1 | 2
   /**
-   * The route's signature type. This property never actually exists at
-   * runtime.
+   * Type information for the route. Doesn't exist at runtime.
    */
-  callee: TCallee
+  __type: T
+}
+
+export declare namespace Route {
+  /**
+   * Shorthand for a route with no path parameters or search parameters.
+   */
+  export type withNoParams = Route<
+    (pathParams: unknown, searchParams: unknown, body: any) => any
+  >
+
+  /**
+   * Shorthand for a route with optional path parameters and search
+   * parameters.
+   */
+  export type withOptionalParams = Route<
+    (pathParams: {}, searchParams: {}, body: any) => any
+  >
+
+  /**
+   * Infer the path parameters and search parameters from a route definition.
+   *
+   * Notably, this excludes the request body.
+   */
+  export type inferParams<TRoute> = TRoute extends Route<
+    (
+      pathParams: infer TPathParams,
+      searchParams: infer TSearchParams,
+      body: any,
+    ) => any
+  >
+    ? MergeParams<Objectify<TPathParams>, Objectify<TSearchParams>>
+    : never
+
+  /**
+   * Infer the result type from a route definition.
+   */
+  export type inferResult<TRoute> = TRoute extends Route<infer TSignature>
+    ? ReturnType<TSignature>
+    : never
 }
 
 export type RouteProtocol<TRoute> = {
   name: string
-  getURL: (
-    route: TRoute,
-    options: ClientOptions
-  ) => string | ((params: {}) => string)
   createFunction: (route: TRoute, client: Client, routeName: string) => AnyFn
 }
 
@@ -67,6 +102,19 @@ export declare namespace ws {
     // Doesn't exist at runtime.
     callee: TCallee
   }
+
+  export type RouteFunction<
+    TRoute,
+    TErrorMode extends ErrorMode,
+  > = TRoute extends ws.Route<(...args: infer TArgs) => infer TResult>
+    ? (
+        ...args: TArgs
+      ) => TRoute['pattern'] extends 'r'
+        ? TErrorMode extends 'return'
+          ? Promise<[Error, undefined] | [undefined, Awaited<TResult>]>
+          : TResult
+        : TResult
+    : never
 
   export type RequestOptions = {
     signal?: AbortSignal | undefined
@@ -92,53 +140,6 @@ export declare namespace ws {
  * ```
  */
 export type ClientRoutes = Record<string, AnyRoute | Record<string, AnyRoute>>
-
-/**
- * Any valid URI pathname for the given set of client routes.
- */
-export type RoutePathname<TRoutes extends ClientRoutes> = //
-  [TRoutes] extends [Any]
-    ? string
-    : {
-        [K in keyof TRoutes]: TRoutes[K] extends infer TRoute
-          ? TRoute extends Route<infer TPath>
-            ? PathTemplate<TPath>
-            : TRoute extends Record<string, Route>
-              ? RoutePathname<TRoute>
-              : never
-          : never
-      }[keyof TRoutes]
-
-/**
- * The route definition for the given URI pathname and set of client routes.
- */
-export type FindRouteForPath<
-  TRoutes extends ClientRoutes,
-  TPath extends string,
-> = {
-  [K in keyof TRoutes]: TRoutes[K] extends infer TRoute
-    ? TRoute extends Route<infer P>
-      ? TPath extends PathTemplate<P>
-        ? TRoute
-        : never
-      : TRoute extends Record<string, Route>
-        ? FindRouteForPath<TRoute, TPath>
-        : never
-    : never
-}[keyof TRoutes]
-
-/**
- * The response type for the given URI pathname and set of client routes.
- */
-export type FindResponseForPath<
-  TRoutes extends ClientRoutes,
-  TPath extends string,
-> =
-  FindRouteForPath<TRoutes, TPath> extends infer TRoute
-    ? TRoute extends Route
-      ? ReturnType<TRoute['callee']>
-      : never
-    : never
 
 /**
  * Pagination links (relative to the client prefix URL) are received at the
@@ -310,15 +311,27 @@ type ExcludeObject<T> = T extends object
   : T
 
 /**
+ * Coerce `never` to `U`.
+ */
+type CoerceNever<T, U> = [T] extends [never] ? U : T
+
+/**
+ * Coerce `never` and `unknown` types to `Record<string, never>`.
+ */
+type Objectify<T> = CoerceNever<Extract<T, object>, Record<string, never>>
+
+/**
  * Merge two object types, with handling of `Record<string, never>` being
  * used to represent an empty object.
  */
-type MergeParams<TLeft extends object, TRight extends object> =
-  TLeft extends Record<string, never>
-    ? TRight
-    : TRight extends Record<string, never>
-      ? TLeft
-      : TLeft & TRight
+type MergeParams<
+  TLeft extends object,
+  TRight extends object,
+> = TLeft extends Record<string, never>
+  ? TRight
+  : TRight extends Record<string, never>
+    ? TLeft
+    : TLeft & TRight
 
 /**
  * Return true if type `T` has a single property.
@@ -356,25 +369,6 @@ export interface RouteResultCache {
 
 export type ErrorMode = 'return' | 'reject'
 
-export type PathsProxy<API extends ClientRoutes> = {
-  readonly [TKey in keyof API]: API[TKey] extends Route
-    ? PathBuilderForRoute<API[TKey]>
-    : API[TKey] extends Record<string, Route>
-      ? PathsProxy<API[TKey]>
-      : never
-}
-
-/**
- * Produces either a fixed URL or, for dynamic paths, a function that
- * converts a parameters object into a URL.
- */
-type PathBuilderForRoute<TRoute extends Route> =
-  InferParams<TRoute['path']> extends infer TParams
-    ? Record<string, never> extends TParams
-      ? string
-      : (params: TParams) => string
-    : never
-
 export type RouteFunctions<
   API extends ClientRoutes,
   TErrorMode extends ErrorMode,
@@ -384,25 +378,45 @@ export type RouteFunctions<
       [K in keyof API]: API[K] extends infer TRoute
         ? TRoute extends Record<string, AnyRoute>
           ? RouteFunctions<TRoute, TErrorMode>
-          : RouteFunction<TRoute, TErrorMode>
+          : TRoute extends Route
+            ? RouteFunction<TRoute, TErrorMode>
+            : ws.RouteFunction<TRoute, TErrorMode>
         : never
     }
 
-type RouteFunction<TRoute, TErrorMode extends ErrorMode> =
-  TRoute extends Route<string, (...args: infer TArgs) => infer TResult>
-    ? (
-        ...args: TArgs
-      ) => TResult extends ResponseStream<any>
-        ? TResult
-        : TErrorMode extends 'return'
-          ? Promise<[Error, undefined] | [undefined, Awaited<TResult>]>
-          : TResult
-    : TRoute extends ws.Route<(...args: infer TArgs) => infer TResult>
-      ? (
-          ...args: TArgs
-        ) => TRoute['pattern'] extends 'r'
-          ? TErrorMode extends 'return'
-            ? Promise<[Error, undefined] | [undefined, Awaited<TResult>]>
-            : TResult
-          : TResult
-      : never
+export type RouteTypeInfo<TRoute> = {
+  /** Type information for the route. Doesn't exist at runtime. */
+  __route: TRoute
+}
+
+type RouteFunction<TRoute, TErrorMode extends ErrorMode> = TRoute extends Route<
+  (
+    pathParams: infer TPathParams,
+    searchParams: infer TSearchParams,
+    body: infer TBody,
+  ) => infer TResult
+>
+  ? RequestParams<
+      Objectify<TPathParams>,
+      [TBody] extends [object] ? Objectify<TBody> : Objectify<TSearchParams>
+    > extends infer TParams
+    ? ([TParams] extends [Record<string, never>]
+        ? (
+            requestOptions?: RequestOptions,
+          ) => RouteFunctionResult<TResult, TErrorMode>
+        : (
+            params: Simplify<TParams>,
+            requestOptions?: RequestOptions,
+          ) => RouteFunctionResult<TResult, TErrorMode>) &
+        RouteTypeInfo<TRoute>
+    : never
+  : never
+
+type RouteFunctionResult<
+  TResult,
+  TErrorMode extends ErrorMode,
+> = TResult extends ResponseStream<any>
+  ? TResult
+  : TErrorMode extends 'return'
+    ? Promise<[Error, undefined] | [undefined, Awaited<TResult>]>
+    : TResult

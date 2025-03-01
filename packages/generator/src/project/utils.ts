@@ -101,25 +101,6 @@ export function createUtils(ts: typeof import('typescript')) {
       )
       return (sourceFile.statements[0] as ts.TypeAliasDeclaration).type
     },
-
-    /**
-     * Check if every property in an object literal type is optional.
-     */
-    arePropertiesOptional(objectLiteralType: string): boolean {
-      if (objectLiteralType === 'Record<string, never>') {
-        return true
-      }
-      const typeNode = this.parseTypeLiteral(objectLiteralType)
-      if (ts.isTypeLiteralNode(typeNode)) {
-        return typeNode.members.every(member => {
-          if (ts.isPropertySignature(member)) {
-            return member.questionToken !== undefined
-          }
-          return false
-        })
-      }
-      return false
-    },
   }
 }
 

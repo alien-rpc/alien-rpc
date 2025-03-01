@@ -13,9 +13,6 @@ function getWebSocketURL(options: ClientOptions) {
 
 export default {
   name: 'ws' as const,
-  getURL(_, options) {
-    return getWebSocketURL(options)
-  },
   createFunction(route, client, method) {
     if (route.pattern === 'n') {
       return (...params: any[]) =>

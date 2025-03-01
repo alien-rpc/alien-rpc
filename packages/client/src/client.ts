@@ -1,21 +1,26 @@
 /// <reference lib="dom.asynciterable" />
+import { bodylessMethods } from '@alien-rpc/route'
+import * as jsonQS from '@json-qs/json-qs'
+import { buildPath } from 'pathic'
 import { isObject, isString, shake, sleep } from 'radashi'
 import { HTTPError } from './error.js'
 import http from './protocols/http.js'
-import {
+import { kClientProperty, kRouteProperty } from './symbols.js'
+import type {
   ClientOptions,
   ClientRoutes,
   ErrorMode,
-  PathsProxy,
   RequestOptions,
   ResolvedClientOptions,
+  Route,
   RouteFunctions,
   RouteProtocol,
+  RouteTypeInfo,
 } from './types.js'
 import { iterateHooks } from './utils/callHook.js'
 import { mergeHeaders } from './utils/mergeHeaders.js'
 import { mergeOptions } from './utils/mergeOptions.js'
-import { getShouldRetry, ShouldRetryFunction } from './utils/retry.js'
+import { getShouldRetry, type ShouldRetryFunction } from './utils/retry.js'
 import { urlWithPathname } from './utils/url.js'
 
 type Fetch = (
@@ -34,7 +39,6 @@ type ClientPrototype<
 > = {
   readonly fetch: Fetch
   readonly options: Readonly<ResolvedClientOptions<TErrorMode>>
-  readonly paths: PathsProxy<API>
   ws?: WebSocket
 
   extend<TNewErrorMode extends ErrorMode = TErrorMode>(
@@ -63,9 +67,6 @@ export function defineClient<
     options: mergedOptions,
     get fetch() {
       return (fetch ??= createFetchFunction(client))
-    },
-    get paths() {
-      return createPathsProxy(routes, client.options) as any
     },
     extend(options) {
       return defineClient(routes, options, client)
@@ -164,25 +165,8 @@ function createClientProxy<API extends ClientRoutes>(
         }
         return value
       }
-      if (client.hasOwnProperty(key)) {
+      if (Object.hasOwn(client, key)) {
         return client[key as keyof ClientPrototype<API>]
-      }
-    },
-  })
-}
-
-function createPathsProxy<API extends ClientRoutes>(
-  routes: API,
-  options: ClientOptions
-): any {
-  return new Proxy(routes, {
-    get(routes, key) {
-      const route = routes[key as keyof API]
-      if (route) {
-        const protocol = resolveRouteProtocol(route)
-        return protocol
-          ? protocol.getURL(route, options)
-          : createPathsProxy(route as ClientRoutes, options)
       }
     },
   })
@@ -201,4 +185,52 @@ function resolveRouteProtocol(
   ) {
     return route.protocol
   }
+}
+
+/**
+ * Get the route information from a route function.
+ *
+ * Note: WebSocket routes are not supported by this function.
+ *
+ * ```ts
+ * const client = defineClient(myRoutes, {…})
+ * const route = getRouteFromFunction(client.myRoute)
+ * route.method // 'GET'
+ * route.path // '/my/route'
+ * ```
+ */
+export function getRouteFromFunction<TRoute extends Route>(
+  routeFunction: Function & RouteTypeInfo<TRoute>
+): TRoute {
+  return (routeFunction as any)[kRouteProperty]
+}
+
+/**
+ * Get an absolute URL string for a route function.
+ *
+ * Note: WebSocket routes are not supported by this function.
+ */
+export function buildRouteURL(
+  routeFunction: Function & RouteTypeInfo<Route.withOptionalParams>
+): string
+
+export function buildRouteURL<TRoute>(
+  routeFunction: Function & RouteTypeInfo<TRoute>,
+  params: Route.inferParams<TRoute>
+): string
+
+export function buildRouteURL(routeFunction: Function, params?: object | null) {
+  const route = getRouteFromFunction(routeFunction as any)
+  const { options }: Client = (routeFunction as any)[kClientProperty]
+  const { prefixUrl = location.origin } = options
+  const url = urlWithPathname(
+    prefixUrl,
+    route.pathParams ? buildPath(route.path, params ?? {}) : route.path
+  )
+  if (bodylessMethods.has(route.method) && params) {
+    url.search = jsonQS.encode(params as any, {
+      skippedKeys: route.pathParams,
+    })
+  }
+  return url.href
 }

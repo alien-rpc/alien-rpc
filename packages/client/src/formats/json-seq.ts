@@ -1,14 +1,13 @@
 import type { Client } from '../client.js'
 import type {
   RequestOptions,
+  ResponseFormat,
+  ResponseParser,
   ResponseStream,
   RoutePagination,
 } from '../types.js'
 
-export default function parseResponse(
-  promisedResponse: Promise<Response>,
-  client: Client
-) {
+const parseResponse = ((promisedResponse, client) => {
   async function* parse() {
     const response = await promisedResponse
     if (!response.body) {
@@ -29,7 +28,12 @@ export default function parseResponse(
   const responseStream: ResponseStream<any> = parse() as any
   responseStream.toArray = toArray
   return responseStream
-}
+}) satisfies ResponseParser
+
+export default {
+  name: 'json-seq',
+  parse: parseResponse,
+} satisfies ResponseFormat
 
 async function toArray(this: AsyncIterableIterator<any>) {
   const result = []
