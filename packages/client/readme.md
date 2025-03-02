@@ -1,6 +1,6 @@
 # @alien-rpc/client
 
-This package wraps a [Ky](https://github.com/sindresorhus/ky) client with a [Proxy](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy) that allows you to call your API routes as TypeScript methods.
+This package provides a client library for interacting with your API routes as TypeScript methods.
 
 > [!NOTE]
 > Typically, you should install `alien-rpc` instead of this package directly, then import from this package via `alien-rpc/client`.
@@ -17,7 +17,7 @@ Where you import the generated `API` namespace depends on what you passed to the
 
 ### Options
 
-The `defineClient` function also accepts an options object, which supports [all Ky options](https://github.com/sindresorhus/ky?tab=readme-ov-file#options) in addition to the following:
+The `defineClient` function also accepts an options object, which supports the following:
 
 - `errorMode`: A string that determines how errors are handled by the client.
   - `'reject'`: Errors reject the query promise. _This is the default._
@@ -37,7 +37,7 @@ Each client also has the following methods:
 - `getCachedResponse(path: string)`: Get a cached response for a given path.
 - `setCachedResponse(path: string, response: unknown)`: Manually set a cached response for a given path.
 - `unsetCachedResponse(path: string)`: Manually unset a cached response for a given path.
-- `request(input, init?)`: Send an unsafe request using the underlying [Ky](https://github.com/sindresorhus/ky) client. This is also a reference to the underlying `ky` client, so you can use all of its methods.
+- `request(input, init?)`: Send an unsafe request using the underlying `fetch` function. This is also a reference to the underlying `fetch` function, so you can use all of its methods.
 
 ## Example
 
