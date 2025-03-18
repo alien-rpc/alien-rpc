@@ -199,6 +199,17 @@ export interface RequestOptions
    * [2]: https://www.ietf.org/archive/id/draft-polli-ratelimit-headers-02.html#section-3.3
    */
   retry?: RetryOptions | number | undefined
+
+  /**
+   * The request timeout (in seconds). If response headers are not received
+   * within this time, the request will be aborted. Each retry has its own
+   * timeout. Set to `0` to disable timeouts.
+   *
+   * The timeout error is a `DOMException` with the name `"TimeoutError"`.
+   *
+   * @default 60
+   */
+  timeout?: number | undefined
 }
 
 export interface ClientOptions<TErrorMode extends ErrorMode = ErrorMode>

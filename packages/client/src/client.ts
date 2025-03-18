@@ -85,9 +85,25 @@ function createFetchFunction(client: Client): Fetch {
 
   const tryRequest = async (
     request: Request,
-    shouldRetry: ShouldRetryFunction
+    shouldRetry: ShouldRetryFunction,
+    timeout: number
   ) => {
-    let response = await fetch(request)
+    let response: Response
+    if (timeout > 0) {
+      const timeoutCtrl = new AbortController()
+      const timeoutId = setTimeout(() => {
+        timeoutCtrl.abort(new DOMException('Request timed out', 'TimeoutError'))
+      }, timeout * 1000)
+
+      response = await fetch(
+        new Request(request, {
+          signal: AbortSignal.any([timeoutCtrl.signal, request.signal]),
+        })
+      )
+      clearTimeout(timeoutId)
+    } else {
+      response = await fetch(request)
+    }
     for (const afterResponse of iterateHooks(hooks, 'afterResponse')) {
       const newResponse = await afterResponse({ request, response })
       if (newResponse instanceof Response) {
@@ -99,7 +115,7 @@ function createFetchFunction(client: Client): Fetch {
       if (retryDelay !== false) {
         request.signal.throwIfAborted()
         await sleep(retryDelay)
-        return tryRequest(request, shouldRetry)
+        return tryRequest(request, shouldRetry, timeout)
       }
       let error = new HTTPError(request, response)
       if (response.headers.get('Content-Type') === 'application/json') {
@@ -113,7 +129,7 @@ function createFetchFunction(client: Client): Fetch {
     return response
   }
 
-  return (input, { query, headers, json, ...init } = {}) => {
+  return (input, { query, headers, json, timeout, ...init } = {}) => {
     headers = mergeHeaders(client.options.headers, headers)
     if (json) {
       headers ??= new Headers()
@@ -135,7 +151,11 @@ function createFetchFunction(client: Client): Fetch {
       ...(init && shake(init)),
       headers,
     })
-    return tryRequest(request, getShouldRetry(request, client.options.retry))
+    return tryRequest(
+      request,
+      getShouldRetry(request, client.options.retry),
+      timeout ?? 60
+    )
   }
 }
 
