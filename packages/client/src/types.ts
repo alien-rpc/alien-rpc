@@ -13,7 +13,7 @@ export type { RetryOptions }
  */
 export type ResponseParser<TResult = unknown> = (
   promisedResponse: Promise<Response>,
-  client: Client,
+  client: Client
 ) => TResult
 
 export type ResponseFormat<TResult = unknown> = {
@@ -65,22 +65,22 @@ export declare namespace Route {
    *
    * Notably, this excludes the request body.
    */
-  export type inferParams<TRoute> = TRoute extends Route<
-    (
-      pathParams: infer TPathParams,
-      searchParams: infer TSearchParams,
-      body: any,
-    ) => any
-  >
-    ? MergeParams<Objectify<TPathParams>, Objectify<TSearchParams>>
-    : never
+  export type inferParams<TRoute> =
+    TRoute extends Route<
+      (
+        pathParams: infer TPathParams,
+        searchParams: infer TSearchParams,
+        body: any
+      ) => any
+    >
+      ? MergeParams<Objectify<TPathParams>, Objectify<TSearchParams>>
+      : never
 
   /**
    * Infer the result type from a route definition.
    */
-  export type inferResult<TRoute> = TRoute extends Route<infer TSignature>
-    ? ReturnType<TSignature>
-    : never
+  export type inferResult<TRoute> =
+    TRoute extends Route<infer TSignature> ? ReturnType<TSignature> : never
 }
 
 export type RouteProtocol<TRoute> = {
@@ -103,18 +103,16 @@ export declare namespace ws {
     callee: TCallee
   }
 
-  export type RouteFunction<
-    TRoute,
-    TErrorMode extends ErrorMode,
-  > = TRoute extends ws.Route<(...args: infer TArgs) => infer TResult>
-    ? (
-        ...args: TArgs
-      ) => TRoute['pattern'] extends 'r'
-        ? TErrorMode extends 'return'
-          ? Promise<[Error, undefined] | [undefined, Awaited<TResult>]>
+  export type RouteFunction<TRoute, TErrorMode extends ErrorMode> =
+    TRoute extends ws.Route<(...args: infer TArgs) => infer TResult>
+      ? (
+          ...args: TArgs
+        ) => TRoute['pattern'] extends 'r'
+          ? TErrorMode extends 'return'
+            ? Promise<[Error, undefined] | [undefined, Awaited<TResult>]>
+            : TResult
           : TResult
-        : TResult
-    : never
+      : never
 
   export type RequestOptions = {
     signal?: AbortSignal | undefined
@@ -184,11 +182,12 @@ export interface RequestOptions
    * will remain in place.
    *
    * If the response provides an HTTP status contained in
-   * `afterStatusCodes`, Ky will wait until the date or timeout given in
-   * the [`Retry-After`][1] header has passed to retry the request. If
-   * `Retry-After` is missing, the non-standard [`RateLimit-Reset`][2]
-   * header is used in its place as a fallback. If the provided status code
-   * is not in the list, the [`Retry-After`][1] header will be ignored.
+   * `afterStatusCodes`, the client will wait until the date or timeout
+   * given in the [`Retry-After`][1] header has passed to retry the
+   * request. If `Retry-After` is missing, the non-standard
+   * [`RateLimit-Reset`][2] header is used in its place as a fallback. If
+   * the provided status code is not in the list, the [`Retry-After`][1]
+   * header will be ignored.
    *
    * If [`Retry-After`][1] header is greater than `maxRetryAfter`, it will
    * cancel the request.
@@ -335,14 +334,12 @@ type Objectify<T> = CoerceNever<Extract<T, object>, Record<string, never>>
  * Merge two object types, with handling of `Record<string, never>` being
  * used to represent an empty object.
  */
-type MergeParams<
-  TLeft extends object,
-  TRight extends object,
-> = TLeft extends Record<string, never>
-  ? TRight
-  : TRight extends Record<string, never>
-    ? TLeft
-    : TLeft & TRight
+type MergeParams<TLeft extends object, TRight extends object> =
+  TLeft extends Record<string, never>
+    ? TRight
+    : TRight extends Record<string, never>
+      ? TLeft
+      : TLeft & TRight
 
 /**
  * Return true if type `T` has a single property.
@@ -400,34 +397,33 @@ export type RouteTypeInfo<TRoute> = {
   __route: TRoute
 }
 
-type RouteFunction<TRoute, TErrorMode extends ErrorMode> = TRoute extends Route<
-  (
-    pathParams: infer TPathParams,
-    searchParams: infer TSearchParams,
-    body: infer TBody,
-  ) => infer TResult
->
-  ? RequestParams<
-      Objectify<TPathParams>,
-      [TBody] extends [object] ? Objectify<TBody> : Objectify<TSearchParams>
-    > extends infer TParams
-    ? ([TParams] extends [Record<string, never>]
-        ? (
-            requestOptions?: RequestOptions,
-          ) => RouteFunctionResult<TResult, TErrorMode>
-        : (
-            params: Simplify<TParams>,
-            requestOptions?: RequestOptions,
-          ) => RouteFunctionResult<TResult, TErrorMode>) &
-        RouteTypeInfo<TRoute>
+type RouteFunction<TRoute, TErrorMode extends ErrorMode> =
+  TRoute extends Route<
+    (
+      pathParams: infer TPathParams,
+      searchParams: infer TSearchParams,
+      body: infer TBody
+    ) => infer TResult
+  >
+    ? RequestParams<
+        Objectify<TPathParams>,
+        [TBody] extends [object] ? Objectify<TBody> : Objectify<TSearchParams>
+      > extends infer TParams
+      ? ([TParams] extends [Record<string, never>]
+          ? (
+              requestOptions?: RequestOptions
+            ) => RouteFunctionResult<TResult, TErrorMode>
+          : (
+              params: Simplify<TParams>,
+              requestOptions?: RequestOptions
+            ) => RouteFunctionResult<TResult, TErrorMode>) &
+          RouteTypeInfo<TRoute>
+      : never
     : never
-  : never
 
-type RouteFunctionResult<
-  TResult,
-  TErrorMode extends ErrorMode,
-> = TResult extends ResponseStream<any>
-  ? TResult
-  : TErrorMode extends 'return'
-    ? Promise<[Error, undefined] | [undefined, Awaited<TResult>]>
-    : TResult
+type RouteFunctionResult<TResult, TErrorMode extends ErrorMode> =
+  TResult extends ResponseStream<any>
+    ? TResult
+    : TErrorMode extends 'return'
+      ? Promise<[Error, undefined] | [undefined, Awaited<TResult>]>
+      : TResult
