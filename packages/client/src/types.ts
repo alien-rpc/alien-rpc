@@ -202,7 +202,8 @@ export interface RequestOptions
   /**
    * The request timeout (in seconds). If response headers are not received
    * within this time, the request will be aborted. Each retry has its own
-   * timeout. Set to `0` to disable timeouts.
+   * timeout. Set to `0` to disable timeouts. Can not be greater than
+   * `2147483647`.
    *
    * The timeout error is a `DOMException` with the name `"TimeoutError"`.
    *
