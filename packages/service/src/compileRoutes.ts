@@ -20,7 +20,7 @@ import {
   isDecodeCheckError,
   isDecodeError,
 } from './errorUtils.js'
-import { JSONCodable } from './internal/types.js'
+import { JSONCodable } from './json/types.js'
 import { BadRequestError, InternalServerError } from './response.js'
 import type { Route, RouteList } from './types.js'
 import { isWebSocketRoute } from './websocket.js'

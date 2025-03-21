@@ -2,12 +2,8 @@ import type { RouteMethod, RouteResultFormat } from '@alien-rpc/route'
 import type { RequestContext, RequestHandlerStack } from '@hattip/compose'
 import type { TAnySchema } from '@sinclair/typebox'
 import type { InferParamNames, InferParamsArray } from 'pathic'
-import type {
-  JSON,
-  JSONCodable,
-  JSONObjectCodable,
-  Promisable,
-} from './internal/types.js'
+import type { Promisable } from './internal/types.js'
+import type { JSON, JSONCodable, JSONObjectCodable } from './json/types.js'
 import type { PaginationLinks } from './pagination.js'
 import type { ws } from './websocket.js'
 

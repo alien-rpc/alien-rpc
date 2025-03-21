@@ -3,7 +3,7 @@ import {
   TransformDecodeCheckError,
   TransformDecodeError,
 } from '@sinclair/typebox/value'
-import { JsonResponse } from './response.js'
+import { JSONResponse } from './response.js'
 
 export type { ValueError }
 
@@ -49,7 +49,7 @@ export function getStackTrace(error: Error, constructor?: Function) {
 
 export function getErrorFromResponse(response: Response) {
   const { message = 'Thrown response', ...props } =
-    response instanceof JsonResponse ? response.decodedBody : {}
+    response instanceof JSONResponse ? response.decodedBody : {}
   const error = new Error(message)
   Object.assign(error, props)
   if (process.env.NODE_ENV !== 'production' && 'stack' in response) {

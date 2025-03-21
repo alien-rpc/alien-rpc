@@ -1,6 +1,6 @@
 import { getStackTrace } from './errorUtils.js'
 import { Headers } from './headers.js'
-import { JSONCodable } from './internal/types.js'
+import { JSONCodable } from './json/types.js'
 
 class TracedResponse extends Response {
   /**
@@ -18,7 +18,7 @@ class TracedResponse extends Response {
  * Stringify the `body` argument with `JSON.stringify` and set the
  * `Content-Type` header to `application/json`.
  */
-export class JsonResponse<T extends JSONCodable> extends TracedResponse {
+export class JSONResponse<T extends JSONCodable> extends TracedResponse {
   constructor(
     readonly decodedBody: T,
     options?: { status?: number; headers?: Headers }
@@ -40,7 +40,7 @@ type ErrorDetails = { message: string } & Record<string, JSONCodable>
  *
  * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500
  */
-export class InternalServerError extends JsonResponse<ErrorDetails> {
+export class InternalServerError extends JSONResponse<ErrorDetails> {
   constructor(error: ErrorDetails, headers?: Headers) {
     super(error, { status: 500, headers })
   }
@@ -51,7 +51,7 @@ export class InternalServerError extends JsonResponse<ErrorDetails> {
  *
  * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400
  */
-export class BadRequestError extends JsonResponse<ErrorDetails> {
+export class BadRequestError extends JSONResponse<ErrorDetails> {
   constructor(error: ErrorDetails, headers?: Headers) {
     super(error, { status: 400, headers })
   }

@@ -1,11 +1,11 @@
-import type { JSONCodable } from './internal/types.js'
+import { JSONCodable } from './types.js'
 
 /**
  * Using `JsonStream` makes it easy to push JSON-serializable values to the
  * client over a long-lived HTTP request or WebSocket connection. And yes,
  * you can return a `JsonStream` from your alien-rpc route!
  */
-export class JsonStream<T extends JSONCodable | undefined>
+export class JSONStream<T extends JSONCodable | undefined>
   implements AsyncIterable<T>
 {
   #readable: ReadableStream<T>

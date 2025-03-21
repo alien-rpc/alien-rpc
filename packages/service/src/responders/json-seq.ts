@@ -1,5 +1,5 @@
 import { getErrorFromResponse, getStackTrace } from '../errorUtils.js'
-import type { JSON } from '../internal/types.js'
+import type { JSON } from '../json/types.js'
 import { resolvePaginationLink } from '../pagination.js'
 import type {
   RouteDefinition,

@@ -16,8 +16,9 @@ import {
   type ValueError,
 } from './errorUtils.js'
 import { importRoute } from './internal/importRoute.js'
-import type { JSONCodable, Promisable } from './internal/types.js'
-import { JsonResponse } from './response.js'
+import type { Promisable } from './internal/types.js'
+import type { JSONCodable } from './json/types.js'
+import { JSONResponse } from './response.js'
 import type { RouteList } from './types.js'
 
 export function isWebSocketRoute(route: any): route is ws.Route {
@@ -179,7 +180,7 @@ export namespace ws {
                   code = error.status,
                   message = error.statusText,
                   ...data
-                } = error instanceof JsonResponse ? error.decodedBody : {}
+                } = error instanceof JSONResponse ? error.decodedBody : {}
 
                 peer.send({
                   id,
