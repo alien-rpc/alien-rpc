@@ -157,6 +157,7 @@ export type { InferParams, PathTemplate } from 'pathic'
 export interface ResolvedClientOptions<TErrorMode extends ErrorMode = ErrorMode>
   extends ClientOptions<TErrorMode> {
   errorMode: TErrorMode
+  headers: Headers
 }
 
 // Allow undefined header values.

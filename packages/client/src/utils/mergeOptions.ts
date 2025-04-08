@@ -1,4 +1,4 @@
-import { ClientOptions } from '../types.js'
+import { ClientOptions, ResolvedClientOptions } from '../types.js'
 import { mergeHeaders } from './mergeHeaders.js'
 import { mergeHooks } from './mergeHooks.js'
 import { mergeRetryOptions } from './retry.js'
@@ -6,7 +6,7 @@ import { mergeRetryOptions } from './retry.js'
 export function mergeOptions(
   parentOptions: ClientOptions<any> | undefined,
   options: ClientOptions<any>
-) {
+): ResolvedClientOptions<any> {
   return {
     ...parentOptions,
     ...options,
