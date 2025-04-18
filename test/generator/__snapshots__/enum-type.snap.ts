@@ -10,8 +10,12 @@ enum ShapeType {
   Circle = "circle",
 }
 
+enum SingleMember {
+  justThis,
+}
+
 export const createShape = route("/shapes").post(
-  async ({ type }: { type: ShapeType }) => {
+  async ({ type }: { type: ShapeType; single?: SingleMember }) => {
     return {
       type,
       rectangle: ShapeType.Rectangle,
@@ -29,12 +33,15 @@ export enum ShapeType {
   Rectangle = "rectangle",
   Circle = "circle",
 }
+export enum SingleMember {
+  justThis,
+}
 
 export const createShape: Route<
   (
     pathParams: unknown,
     searchParams: unknown,
-    body: { type: ShapeType },
+    body: { type: ShapeType; single?: SingleMember | undefined },
   ) => Promise<{
     type: ShapeType;
     rectangle: ShapeType.Rectangle;
@@ -53,6 +60,11 @@ enum EnumShapeType {
 }
 export const ShapeType = Type.Enum(EnumShapeType);
 
+enum EnumSingleMember {
+  justThis,
+}
+export const SingleMember = Type.Enum(EnumSingleMember);
+
 export default [
   {
     path: "/shapes",
@@ -63,6 +75,7 @@ export default [
     requestSchema: Type.Object(
       {
         type: ShapeType,
+        single: Type.Optional(Type.Union([SingleMember, Type.Undefined()])),
       },
       { additionalProperties: false },
     ),

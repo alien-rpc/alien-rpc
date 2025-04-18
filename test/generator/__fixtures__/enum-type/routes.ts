@@ -5,8 +5,12 @@ enum ShapeType {
   Circle = 'circle',
 }
 
+enum SingleMember {
+  justThis,
+}
+
 export const createShape = route('/shapes').post(
-  async ({ type }: { type: ShapeType }) => {
+  async ({ type }: { type: ShapeType; single?: SingleMember }) => {
     return {
       type,
       rectangle: ShapeType.Rectangle,

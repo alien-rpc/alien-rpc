@@ -46,6 +46,14 @@ export function collectReferencedTypes(
         collect(nestedType)
       }
 
+      if (symbol && ts.isEnumMember(symbol) && declaration) {
+        const enumDeclaration = declaration.parent as ts.EnumDeclaration
+        if (!referencedTypes.has(enumDeclaration.symbol)) {
+          const enumType = typeChecker.getTypeOfSymbol(enumDeclaration.symbol)
+          collect(enumType)
+        }
+      }
+
       if (
         symbol &&
         symbol === referencedSymbol &&
