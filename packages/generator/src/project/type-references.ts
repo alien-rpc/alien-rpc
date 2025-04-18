@@ -56,7 +56,12 @@ export function collectReferencedTypes(
       ) {
         let typeString: string
         if (ts.isRegularEnum(symbol)) {
-          typeString = 'export ' + declaration!.getText()
+          if (!declaration) {
+            throw new Error('Enum declaration not found')
+          }
+          typeString =
+            (ts.isExportedNode(declaration) ? '' : 'export ') +
+            declaration.getText()
         } else {
           typeString = `export type ${symbol.name} = `
           if (ts.isInterfaceType(symbol)) {
