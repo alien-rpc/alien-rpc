@@ -242,7 +242,7 @@ function processSourceFile(
 
       const exports = isExport(node) ? 'export ' : ''
       const members = node.members.map(member => member.getText()).join(', ')
-      const enumType = `${exports}enum Enum${node.name.getText()} { ${members} }`
+      const enumType = `enum Enum${node.name.getText()} { ${members} }`
 
       const staticType =
         !options.emitConstOnly &&

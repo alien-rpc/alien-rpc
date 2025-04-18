@@ -11,6 +11,7 @@ export function createUtils(ts: typeof import('typescript')) {
     'getTextOfJSDocComment',
     'factory',
     'SyntaxKind',
+    'SymbolFlags',
     'NodeFlags',
     'TypeFlags',
     'TypeFormatFlags',
@@ -53,6 +54,14 @@ export function createUtils(ts: typeof import('typescript')) {
         symbol.flags & ts.SymbolFlags.TypeLiteral ||
           symbol.flags & ts.SymbolFlags.ObjectLiteral
       )
+    },
+
+    isEnumMember(symbol: ts.Symbol): boolean {
+      return Boolean(symbol.flags & ts.SymbolFlags.EnumMember)
+    },
+
+    isRegularEnum(symbol: ts.Symbol): boolean {
+      return Boolean(symbol.flags & ts.SymbolFlags.RegularEnum)
     },
 
     isAsyncGeneratorType(type: ts.Type): type is ts.TypeReference {
