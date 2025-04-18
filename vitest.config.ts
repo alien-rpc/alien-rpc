@@ -1,7 +1,8 @@
-import os from 'os'
+import os from 'node:os'
+import path from 'node:path'
 import { defineConfig } from 'vitest/config'
 
-const resolve = (path: string) => new URL(import.meta.resolve(path)).pathname
+const resolve = (file: string) => path.resolve(import.meta.dirname, file)
 
 const alias = {
   '@alien-rpc/client/formats/json-seq': resolve(
