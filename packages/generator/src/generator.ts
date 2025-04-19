@@ -364,7 +364,7 @@ export default (rawOptions: Options) =>
       clientFormats.add(route.format)
       scopeDefinitions.push(
         (description || '') +
-          `export const ${methodName}: Route<(${clientArgs.join(', ')}) => ${clientReturn}> = {${clientProperties.join(', ')}} as any`
+          `${methodName}: {${clientProperties.join(', ')}} as Route<(${clientArgs.join(', ')}) => ${clientReturn}>`
       )
     }
 
@@ -421,7 +421,7 @@ export default (rawOptions: Options) =>
       clientTypeImports.add('ws')
       scopeDefinitions.push(
         (description || '') +
-          `export const ${methodName}: ws.Route<(${clientArgs.join(', ')}) => ${clientReturn}> = {${clientProperties.join(', ')}} as any`
+          `${methodName}: {${clientProperties.join(', ')}} as ws.Route<(${clientArgs.join(', ')}) => ${clientReturn}>`
       )
     }
 
@@ -508,15 +508,15 @@ export default (rawOptions: Options) =>
         ),
         ...Object.entries(clientDefinitions).map(
           ([scopeName, methodDefinitions]) => {
-            const body = methodDefinitions.join('\n\n')
-            if (scopeName) {
-              return dedent`
-                export namespace ${scopeName} {
-                  ${body}
-                }
-              `
-            }
-            return body
+            const scopeDeclaration = scopeName
+              ? `const ${scopeName} =`
+              : `default`
+
+            return dedent`
+              export ${scopeDeclaration} {
+                ${methodDefinitions.join(',\n\n')}
+              }
+            `
           }
         ),
       ]).join('\n\n')
