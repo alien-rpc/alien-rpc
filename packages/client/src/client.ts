@@ -53,7 +53,7 @@ export type Client<
 
 export function defineClient<
   API extends ClientRoutes,
-  TErrorMode extends ErrorMode = ErrorMode,
+  TErrorMode extends ErrorMode = 'reject',
 >(
   routes: API,
   options: ClientOptions<TErrorMode>,
