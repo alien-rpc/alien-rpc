@@ -415,10 +415,15 @@ type RouteFunction<TRoute, TErrorMode extends ErrorMode> =
           ? (
               requestOptions?: RequestOptions
             ) => RouteFunctionResult<TResult, TErrorMode>
-          : (
-              params: Simplify<TParams>,
-              requestOptions?: RequestOptions
-            ) => RouteFunctionResult<TResult, TErrorMode>) &
+          : Record<string, never> extends TParams
+            ? (
+                params?: Simplify<TParams>,
+                requestOptions?: RequestOptions
+              ) => RouteFunctionResult<TResult, TErrorMode>
+            : (
+                params: Simplify<TParams>,
+                requestOptions?: RequestOptions
+              ) => RouteFunctionResult<TResult, TErrorMode>) &
           RouteTypeInfo<TRoute>
       : never
     : never
