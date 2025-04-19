@@ -56,7 +56,7 @@ export function defineClient<
   TErrorMode extends ErrorMode = 'reject',
 >(
   routes: API,
-  options: ClientOptions<TErrorMode>,
+  options?: ClientOptions<TErrorMode>,
   parent?: Client | undefined
 ): Client<API, TErrorMode> {
   const mergedOptions = mergeOptions(parent?.options, options)
