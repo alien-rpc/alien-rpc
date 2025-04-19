@@ -123,7 +123,7 @@ async function getTestClient() {
 
   const handler = compileRoutes(serverRoutes)
 
-  return defineClient(clientRoutes, {
+  return defineClient(clientRoutes.default, {
     prefixUrl: 'http://example.com/',
     fetch: createTestClient({
       handler: compose(handler) as CreateTestClientArgs['handler'],
