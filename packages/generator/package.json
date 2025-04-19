@@ -1,6 +1,6 @@
 {
   "name": "@alien-rpc/generator",
-  "version": "0.3.0-beta.15",
+  "version": "0.3.0-beta.16",
   "description": "Code generator for alien-rpc",
   "type": "module",
   "files": [
