@@ -39,26 +39,26 @@ export const getPost = route("/posts/:id").get(async (id): Promise<Post> => {
 /**
  * client/generated/api.ts
  */
-import type { RequestOptions, RequestParams, Route } from "@alien-rpc/client";
+import type { Route } from "@alien-rpc/client";
 
-export const getPost: Route<
-  "posts/:id",
-  (
-    params: RequestParams<{ id: string }, Record<string, never>>,
-    requestOptions?: RequestOptions,
-  ) => Promise<{
-    id: string;
-    title: string;
-    body: string;
-    author: { id: string; name: string };
-  }>
-> = {
-  path: "posts/:id",
-  method: "GET",
-  pathParams: ["id"],
-  arity: 2,
-  format: "json",
-} as any;
+export default {
+  getPost: {
+    path: "posts/:id",
+    method: "GET",
+    pathParams: ["id"],
+    arity: 2,
+    format: "json",
+  } as Route<
+    (pathParams: {
+      id: string;
+    }) => Promise<{
+      id: string;
+      title: string;
+      body: string;
+      author: { id: string; name: string };
+    }>
+  >,
+};
 
 /**
  * server/generated/api.ts

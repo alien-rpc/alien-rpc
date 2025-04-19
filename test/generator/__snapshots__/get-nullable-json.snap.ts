@@ -15,21 +15,19 @@ export const getUserById = route("/users/:id").get(async (id: number) => {
 /**
  * client/generated/api.ts
  */
-import type { RequestOptions, RequestParams, Route } from "@alien-rpc/client";
+import type { Route } from "@alien-rpc/client";
 
-export const getUserById: Route<
-  "users/:id",
-  (
-    params: RequestParams<{ id: number }, Record<string, never>>,
-    requestOptions?: RequestOptions,
-  ) => Promise<{ id: 1; name: "John" } | null>
-> = {
-  path: "users/:id",
-  method: "GET",
-  pathParams: ["id"],
-  arity: 2,
-  format: "json",
-} as any;
+export default {
+  getUserById: {
+    path: "users/:id",
+    method: "GET",
+    pathParams: ["id"],
+    arity: 2,
+    format: "json",
+  } as Route<
+    (pathParams: { id: number }) => Promise<{ id: 1; name: "John" } | null>
+  >,
+};
 
 /**
  * server/generated/api.ts

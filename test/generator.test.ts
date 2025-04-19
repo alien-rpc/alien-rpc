@@ -186,13 +186,15 @@ describe.concurrent('generator', () => {
       }, { additionalProperties: false }), requestSchema: Type.Record(Type.String(), Type.Never())}] as const
 
       // client/api.ts
-      import type { RequestOptions, RequestParams, Route } from "@alien-rpc/client"
+      import type { Route } from "@alien-rpc/client"
 
       export type UUID = string
 
-      export const getAuthor: Route<"authors/:id", (params: RequestParams<{ id: UUID }, Record<string, never>>, requestOptions?: RequestOptions) => Promise<undefined>> = {path: "authors/:id", method: "GET", pathParams: ["id"], arity: 2, format: "json"} as any
+      export default {
+        getAuthor: {path: "authors/:id", method: "GET", pathParams: ["id"], arity: 2, format: "json"} as Route<(pathParams: { id: UUID }) => Promise<undefined>>,
 
-      export const getBook: Route<"books/:id", (params: RequestParams<{ id: UUID }, Record<string, never>>, requestOptions?: RequestOptions) => Promise<undefined>> = {path: "books/:id", method: "GET", pathParams: ["id"], arity: 2, format: "json"} as any"
+        getBook: {path: "books/:id", method: "GET", pathParams: ["id"], arity: 2, format: "json"} as Route<(pathParams: { id: UUID }) => Promise<undefined>>
+      }"
     `)
 
     // Add a new getBooks route.
@@ -227,15 +229,17 @@ describe.concurrent('generator', () => {
       }, { additionalProperties: false }), requestSchema: Type.Record(Type.String(), Type.Never())}, {path: "/books", method: "GET", name: "getBooks", import: () => import("./api/books.js"), format: "json", requestSchema: Type.Record(Type.String(), Type.Never())}] as const
 
       // client/api.ts
-      import type { RequestOptions, RequestParams, Route } from "@alien-rpc/client"
+      import type { Route } from "@alien-rpc/client"
 
       export type UUID = string
 
-      export const getAuthor: Route<"authors/:id", (params: RequestParams<{ id: UUID }, Record<string, never>>, requestOptions?: RequestOptions) => Promise<undefined>> = {path: "authors/:id", method: "GET", pathParams: ["id"], arity: 2, format: "json"} as any
+      export default {
+        getAuthor: {path: "authors/:id", method: "GET", pathParams: ["id"], arity: 2, format: "json"} as Route<(pathParams: { id: UUID }) => Promise<undefined>>,
 
-      export const getBook: Route<"books/:id", (params: RequestParams<{ id: UUID }, Record<string, never>>, requestOptions?: RequestOptions) => Promise<undefined>> = {path: "books/:id", method: "GET", pathParams: ["id"], arity: 2, format: "json"} as any
+        getBook: {path: "books/:id", method: "GET", pathParams: ["id"], arity: 2, format: "json"} as Route<(pathParams: { id: UUID }) => Promise<undefined>>,
 
-      export const getBooks: Route<"books", (requestOptions?: RequestOptions) => Promise<[]>> = {path: "books", method: "GET", arity: 1, format: "json"} as any"
+        getBooks: {path: "books", method: "GET", arity: 1, format: "json"} as Route<() => Promise<[]>>
+      }"
     `)
 
     // Remove the getBooks route.
@@ -269,13 +273,15 @@ describe.concurrent('generator', () => {
       }, { additionalProperties: false }), requestSchema: Type.Record(Type.String(), Type.Never())}] as const
 
       // client/api.ts
-      import type { RequestOptions, RequestParams, Route } from "@alien-rpc/client"
+      import type { Route } from "@alien-rpc/client"
 
       export type UUID = string
 
-      export const getAuthor: Route<"authors/:id", (params: RequestParams<{ id: UUID }, Record<string, never>>, requestOptions?: RequestOptions) => Promise<undefined>> = {path: "authors/:id", method: "GET", pathParams: ["id"], arity: 2, format: "json"} as any
+      export default {
+        getAuthor: {path: "authors/:id", method: "GET", pathParams: ["id"], arity: 2, format: "json"} as Route<(pathParams: { id: UUID }) => Promise<undefined>>,
 
-      export const getBook: Route<"books/:id", (params: RequestParams<{ id: UUID }, Record<string, never>>, requestOptions?: RequestOptions) => Promise<undefined>> = {path: "books/:id", method: "GET", pathParams: ["id"], arity: 2, format: "json"} as any"
+        getBook: {path: "books/:id", method: "GET", pathParams: ["id"], arity: 2, format: "json"} as Route<(pathParams: { id: UUID }) => Promise<undefined>>
+      }"
     `)
   })
 

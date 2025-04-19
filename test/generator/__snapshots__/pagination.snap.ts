@@ -39,24 +39,22 @@ export const listPosts = route("/posts").get(async function* ({
 /**
  * client/generated/api.ts
  */
-import type {
-  RequestOptions,
-  RequestParams,
-  ResponseStream,
-  Route,
-} from "@alien-rpc/client";
+import type { ResponseStream, Route } from "@alien-rpc/client";
 import jsonSeq from "@alien-rpc/client/formats/json-seq";
 
-export const listPosts: Route<
-  "posts",
-  (
-    params?: RequestParams<
-      Record<string, never>,
-      { page?: number | undefined; limit?: number | undefined }
-    > | null,
-    requestOptions?: RequestOptions,
-  ) => ResponseStream<{ id: number; title: string; content: string }>
-> = { path: "posts", method: "GET", arity: 2, format: jsonSeq } as any;
+export default {
+  listPosts: {
+    path: "posts",
+    method: "GET",
+    arity: 2,
+    format: jsonSeq,
+  } as Route<
+    (
+      pathParams: unknown,
+      searchParams: { page?: number | undefined; limit?: number | undefined },
+    ) => ResponseStream<{ id: number; title: string; content: string }>
+  >,
+};
 
 /**
  * server/generated/api.ts

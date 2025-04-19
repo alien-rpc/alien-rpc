@@ -19,12 +19,16 @@ export const funFact = route("/fun-fact").get(() => {
 /**
  * client/generated/api.ts
  */
-import type { RequestOptions, Route } from "@alien-rpc/client";
+import type { Route } from "@alien-rpc/client";
 
-export const funFact: Route<
-  "v1/fun-fact",
-  (requestOptions?: RequestOptions) => Promise<string>
-> = { path: "v1/fun-fact", method: "GET", arity: 1, format: "json" } as any;
+export default {
+  funFact: {
+    path: "v1/fun-fact",
+    method: "GET",
+    arity: 1,
+    format: "json",
+  } as Route<() => Promise<string>>,
+};
 
 /**
  * server/generated/api.ts

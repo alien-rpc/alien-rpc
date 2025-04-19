@@ -18,18 +18,19 @@ export const foo = route("/foo").get(() => {
 /**
  * client/generated/api.ts
  */
-import type { RequestOptions, Route } from "@alien-rpc/client";
+import type { Route } from "@alien-rpc/client";
 
-/**
- * Get "foo" from the server.
- *
- * @returns "foo"
- * @see https://en.wikipedia.org/wiki/Foo_(disambiguation)
- */
-export const foo: Route<
-  "foo",
-  (requestOptions?: RequestOptions) => Promise<"foo">
-> = { path: "foo", method: "GET", arity: 1, format: "json" } as any;
+export default {
+  /**
+   * Get "foo" from the server.
+   *
+   * @returns "foo"
+   * @see https://en.wikipedia.org/wiki/Foo_(disambiguation)
+   */
+  foo: { path: "foo", method: "GET", arity: 1, format: "json" } as Route<
+    () => Promise<"foo">
+  >,
+};
 
 /**
  * server/generated/api.ts

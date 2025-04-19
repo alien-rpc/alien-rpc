@@ -14,13 +14,17 @@ export const streamNumbers = route("/numbers").get(async function* () {
 /**
  * client/generated/api.ts
  */
-import type { RequestOptions, ResponseStream, Route } from "@alien-rpc/client";
+import type { ResponseStream, Route } from "@alien-rpc/client";
 import jsonSeq from "@alien-rpc/client/formats/json-seq";
 
-export const streamNumbers: Route<
-  "numbers",
-  (requestOptions?: RequestOptions) => ResponseStream<1 | 2 | 3>
-> = { path: "numbers", method: "GET", arity: 1, format: jsonSeq } as any;
+export default {
+  streamNumbers: {
+    path: "numbers",
+    method: "GET",
+    arity: 1,
+    format: jsonSeq,
+  } as Route<() => ResponseStream<1 | 2 | 3>>,
+};
 
 /**
  * server/generated/api.ts

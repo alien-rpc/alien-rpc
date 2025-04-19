@@ -22,31 +22,29 @@ export const testConstraints = route("/constraints/:id").get(
 /**
  * client/generated/api.ts
  */
-import type { RequestOptions, RequestParams, Route } from "@alien-rpc/client";
+import type { Route } from "@alien-rpc/client";
 
-export const testConstraints: Route<
-  "constraints/:id",
-  (
-    params: RequestParams<
-      { id: string },
-      {
+export default {
+  testConstraints: {
+    path: "constraints/:id",
+    method: "GET",
+    pathParams: ["id"],
+    arity: 2,
+    format: "json",
+  } as Route<
+    (
+      pathParams: { id: string },
+      searchParams: {
         tuple?: [string, string] | undefined;
         array?: string[] | undefined;
         object?: Record<string, string> | undefined;
         email?: string | undefined;
         month?: string | undefined;
         date?: Date | undefined;
-      }
-    >,
-    requestOptions?: RequestOptions,
-  ) => Promise<undefined>
-> = {
-  path: "constraints/:id",
-  method: "GET",
-  pathParams: ["id"],
-  arity: 2,
-  format: "json",
-} as any;
+      },
+    ) => Promise<undefined>
+  >,
+};
 
 /**
  * server/generated/api.ts

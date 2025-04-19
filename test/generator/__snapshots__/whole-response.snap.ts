@@ -12,12 +12,13 @@ export const test = route("/test").get(async (): Promise<Response> => {
 /**
  * client/generated/api.ts
  */
-import type { RequestOptions, Route } from "@alien-rpc/client";
+import type { Route } from "@alien-rpc/client";
 
-export const test: Route<
-  "test",
-  (requestOptions?: RequestOptions) => Promise<Response>
-> = { path: "test", method: "GET", arity: 1, format: "response" } as any;
+export default {
+  test: { path: "test", method: "GET", arity: 1, format: "response" } as Route<
+    () => Promise<Response>
+  >,
+};
 
 /**
  * server/generated/api.ts

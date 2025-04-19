@@ -10,12 +10,13 @@ export const voidTest = route("/void").post(async () => {});
 /**
  * client/generated/api.ts
  */
-import type { RequestOptions, Route } from "@alien-rpc/client";
+import type { Route } from "@alien-rpc/client";
 
-export const voidTest: Route<
-  "void",
-  (requestOptions?: RequestOptions) => Promise<undefined>
-> = { path: "void", method: "POST", arity: 1, format: "json" } as any;
+export default {
+  voidTest: { path: "void", method: "POST", arity: 1, format: "json" } as Route<
+    () => Promise<undefined>
+  >,
+};
 
 /**
  * server/generated/api.ts

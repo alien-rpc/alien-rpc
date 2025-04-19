@@ -12,24 +12,19 @@ export const getBookByAuthor = route("/books/:author/:title").get(
 /**
  * client/generated/api.ts
  */
-import type { RequestOptions, RequestParams, Route } from "@alien-rpc/client";
+import type { Route } from "@alien-rpc/client";
 
-export const getBookByAuthor: Route<
-  "books/:author/:title",
-  (
-    params: RequestParams<
-      { author: string; title: string },
-      Record<string, never>
-    >,
-    requestOptions?: RequestOptions,
-  ) => Promise<undefined>
-> = {
-  path: "books/:author/:title",
-  method: "GET",
-  pathParams: ["author", "title"],
-  arity: 2,
-  format: "json",
-} as any;
+export default {
+  getBookByAuthor: {
+    path: "books/:author/:title",
+    method: "GET",
+    pathParams: ["author", "title"],
+    arity: 2,
+    format: "json",
+  } as Route<
+    (pathParams: { author: string; title: string }) => Promise<undefined>
+  >,
+};
 
 /**
  * server/generated/api.ts

@@ -37,17 +37,24 @@ export enum SingleMember {
   justThis,
 }
 
-export const createShape: Route<
-  (
-    pathParams: unknown,
-    searchParams: unknown,
-    body: { type: ShapeType; single?: SingleMember | undefined },
-  ) => Promise<{
-    type: ShapeType;
-    rectangle: ShapeType.Rectangle;
-    circle: ShapeType.Circle;
-  }>
-> = { path: "shapes", method: "POST", arity: 2, format: "json" } as any;
+export default {
+  createShape: {
+    path: "shapes",
+    method: "POST",
+    arity: 2,
+    format: "json",
+  } as Route<
+    (
+      pathParams: unknown,
+      searchParams: unknown,
+      body: { type: ShapeType; single?: SingleMember | undefined },
+    ) => Promise<{
+      type: ShapeType;
+      rectangle: ShapeType.Rectangle;
+      circle: ShapeType.Circle;
+    }>
+  >,
+};
 
 /**
  * server/generated/api.ts
