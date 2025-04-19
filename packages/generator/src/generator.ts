@@ -32,9 +32,13 @@ export default (rawOptions: Options) =>
       clientOutFile: rawOptions.clientOutFile ?? 'client/generated/api.ts',
     } satisfies Options
 
+    options.serverOutFile = path.resolve(options.outDir, options.serverOutFile)
+    options.clientOutFile = path.resolve(options.outDir, options.clientOutFile)
+
     const entryFilePaths = fs.scan(options.include, {
       cwd: root,
       absolute: true,
+      ignore: [options.clientOutFile, options.serverOutFile],
     })
 
     if (!entryFilePaths.length) {
@@ -42,9 +46,6 @@ export default (rawOptions: Options) =>
         `No files matching ${JSON.stringify(options.include)} were found in ${JSON.stringify(root)}`
       )
     }
-
-    options.serverOutFile = path.resolve(options.outDir, options.serverOutFile)
-    options.clientOutFile = path.resolve(options.outDir, options.clientOutFile)
 
     if (isProjectInvalidated(store, changes)) {
       store.project = await createProject(root, {
