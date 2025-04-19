@@ -60,6 +60,9 @@ export function createTestContext(config: { tempDir?: boolean } = {}) {
       const resetFiles = (testDir: string) => {
         const inputFiles = globSync(['**/*.ts', '!api.ts'], { cwd: testDir })
         for (const file of inputFiles) {
+          if (file.includes('generated')) {
+            continue
+          }
           const outFile = join(root, file)
           mkdirSync(dirname(outFile), { recursive: true })
           copyFileSync(join(testDir, file), outFile)
