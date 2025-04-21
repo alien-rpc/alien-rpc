@@ -106,21 +106,37 @@ function processSourceFile(
   }
   return declarations
 
-  function renderTypeTags(
-    tagNodes: ts.TypeReferenceNode[] | undefined,
-    prefix: string = ''
-  ): string {
-    if (!tagNodes || tagNodes.length === 0) {
+  // Note: Only optional arguments can be empty strings.
+  function renderArguments(...args: string[]) {
+    return args.filter(Boolean).join(', ')
+  }
+
+  function renderObjectLiteral(properties: Record<string, unknown> | null) {
+    if (!properties) {
       return ''
     }
-    let properties = ''
+    return `{${Object.entries(properties)
+      .map(([key, value]) => {
+        return `${key}: ${JSON.stringify(value)}`
+      })
+      .join(', ')}}`
+  }
+
+  function evaluateTagNodes(tagNodes: ts.TypeReferenceNode[] | undefined) {
+    if (!tagNodes || tagNodes.length === 0) {
+      return null
+    }
+    const values: any = {}
     for (const tagNode of tagNodes) {
       const name = camel(tagNode.getChildAt(0).getText())
       const value = tagNode.typeArguments?.[0].getText() ?? 'true'
-      if (properties) properties += ', '
-      properties += `${name}: ${value}`
+      values[name] = value
     }
-    return prefix + '{ ' + properties + ' }'
+    return values
+  }
+
+  function renderTypeTags(tagNodes: ts.TypeReferenceNode[] | undefined) {
+    return renderObjectLiteral(evaluateTagNodes(tagNodes))
   }
 
   function* renderIndexSignature(node: ts.IndexSignatureDeclaration) {
@@ -223,7 +239,7 @@ function processSourceFile(
     if (ts.isArrayTypeNode(node)) {
       const elementType = render(node.elementType)
 
-      yield `Type.Array(${elementType}${renderTypeTags(tagNodes, ', ')})`
+      yield `Type.Array(${renderArguments(elementType, renderTypeTags(tagNodes))})`
     }
 
     // Type.Extends
@@ -317,8 +333,12 @@ function processSourceFile(
             return // Assume it's a branded primitive.
           }
         }
-        const types = typeNodes.map(type => render(type)).join(',\n')
-        yield `Type.Intersect([\n${types}\n]${renderTypeTags(tagNodes, ', ')})`
+        const types = `[\n${typeNodes.map(type => render(type)).join(',\n')}\n]`
+        const typeTags = {
+          ...evaluateTagNodes(tagNodes),
+          additionalProperties: false,
+        }
+        yield `Type.Composite(${renderArguments(types, renderObjectLiteral(typeTags))})`
       } else {
         yield* lazyRender(typeNodes[0], tagNodes)
       }
@@ -432,7 +452,7 @@ function processSourceFile(
     else if (ts.isTypeReferenceNode(node)) {
       const name = node.typeName.getText()
       const args = node.typeArguments
-        ? `(${node.typeArguments.map(type => render(type)).join(', ')}${renderTypeTags(tagNodes, ', ')})`
+        ? `(${renderArguments(...node.typeArguments.map(type => render(type)), renderTypeTags(tagNodes))})`
         : ''
 
       if (name === 'Date') {
