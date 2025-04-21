@@ -117,7 +117,7 @@ function processSourceFile(
     }
     return `{${Object.entries(properties)
       .map(([key, value]) => {
-        return `${key}: ${JSON.stringify(value)}`
+        return `${key}: ${value}`
       })
       .join(', ')}}`
   }
