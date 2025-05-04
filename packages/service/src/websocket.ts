@@ -256,7 +256,7 @@ export namespace ws {
 
   /**
    * WebSocket routes have their own `RequestContext` type that is derived
-   * from the `@hattip/compose`-provided `RequestContext`. Therefore, any
+   * from the `alien-middleware`-provided `RequestContext`. Therefore, any
    * properties you add to the latter will also be available on the former.
    */
   export interface RequestContext<TPlatform = unknown>

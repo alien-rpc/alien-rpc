@@ -18,4 +18,4 @@ export type {
 
 export type { RouteMethod, RouteResultFormat } from '@alien-rpc/route'
 
-export type { RequestContext } from '@hattip/compose'
+export type { RequestContext } from 'alien-middleware'

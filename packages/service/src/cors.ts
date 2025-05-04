@@ -1,4 +1,4 @@
-import { RequestContext } from '@hattip/compose'
+import { RequestContext } from 'alien-middleware'
 import { isString } from 'radashi'
 import { Promisable } from './internal/types.js'
 

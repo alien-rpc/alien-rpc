@@ -1,6 +1,6 @@
 import type { RouteMethod } from '@alien-rpc/route'
-import type { RequestContext } from '@hattip/compose'
 import type { ValueError } from '@sinclair/typebox/errors'
+import type { RequestContext } from 'alien-middleware'
 import { compilePaths } from 'pathic'
 import { mapValues } from 'radashi'
 import {

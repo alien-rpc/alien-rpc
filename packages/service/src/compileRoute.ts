@@ -1,5 +1,4 @@
 import { bodylessMethods } from '@alien-rpc/route'
-import { RequestContext } from '@hattip/compose'
 import * as jsonQS from '@json-qs/json-qs'
 import { KindGuard, TSchema, Type } from '@sinclair/typebox'
 import { TypeCompiler } from '@sinclair/typebox/compiler'
@@ -8,7 +7,7 @@ import {
   TransformDecodeCheckError,
   ValueErrorType,
 } from '@sinclair/typebox/value'
-import { applyMiddlewares } from './applyMiddlewares.js'
+import { RequestContext } from 'alien-middleware'
 import { importRoute } from './internal/importRoute.js'
 import { supportedResponders } from './responders/index.js'
 import { Route, RouteDefinition, RouteHandler } from './types.js'
@@ -66,12 +65,9 @@ export function compileRoute(route: Route, options: CompileRouteOptions = {}) {
      */
     async responder(args: Parameters<RouteHandler>, ctx: RequestContext) {
       const def = await importRoute<RouteDefinition>(route)
-      if (def.middlewares) {
-        return applyMiddlewares(def.middlewares, ctx, () => {
-          return responder(def, args, ctx)
-        })
-      }
-      return responder(def, args, ctx)
+      return def.middleware
+        ? def.middleware.use(ctx => responder(def, args, ctx))(ctx)
+        : responder(def, args, ctx)
     },
   }
 }
