@@ -1,13 +1,20 @@
 import type { RouteMethod } from '@alien-rpc/route'
-import type { RequestHandlerStack } from '@hattip/compose'
+import {
+  type ApplyMiddleware,
+  chain,
+  type ExtractMiddleware,
+  type Middleware,
+  type MiddlewareChain,
+  type MiddlewareContext,
+} from 'alien-middleware'
 import type { InferParamsArray } from 'pathic'
-import type { InferPlatform, Last } from './internal/types.js'
 import type {
   ClientResult,
   FixedRouteHandler,
   MultiParamRouteHandler,
   MultiParamRoutePath,
   PathParam,
+  RouteDefinition,
   RouteResult,
   SingleParamRouteHandler,
   SingleParamRoutePath,
@@ -38,14 +45,16 @@ import type { ws } from './websocket.js'
  */
 export const route = create()
 
-function defineRoute(
-  path: string,
-  middlewares?: RequestHandlerStack<any>[]
-): RouteBuilder {
+function defineRoute(path: string, middleware?: MiddlewareChain): RouteBuilder {
   return new Proxy({} as RouteBuilder, {
-    get(_, method: string) {
-      method = method.toUpperCase()
-      return (handler: any) => ({ method, path, handler, middlewares })
+    get(_, key: string) {
+      const method = key.toUpperCase() as RouteMethod
+      return (handler: any): RouteDefinition => ({
+        method,
+        path,
+        handler,
+        middleware,
+      })
     },
   })
 }
@@ -56,36 +65,43 @@ function defineWebSocketRoute(
   return { protocol: 'ws', handler }
 }
 
-function create<TPlatform>(
-  sharedMiddlewares?: RequestHandlerStack<TPlatform>[]
-): RouteFactory<TPlatform> {
-  function route(path: string, middlewares?: RequestHandlerStack<any>[]) {
-    return defineRoute(path, merge(sharedMiddlewares, middlewares))
+function create<T extends MiddlewareChain = never>(
+  middlewares?: T
+): RouteFactory<T> {
+  function route(path: string, middleware?: Middleware) {
+    return defineRoute(
+      path,
+      middleware
+        ? (middlewares?.use(middleware) ?? chain(middleware))
+        : middlewares
+    )
   }
 
   route.ws = (handler: (...args: any[]) => ws.RouteResult) => {
     return defineWebSocketRoute(handler) as any
   }
 
-  route.use = (middlewares: RequestHandlerStack<any>[]) => {
-    return create(merge(sharedMiddlewares, middlewares))
+  route.use = (middleware: Middleware) => {
+    return create(middlewares?.use(middleware) ?? chain(middleware))
   }
 
-  return route
+  return route as any
 }
 
-function merge<T, U>(left: T[] | undefined, right: U[] | undefined) {
-  return left ? (right ? [...left, ...right] : left) : right
-}
+export type RouteContext<T extends RouteFactory<any>> =
+  T extends RouteFactory<infer TMiddleware>
+    ? MiddlewareContext<TMiddleware>
+    : never
 
-export interface RouteFactory<P = unknown> {
+export interface RouteFactory<T extends MiddlewareChain> {
   /**
    * Define a new HTTP route, optionally with a set of middlewares.
    */
-  <TPath extends string, TPlatform extends P>(
+  <TPath extends string>(path: TPath): RouteBuilder<TPath, T>
+  <TPath extends string, TMiddleware extends ExtractMiddleware<T>>(
     path: TPath,
-    middlewares?: RequestHandlerStack<TPlatform>[]
-  ): RouteBuilder<TPath, TPlatform>
+    middleware: TMiddleware
+  ): RouteBuilder<TPath, ApplyMiddleware<T, TMiddleware>>
 
   /**
    * Define a websocket route powered by [crossws].
@@ -96,15 +112,13 @@ export interface RouteFactory<P = unknown> {
    * [crossws]: https://crossws.unjs.io/
    */
   ws: <
-    TArgs extends [...any[], ws.RequestContext<P>] = [ws.RequestContext<P>],
+    TArgs extends [...any[], ws.RequestContext<T>] = [ws.RequestContext<T>],
     const TResult extends ws.RouteResult = any,
   >(
-    handler: (...args: TArgs) => TResult,
-    middlewares?: RequestHandlerStack<InferPlatform<Last<TArgs>>>[]
+    handler: (...args: TArgs) => TResult
   ) => {
     protocol: 'ws'
     handler: (...args: TArgs) => TResult
-    middlewares?: typeof middlewares
     /** @internal */
     __clientResult: ClientResult<TResult>
   }
@@ -113,30 +127,35 @@ export interface RouteFactory<P = unknown> {
    * Use a set of middlewares for all routes defined with the returned
    * factory function.
    */
-  use: <TPlatform extends P>(
-    sharedMiddlewares: RequestHandlerStack<TPlatform>[]
-  ) => RouteFactory<TPlatform>
+  use: <TMiddleware extends ExtractMiddleware<T>>(
+    middleware: TMiddleware
+  ) => RouteFactory<ApplyMiddleware<T, TMiddleware>>
 }
 
 type MultiParamRouteBuilder<
   TPath extends MultiParamRoutePath,
   TMethod extends RouteMethod,
-  Platform = unknown,
+  TMiddleware extends MiddlewareChain,
 > = <
   TPathParams extends InferParamsArray<TPath, PathParam> = InferParamsArray<
     TPath,
     string
   >,
   TData extends object = Record<string, never>,
-  TPlatform extends Platform = Platform,
   const TResult extends RouteResult = any,
 >(
-  handler: MultiParamRouteHandler<TPath, TPathParams, TData, TPlatform, TResult>
+  handler: MultiParamRouteHandler<
+    TPath,
+    TPathParams,
+    TData,
+    MiddlewareContext<TMiddleware>,
+    TResult
+  >
 ) => {
   method: TMethod
   path: TPath
   handler: typeof handler
-  middlewares?: RequestHandlerStack<Platform>[]
+  middleware?: TMiddleware
   /** @internal */
   __clientResult: ClientResult<TResult>
 }
@@ -144,19 +163,24 @@ type MultiParamRouteBuilder<
 type SingleParamRouteBuilder<
   TPath extends SingleParamRoutePath,
   TMethod extends RouteMethod,
-  Platform = unknown,
+  TMiddleware extends MiddlewareChain,
 > = <
   TPathParam extends PathParam = string,
   TData extends object = Record<string, never>,
-  TPlatform extends Platform = Platform,
   const TResult extends RouteResult = any,
 >(
-  handler: SingleParamRouteHandler<TPath, TPathParam, TData, TPlatform, TResult>
+  handler: SingleParamRouteHandler<
+    TPath,
+    TPathParam,
+    TData,
+    MiddlewareContext<TMiddleware>,
+    TResult
+  >
 ) => {
   method: TMethod
   path: TPath
   handler: typeof handler
-  middlewares?: RequestHandlerStack<Platform>[]
+  middleware?: TMiddleware
   /** @internal */
   __clientResult: ClientResult<TResult>
 }
@@ -164,28 +188,35 @@ type SingleParamRouteBuilder<
 type FixedRouteBuilder<
   TPath extends string,
   TMethod extends RouteMethod,
-  Platform = unknown,
+  TMiddleware extends MiddlewareChain,
 > = <
   TData extends object = Record<string, never>,
-  TPlatform extends Platform = Platform,
   const TResult extends RouteResult = any,
 >(
-  handler: FixedRouteHandler<TPath, TData, TPlatform, TResult>
+  handler: FixedRouteHandler<
+    TPath,
+    TData,
+    MiddlewareContext<TMiddleware>,
+    TResult
+  >
 ) => {
   method: TMethod
   path: TPath
   handler: typeof handler
-  middlewares?: RequestHandlerStack<Platform>[]
+  middleware?: TMiddleware
   /** @internal */
   __clientResult: ClientResult<TResult>
 }
 
-export type RouteBuilder<TPath extends string = any, TPlatform = any> = {
+export type RouteBuilder<
+  TPath extends string = any,
+  TMiddleware extends MiddlewareChain = any,
+> = {
   [TMethod in
     | RouteMethod
     | Lowercase<RouteMethod>]: TPath extends MultiParamRoutePath
-    ? MultiParamRouteBuilder<TPath, Uppercase<TMethod>, TPlatform>
+    ? MultiParamRouteBuilder<TPath, Uppercase<TMethod>, TMiddleware>
     : TPath extends SingleParamRoutePath
-      ? SingleParamRouteBuilder<TPath, Uppercase<TMethod>, TPlatform>
-      : FixedRouteBuilder<TPath, Uppercase<TMethod>, TPlatform>
+      ? SingleParamRouteBuilder<TPath, Uppercase<TMethod>, TMiddleware>
+      : FixedRouteBuilder<TPath, Uppercase<TMethod>, TMiddleware>
 }

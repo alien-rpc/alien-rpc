@@ -1,34 +1,11 @@
 import type { RouteMethod, RouteResultFormat } from '@alien-rpc/route'
-import type { RequestContext, RequestHandlerStack } from '@hattip/compose'
 import type { TAnySchema } from '@sinclair/typebox'
+import { MiddlewareChain, RequestContext } from 'alien-middleware'
 import type { InferParamNames, InferParamsArray } from 'pathic'
 import type { Promisable } from './internal/types.js'
 import type { JSON, JSONCodable, JSONObjectCodable } from './json/types.js'
 import type { PaginationLinks } from './pagination.js'
 import type { ws } from './websocket.js'
-
-declare module '@hattip/compose' {
-  interface RequestContextExtensions {
-    /**
-     * Manipulate the HTTP response by editing this.
-     */
-    response: {
-      /**
-       * Set the HTTP status code.
-       *
-       * Note: If this remains `undefined` by the end of the response, a
-       * default status of `200` will be used.
-       */
-      status: number | undefined
-      /**
-       * Add your own HTTP response headers.
-       *
-       * Content-Type and Content-Length are set for you automatically.
-       */
-      headers: Headers
-    }
-  }
-}
 
 export type RouteIterator<TYield extends JSONCodable = JSONCodable> =
   AsyncIterator<TYield, PaginationLinks | void | null, any>
@@ -42,53 +19,47 @@ export type RouteHandler =
   | SingleParamRouteHandler<any>
   | MultiParamRouteHandler<any>
 
-export interface FixedRouteHandler<
+export type FixedRouteHandler<
   TPath extends string,
   TData extends object = any,
-  TPlatform = any,
+  TContext extends RequestContext = any,
   TResult extends RouteResult = any,
-> {
-  (
-    this: RouteDefinition<TPath, [TData]>,
-    data: TData,
-    ctx: RequestContext<TPlatform>
-  ): TResult
-}
+> = (
+  this: RouteDefinition<TPath, [TData]>,
+  data: TData,
+  ctx: TContext
+) => TResult
 
 export type SingleParamRoutePath = `${string}/${':' | '*'}${string}`
 
-export interface SingleParamRouteHandler<
+export type SingleParamRouteHandler<
   TPath extends SingleParamRoutePath,
   TPathParam extends PathParam = any,
   TData extends object = any,
-  TPlatform = any,
+  TContext extends RequestContext = any,
   TResult extends RouteResult = any,
-> {
-  (
-    this: NoInfer<RouteDefinition<TPath, [TPathParam, TData]>>,
-    pathParam: TPathParam,
-    data: TData,
-    ctx: RequestContext<TPlatform>
-  ): TResult
-}
+> = (
+  this: NoInfer<RouteDefinition<TPath, [TPathParam, TData]>>,
+  pathParam: TPathParam,
+  data: TData,
+  ctx: TContext
+) => TResult
 
 export type MultiParamRoutePath =
   `${string}/${':' | '*'}${string}/${':' | '*'}${string}`
 
-export interface MultiParamRouteHandler<
+export type MultiParamRouteHandler<
   TPath extends MultiParamRoutePath,
   TPathParams extends InferParamsArray<TPath, PathParam> = any,
   TData extends object = any,
-  TPlatform = any,
+  TContext extends RequestContext = any,
   TResult extends RouteResult = any,
-> {
-  (
-    this: NoInfer<RouteDefinition<TPath, [TPathParams, TData]>>,
-    pathParams: TPathParams,
-    data: TData,
-    ctx: RequestContext<TPlatform>
-  ): TResult
-}
+> = (
+  this: NoInfer<RouteDefinition<TPath, [TPathParams, TData]>>,
+  pathParams: TPathParams,
+  data: TData,
+  ctx: TContext
+) => TResult
 
 export interface RouteDefinition<
   TPath extends string = string,
@@ -99,7 +70,7 @@ export interface RouteDefinition<
   method: TMethod
   path: TPath
   handler: (...args: TArgs) => TResult
-  middlewares?: RequestHandlerStack[]
+  middleware?: MiddlewareChain
 }
 
 /**

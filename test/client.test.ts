@@ -1,7 +1,7 @@
 import { defineClient } from '@alien-rpc/client'
 import { compileRoutes } from '@alien-rpc/service'
-import { createTestClient, CreateTestClientArgs } from '@hattip/adapter-test'
-import { compose } from '@hattip/compose'
+import { createTestClient as createFetch } from '@hattip/adapter-test'
+import { chain } from 'alien-middleware'
 import { join } from 'node:path'
 import { createTestContext, TestContext } from './helper.js'
 
@@ -125,8 +125,8 @@ async function getTestClient() {
 
   return defineClient(clientRoutes.default, {
     prefixUrl: 'http://example.com/',
-    fetch: createTestClient({
-      handler: compose(handler) as CreateTestClientArgs['handler'],
+    fetch: createFetch({
+      handler: chain(handler),
     }),
   })
 }

@@ -14,11 +14,11 @@ const responder: RouteResponder = async (route, args, ctx) => {
     result = JSON.stringify(result)
 
     if (result !== undefined) {
-      ctx.response.headers.set('Content-Type', 'application/json')
+      ctx.setHeader('Content-Type', 'application/json')
     }
   }
 
-  return new Response(result, ctx.response)
+  return new Response(result)
 }
 
 export default responder

@@ -1,5 +1,6 @@
 import type { TAnySchema } from '@sinclair/typebox'
 import { Decode } from '@sinclair/typebox/value'
+import { MiddlewareChain } from 'alien-middleware'
 import type {
   Hooks,
   Peer,
@@ -19,6 +20,7 @@ import { importRoute } from './internal/importRoute.js'
 import type { Promisable } from './internal/types.js'
 import type { JSONCodable } from './json/types.js'
 import { JSONResponse } from './response.js'
+import { RouteFactory } from './route.js'
 import type { RouteList } from './types.js'
 
 export function isWebSocketRoute(route: any): route is ws.Route {
@@ -29,12 +31,12 @@ function isAsyncIterable<T>(value: unknown): value is AsyncIterable<T> {
   return !!value && typeof value === 'object' && Symbol.asyncIterator in value
 }
 
-function createWebSocketContext<P = unknown>(
-  peer: Peer<P>,
+function createWebSocketContext<TMiddleware extends MiddlewareChain>(
+  peer: Peer<PeerContext<TMiddleware>>,
   deferQueue: ((reason?: any) => void)[],
   signal?: AbortSignal
-): ws.RequestContext<P> {
-  const { request, response, ...context } = peer.context
+): ws.RequestContext<TMiddleware> {
+  const { request, ...context } = peer.context
 
   return {
     ...context,
@@ -50,22 +52,35 @@ function createWebSocketContext<P = unknown>(
 
 export namespace ws {
   export function compileRoutes<
-    TPlatform,
+    TContext extends object,
     TRequest extends object,
     TResponse extends object,
-    TAdapter extends WebSocketAdapter<TPlatform>,
+    TAdapter extends WebSocketAdapter<TContext>,
   >(
     routes: RouteList,
     createAdapter: (
-      options: WebSocketAdapterOptions<TPlatform, TRequest, TResponse>
+      options: WebSocketAdapterOptions<TContext, TRequest, TResponse>
     ) => TAdapter,
-    hooks?: Partial<Hooks<TPlatform, TRequest, TResponse>>
+    hooks?: Partial<Hooks<TContext, TRequest, TResponse>>
   ) {
     const wsRoutes: Record<string, ws.Route> = Object.create(null)
     for (const route of routes) {
       if (isWebSocketRoute(route)) {
         wsRoutes[route.name] = route
       }
+    }
+
+    const pendingRequests = new WeakMap<
+      TContext,
+      Map<number, AbortController>
+    >()
+    const getPendingRequests = (context: TContext) => {
+      let requests = pendingRequests.get(context)
+      if (!requests) {
+        requests = new Map()
+        pendingRequests.set(context, requests)
+      }
+      return requests
     }
 
     return createAdapter({
@@ -115,8 +130,7 @@ export namespace ws {
               ).catch(console.error)
             }
           } else {
-            const pendingRequests = (peer.context._pendingRequests ??=
-              new Map()) as Map<number, AbortController>
+            const pendingRequests = getPendingRequests(peer.context)
 
             if (method === '.cancel') {
               const ctrl = pendingRequests.get(id)
@@ -242,10 +256,7 @@ export namespace ws {
             await hooks.close(peer, details)
           }
 
-          const pendingRequests = peer.context._pendingRequests as Map<
-            number,
-            AbortController
-          >
+          const pendingRequests = getPendingRequests(peer.context)
           for (const ctrl of pendingRequests.values()) {
             ctrl.abort()
           }
@@ -256,36 +267,41 @@ export namespace ws {
 
   /**
    * WebSocket routes have their own `RequestContext` type that is derived
-   * from the `@hattip/compose`-provided `RequestContext`. Therefore, any
+   * from the `alien-middleware`-provided `RequestContext`. Therefore, any
    * properties you add to the latter will also be available on the former.
    */
-  export interface RequestContext<TPlatform = unknown>
-    extends Omit<PeerContext<TPlatform>, 'request' | 'response'> {
-    /**
-     * The IP address of the client.
-     */
-    readonly ip: string | undefined
-    /**
-     * Unique random [UUID v4][1] identifier for the client.
-     *
-     * [1]: https://developer.mozilla.org/en-US/docs/Glossary/UUID
-     */
-    readonly id: string
-    /**
-     * If the request is cancelled or the connection is lost, the signal
-     * will be aborted.
-     */
-    readonly signal: AbortSignal
-    /**
-     * The headers used in the upgrade request.
-     */
-    readonly headers: Headers
-    /**
-     * Register a handler for when the request is either aborted by the
-     * client or completed.
-     */
-    defer(handler: (reason?: any) => Promisable<void>): void
-  }
+  export type RequestContext<TMiddleware extends MiddlewareChain = never> =
+    Omit<PeerContext<TMiddleware>, 'request'> & {
+      /**
+       * The IP address of the client.
+       */
+      readonly ip: string | undefined
+      /**
+       * Unique random [UUID v4][1] identifier for the client.
+       *
+       * [1]: https://developer.mozilla.org/en-US/docs/Glossary/UUID
+       */
+      readonly id: string
+      /**
+       * If the request is cancelled or the connection is lost, the signal
+       * will be aborted.
+       */
+      readonly signal: AbortSignal
+      /**
+       * The headers used in the upgrade request.
+       */
+      readonly headers: Headers
+      /**
+       * Register a handler for when the request is either aborted by the
+       * client or completed.
+       */
+      defer(handler: (reason?: any) => Promisable<void>): void
+    }
+
+  export type RouteContext<T extends RouteFactory<any>> =
+    T extends RouteFactory<infer TMiddleware>
+      ? ws.RequestContext<TMiddleware>
+      : never
 
   export type RouteIterableResult = AsyncIterable<JSONCodable | undefined>
 

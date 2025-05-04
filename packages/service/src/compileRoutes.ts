@@ -1,6 +1,6 @@
 import type { RouteMethod } from '@alien-rpc/route'
-import type { RequestContext } from '@hattip/compose'
 import type { ValueError } from '@sinclair/typebox/errors'
+import type { RequestContext } from 'alien-middleware'
 import { compilePaths } from 'pathic'
 import { mapValues } from 'radashi'
 import {
@@ -93,20 +93,12 @@ export function compileRoutes(
       return new Response(null, { status: 403 })
     }
 
-    // By mutating these properties, routes can alter the response status
-    // and headers. Note that each “responder format” is responsible for
-    // using these properties when creating its Response object.
-    ctx.response = {
-      status: undefined,
-      headers: new Headers(corsHeaders),
-    }
-
     let step = RequestStep.Match as RequestStep
 
     try {
       return await matchRoute(url.pathname, async (route, params) => {
         if (process.env.NODE_ENV !== 'production') {
-          ctx.response.headers.set('X-Route-Name', route.name)
+          ctx.setHeader('X-Route-Name', route.name)
         }
 
         step = RequestStep.Validate
@@ -116,11 +108,7 @@ export function compileRoutes(
         return await route.responder(args, ctx)
       })
     } catch (error: any) {
-      const response = handleRouteError(error, step)
-      for (const [name, value] of ctx.response.headers) {
-        response.headers.set(name, value)
-      }
-      return response
+      return handleRouteError(error, step)
     }
   }
 }

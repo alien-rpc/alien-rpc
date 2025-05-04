@@ -38,7 +38,7 @@
     "pathic": "workspace:^"
   },
   "peerDependencies": {
-    "@hattip/compose": "*",
+    "alien-middleware": "*",
     "@sinclair/typebox": "*",
     "hattip-ws": "*"
   },

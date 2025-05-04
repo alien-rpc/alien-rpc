@@ -14,10 +14,10 @@ const responder: RouteResponder = (route, args, ctx) => {
   )
 
   // Don't use "application/json-seq" until it's been standardized.
-  ctx.response.headers.set('Content-Type', 'text/plain; charset=utf-8')
-  ctx.response.headers.set('X-Content-Type', 'application/json-seq')
+  ctx.setHeader('Content-Type', 'text/plain; charset=utf-8')
+  ctx.setHeader('X-Content-Type', 'application/json-seq')
 
-  return new Response(stream, ctx.response)
+  return new Response(stream)
 }
 
 export default responder
