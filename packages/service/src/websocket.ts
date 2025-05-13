@@ -2,7 +2,7 @@ import type { TSchema } from '@sinclair/typebox'
 import { Decode } from '@sinclair/typebox/value'
 import { MiddlewareChain } from 'alien-middleware'
 import type {
-  Hooks,
+  ExtractHooks,
   Peer,
   PeerContext,
   WebSocketAdapter,
@@ -51,17 +51,10 @@ function createWebSocketContext<TMiddleware extends MiddlewareChain>(
 }
 
 export namespace ws {
-  export function compileRoutes<
-    TContext extends object,
-    TRequest extends object,
-    TResponse extends object,
-    TAdapter extends WebSocketAdapter<TContext>,
-  >(
+  export function compileRoutes<TAdapter extends WebSocketAdapter>(
     routes: RouteList,
-    createAdapter: (
-      options: WebSocketAdapterOptions<TContext, TRequest, TResponse>
-    ) => TAdapter,
-    hooks?: Partial<Hooks<TContext, TRequest, TResponse>>
+    createAdapter: (options: WebSocketAdapterOptions) => TAdapter,
+    hooks?: Partial<ExtractHooks<TAdapter>>
   ) {
     const wsRoutes: Record<string, ws.Route> = Object.create(null)
     for (const route of routes) {
@@ -70,11 +63,8 @@ export namespace ws {
       }
     }
 
-    const pendingRequests = new WeakMap<
-      TContext,
-      Map<number, AbortController>
-    >()
-    const getPendingRequests = (context: TContext) => {
+    const pendingRequests = new WeakMap<object, Map<number, AbortController>>()
+    const getPendingRequests = (context: object) => {
       let requests = pendingRequests.get(context)
       if (!requests) {
         requests = new Map()
