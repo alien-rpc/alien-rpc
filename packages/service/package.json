@@ -38,12 +38,12 @@
     "pathic": "workspace:^"
   },
   "peerDependencies": {
-    "alien-middleware": "*",
     "@sinclair/typebox": "*",
-    "hattip-ws": "*"
+    "alien-middleware": "*",
+    "alien-ws": "*"
   },
   "peerDependenciesMeta": {
-    "hattip-ws": {
+    "alien-ws": {
       "optional": true
     }
   },

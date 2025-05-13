@@ -7,7 +7,7 @@ import type {
   PeerContext,
   WebSocketAdapter,
   WebSocketAdapterOptions,
-} from 'hattip-ws'
+} from 'alien-ws'
 import { isError } from 'radashi'
 import {
   firstLeafError,
@@ -36,7 +36,7 @@ function createWebSocketContext<TMiddleware extends MiddlewareChain>(
   deferQueue: ((reason?: any) => void)[],
   signal?: AbortSignal
 ): ws.RequestContext<TMiddleware> {
-  const { request, ...context } = peer.context
+  const { request, ...context } = peer.context as PeerContext<TMiddleware>
 
   return {
     ...context,
