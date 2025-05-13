@@ -1,5 +1,5 @@
 import type { RouteMethod, RouteResultFormat } from '@alien-rpc/route'
-import type { TAnySchema } from '@sinclair/typebox'
+import type { TSchema } from '@sinclair/typebox'
 import { MiddlewareChain, RequestContext } from 'alien-middleware'
 import type { InferParamNames, InferParamsArray } from 'pathic'
 import type { Promisable } from './internal/types.js'
@@ -88,8 +88,8 @@ export interface Route {
   import: () => Promise<any>
   pathParams?: readonly string[]
   format: RouteResultFormat
-  pathSchema?: TAnySchema
-  requestSchema?: TAnySchema
+  pathSchema?: TSchema
+  requestSchema?: TSchema
 }
 
 export type PathParams = { [key: string]: PathParam }

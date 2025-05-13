@@ -1,4 +1,4 @@
-import type { TAnySchema } from '@sinclair/typebox'
+import type { TSchema } from '@sinclair/typebox'
 import { Decode } from '@sinclair/typebox/value'
 import { MiddlewareChain } from 'alien-middleware'
 import type {
@@ -319,6 +319,6 @@ export namespace ws {
     protocol: 'ws'
     name: string
     import: () => Promise<any>
-    requestSchema?: TAnySchema
+    requestSchema?: TSchema
   }
 }
