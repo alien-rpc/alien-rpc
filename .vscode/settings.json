@@ -12,5 +12,9 @@
   },
   "autoHide.autoHidePanel": false,
   "typescript.tsdk": "./node_modules/typescript/lib",
-  "typescript.preferences.importModuleSpecifierEnding": "js"
+  "typescript.preferences.importModuleSpecifierEnding": "js",
+  "files.exclude": {
+    "**/dist": true,
+    "**/node_modules": true,
+  }
 }
