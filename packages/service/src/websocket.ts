@@ -44,7 +44,7 @@ function createWebSocketContext<TMiddleware extends MiddlewareChain>(
     ip: peer.remoteAddress,
     signal: signal ?? request.signal,
     headers: request.headers,
-    defer(handler) {
+    defer(handler: (reason?: any) => Promisable<void>) {
       deferQueue.push(handler)
     },
   }
@@ -285,7 +285,7 @@ export namespace ws {
        * Register a handler for when the request is either aborted by the
        * client or completed.
        */
-      defer(handler: (reason?: any) => Promisable<void>): void
+      readonly defer: (handler: (reason?: any) => Promisable<void>) => void
     }
 
   export type RouteContext<T extends RouteFactory<any>> =
