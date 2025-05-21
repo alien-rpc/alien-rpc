@@ -65,9 +65,16 @@ export function compileRoute(route: Route, options: CompileRouteOptions = {}) {
      */
     async responder(args: Parameters<RouteHandler>, ctx: RequestContext) {
       const def = await importRoute<RouteDefinition>(route)
-      return def.middleware
-        ? def.middleware.use(ctx => responder(def, args, ctx))(ctx)
-        : responder(def, args, ctx)
+      if (def.middleware) {
+        return def.middleware.use(ctx => {
+          // Override the top-level context with middleware-provided
+          // context.
+          args[args.length - 1] = ctx
+
+          return responder(def, args, ctx)
+        })(ctx)
+      }
+      return responder(def, args, ctx)
     },
   }
 }
