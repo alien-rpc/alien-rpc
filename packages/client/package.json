@@ -30,7 +30,8 @@
   },
   "dependencies": {
     "@json-qs/json-qs": "^1.2.0",
-    "pathic": "workspace:^"
+    "pathic": "workspace:^",
+    "resolve-stack-sources": "^1.0.1"
   },
   "devDependencies": {
     "@alien-rpc/route": "workspace:^"

@@ -4,6 +4,7 @@ import * as jsonQS from '@json-qs/json-qs'
 import { buildPath } from 'pathic'
 import { isObject, isString, shake, sleep } from 'radashi'
 import { HTTPError } from './error.js'
+import { resolveStackTrace } from './node/sourcemap.js'
 import http from './protocols/http.js'
 import { kClientProperty, kRouteProperty } from './symbols.js'
 import type {
@@ -119,7 +120,11 @@ function createFetchFunction(client: Client): Fetch {
       }
       let error = new HTTPError(request, response)
       if (response.headers.get('Content-Type') === 'application/json') {
-        Object.assign(error, await response.json())
+        const overrides = await response.json()
+        if (process.env.NODE_ENV !== 'production') {
+          overrides.stack = await resolveStackTrace(overrides.stack)
+        }
+        Object.assign(error, overrides)
       }
       for (const beforeError of iterateHooks(hooks, 'beforeError')) {
         error = await beforeError(error)
