@@ -10,8 +10,22 @@ class TracedResponse extends Response {
    */
   stack =
     process.env.NODE_ENV !== 'production'
-      ? getStackTrace(new Error(), this.constructor)
+      ? generateStackTrace(this.constructor)
       : undefined
+}
+
+function generateStackTrace(constructor: Function) {
+  const stack = getStackTrace(new Error())
+  if (stack) {
+    const lines = stack.split('\n')
+    const constructorIndex = lines.findIndex(line =>
+      line.includes('new ' + constructor.name)
+    )
+    if (constructorIndex !== -1) {
+      return lines.slice(constructorIndex + 1).join('\n')
+    }
+    return stack
+  }
 }
 
 /**

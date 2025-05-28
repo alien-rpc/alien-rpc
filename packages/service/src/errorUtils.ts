@@ -33,18 +33,8 @@ function* flat<T>(iterables: Iterable<T>[]) {
   }
 }
 
-export function getStackTrace(error: Error, constructor?: Function) {
-  const stack = error.stack?.replace(/^.*(?<! *at\b.*)\n/gm, '')
-  if (stack && constructor) {
-    const lines = stack.split('\n')
-    const constructorIndex = lines.findIndex(line =>
-      line.includes('new ' + constructor.name)
-    )
-    if (constructorIndex !== -1) {
-      return lines.slice(constructorIndex + 1).join('\n')
-    }
-  }
-  return stack
+export function getStackTrace(error: Error) {
+  return error.stack?.replace(/^.*(?<! *at\b.*)\n/gm, '')
 }
 
 export function getErrorFromResponse(response: Response) {
