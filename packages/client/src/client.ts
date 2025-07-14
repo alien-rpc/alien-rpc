@@ -136,7 +136,7 @@ function createFetchFunction(client: Client): Fetch {
 
   return (input, { query, headers, json, timeout, ...init } = {}) => {
     headers = mergeHeaders(client.options.headers, headers)
-    if (json) {
+    if (json !== undefined) {
       headers ??= new Headers()
       headers.set('Content-Type', 'application/json')
       init.body = JSON.stringify(json)
