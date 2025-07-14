@@ -409,7 +409,9 @@ type RouteFunction<TRoute, TErrorMode extends ErrorMode> =
   >
     ? RequestParams<
         Objectify<TPathParams>,
-        [TBody] extends [object] ? Objectify<TBody> : Objectify<TSearchParams>
+        [TBody] extends [object]
+          ? Objectify<TBody extends Uint8Array ? { body: TBody } : TBody>
+          : Objectify<TSearchParams>
       > extends infer TParams
       ? ([TParams] extends [Record<string, never>]
           ? (
@@ -434,3 +436,10 @@ type RouteFunctionResult<TResult, TErrorMode extends ErrorMode> =
     : TErrorMode extends 'return'
       ? Promise<[Error, undefined] | [undefined, Awaited<TResult>]>
       : TResult
+
+export type FetchOptions = RequestOptions & {
+  body?: RequestInit['body']
+  json?: unknown
+  method?: string
+  query?: string
+}

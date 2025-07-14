@@ -11,7 +11,7 @@ import type {
   ClientOptions,
   ClientRoutes,
   ErrorMode,
-  RequestOptions,
+  FetchOptions,
   ResolvedClientOptions,
   Route,
   RouteFunctions,
@@ -24,15 +24,7 @@ import { mergeOptions } from './utils/mergeOptions.js'
 import { getShouldRetry, type ShouldRetryFunction } from './utils/retry.js'
 import { urlWithPathname } from './utils/url.js'
 
-type Fetch = (
-  path: string,
-  options?: RequestOptions & {
-    body?: RequestInit['body']
-    json?: unknown
-    method?: string
-    query?: string
-  }
-) => Promise<Response>
+type Fetch = (path: string, options?: FetchOptions) => Promise<Response>
 
 type ClientPrototype<
   API extends ClientRoutes,

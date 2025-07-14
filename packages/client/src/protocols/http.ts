@@ -5,6 +5,7 @@ import { isPromise, isString, omit } from 'radashi'
 import parseJsonResponse from '../formats/json.js'
 import { kClientProperty, kRouteProperty } from '../symbols.js'
 import {
+  FetchOptions,
   RequestOptions,
   ResponseParser,
   Route,
@@ -37,26 +38,32 @@ export default {
           }
         }
 
-        let path = buildPath(route.path, params ?? {})
-        let body: unknown
-        let query: string | undefined
-
-        if (bodylessMethods.has(route.method)) {
-          if (params) {
-            query = jsonQS.encode(params, {
-              skippedKeys: route.pathParams,
-            })
-          }
-        } else if (params) {
-          body = route.pathParams ? omit(params, route.pathParams) : params
+        const request: FetchOptions = {
+          ...options,
+          method: route.method,
+          query: undefined,
+          json: undefined,
+          body: undefined,
         }
 
-        const promisedResponse = client.fetch(path, {
-          ...options,
-          json: body,
-          method: route.method,
-          query,
-        })
+        if (params) {
+          if (bodylessMethods.has(route.method)) {
+            request.query = jsonQS.encode(params, {
+              skippedKeys: route.pathParams,
+            })
+          } else if (params.body instanceof Uint8Array) {
+            request.body = params.body
+          } else {
+            request.json = route.pathParams
+              ? omit(params, route.pathParams)
+              : params
+          }
+        }
+
+        const promisedResponse = client.fetch(
+          buildPath(route.path, params ?? {}),
+          request
+        )
 
         if (client.options.errorMode === 'return') {
           const result = parseResponse(promisedResponse, client)
