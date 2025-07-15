@@ -459,6 +459,8 @@ function processSourceFile(
         yield `Type.Date(${renderTypeTags(tagNodes)})`
       } else if (name === 'Uint8Array') {
         yield `Type.Uint8Array()`
+      } else if (name === 'Blob') {
+        yield `Type.Any()`
       } else if (name === 'String') {
         yield `Type.String()`
       } else if (name === 'Number') {

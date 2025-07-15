@@ -115,7 +115,9 @@ function compileRequestSchema(
       decode(
         request.headers.get('Content-Type') === 'application/json'
           ? await request.json()
-          : {}
+          : request.headers.has('Content-Type')
+            ? await request.blob()
+            : {}
       )
   }
 

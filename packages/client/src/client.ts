@@ -132,6 +132,9 @@ function createFetchFunction(client: Client): Fetch {
       headers ??= new Headers()
       headers.set('Content-Type', 'application/json')
       init.body = JSON.stringify(json)
+    } else if (init.body instanceof Blob) {
+      headers ??= new Headers()
+      headers.set('Content-Type', init.body.type ?? 'application/octet-stream')
     }
     const queryIndex = input.indexOf('?')
     const url = urlWithPathname(

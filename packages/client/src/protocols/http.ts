@@ -51,7 +51,7 @@ export default {
             request.query = jsonQS.encode(params, {
               skippedKeys: route.pathParams,
             })
-          } else if (params.body instanceof Uint8Array) {
+          } else if (params.body instanceof Blob) {
             request.body = params.body
           } else {
             request.json = route.pathParams
