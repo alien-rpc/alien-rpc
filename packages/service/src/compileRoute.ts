@@ -111,14 +111,16 @@ function compileRequestSchema(
   const decode = compileSchema(route.requestSchema, options)
 
   if (!bodylessMethods.has(route.method)) {
-    return async ({ request }) =>
-      decode(
-        request.headers.get('Content-Type') === 'application/json'
-          ? await request.json()
-          : request.headers.has('Content-Type')
-            ? await request.blob()
-            : {}
-      )
+    return async ({ request }) => {
+      const contentType = request.headers.get('Content-Type')
+      if (!contentType || contentType === 'application/json') {
+        return decode(contentType ? await request.json() : {})
+      }
+      if (contentType.startsWith('multipart/form-data')) {
+        return request.formData()
+      }
+      return request.blob()
+    }
   }
 
   // The only supported record type is Record<string, never> which doesn't

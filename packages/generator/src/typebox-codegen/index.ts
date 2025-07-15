@@ -459,20 +459,22 @@ function processSourceFile(
         yield `Type.Date(${renderTypeTags(tagNodes)})`
       } else if (name === 'Uint8Array') {
         yield `Type.Uint8Array()`
-      } else if (name === 'Blob') {
-        yield `Type.Any()`
       } else if (name === 'String') {
         yield `Type.String()`
       } else if (name === 'Number') {
         yield `Type.Number()`
       } else if (name === 'Boolean') {
         yield `Type.Boolean()`
-      } else if (name === 'Function') {
-        yield `Type.Any()`
       } else if (name === 'Array') {
         yield `Type.Array${args}`
       } else if (name === 'Record') {
         yield `Type.Record${args}`
+      } else if (
+        name === 'Blob' ||
+        name === 'FormData' ||
+        name === 'Function'
+      ) {
+        yield `Type.Any()`
       } else if (name === 'Partial') {
         yield `Type.Partial${args}`
       } else if (name === 'Required') {
