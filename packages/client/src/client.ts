@@ -90,7 +90,9 @@ function createFetchFunction(client: Client): Fetch {
 
       response = await fetch(
         new Request(request, {
-          signal: AbortSignal.any([timeoutCtrl.signal, request.signal]),
+          signal: request.signal
+            ? AbortSignal.any([timeoutCtrl.signal, request.signal])
+            : timeoutCtrl.signal,
         })
       )
       clearTimeout(timeoutId)
