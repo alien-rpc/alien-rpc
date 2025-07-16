@@ -128,16 +128,20 @@ function createFetchFunction(client: Client): Fetch {
     return response
   }
 
-  return (input, { query, headers, json, timeout, ...init } = {}) => {
-    headers = mergeHeaders(client.options.headers, headers)
+  return (input, { query, json, timeout, ...init } = {}) => {
+    const headers = mergeHeaders(client.options.headers, init.headers)
+
+    let contentType: string | undefined
     if (json !== undefined) {
-      headers ||= new Headers()
-      headers.set('Content-Type', 'application/json')
+      contentType = 'application/json'
       init.body = JSON.stringify(json)
     } else if (init.body instanceof Blob) {
-      headers ||= new Headers()
-      headers.set('Content-Type', init.body.type ?? 'application/octet-stream')
+      contentType = init.body.type
     }
+    if (contentType || init.body) {
+      headers.set('Content-Type', contentType || 'application/octet-stream')
+    }
+
     const queryIndex = input.indexOf('?')
     const url = urlWithPathname(
       prefixUrl,
@@ -148,11 +152,13 @@ function createFetchFunction(client: Client): Fetch {
     } else if (queryIndex !== -1) {
       url.search = input.slice(queryIndex + 1)
     }
+
     const request = new Request(url.href, {
       ...client.options,
       ...(init && shake(init)),
       headers,
     })
+
     return tryRequest(
       request,
       getShouldRetry(request, client.options.retry),
