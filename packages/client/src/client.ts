@@ -131,12 +131,12 @@ function createFetchFunction(client: Client): Fetch {
   return (input, { query, json, timeout, ...init } = {}) => {
     const headers = mergeHeaders(client.options.headers, init.headers)
 
-    let contentType: string | undefined
+    let contentType = headers.get('Content-Type')
     if (json !== undefined) {
       contentType = 'application/json'
       init.body = JSON.stringify(json)
     } else if (init.body instanceof Blob) {
-      contentType = init.body.type
+      contentType ||= init.body.type
     }
     if (contentType || init.body) {
       headers.set('Content-Type', contentType || 'application/octet-stream')
