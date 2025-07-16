@@ -59,7 +59,10 @@ export function compileRoute(route: Route, options: CompileRouteOptions = {}) {
      * to the route's result format. The caller is responsible for decoding
      * the request data beforehand.
      */
-    async responder(args: Parameters<RouteHandler>, ctx: RequestContext) {
+    async responder(
+      args: Parameters<RouteHandler>,
+      ctx: RequestContext
+    ): Promise<Response> {
       const def = await importRoute<RouteDefinition>(route)
       if (def.middleware) {
         return def.middleware.use(ctx => {
