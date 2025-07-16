@@ -457,8 +457,6 @@ function processSourceFile(
 
       if (name === 'Date') {
         yield `Type.Date(${renderTypeTags(tagNodes)})`
-      } else if (name === 'Uint8Array') {
-        yield `Type.Uint8Array()`
       } else if (name === 'String') {
         yield `Type.String()`
       } else if (name === 'Number') {
@@ -470,7 +468,6 @@ function processSourceFile(
       } else if (name === 'Record') {
         yield `Type.Record${args}`
       } else if (
-        name === 'ArrayBuffer' ||
         name === 'Blob' ||
         name === 'FormData' ||
         name === 'Function'

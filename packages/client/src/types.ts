@@ -411,9 +411,11 @@ type RouteFunction<TRoute, TErrorMode extends ErrorMode> =
         Objectify<TPathParams>,
         [TBody] extends [object]
           ? Objectify<
-              TBody extends ArrayBuffer | Blob | FormData
-                ? { body: TBody }
-                : TBody
+              TBody extends FormData
+                ? { body: FormData }
+                : TBody extends Blob
+                  ? { body: Blob | ArrayBuffer | Uint8Array }
+                  : TBody
             >
           : Objectify<TSearchParams>
       > extends infer TParams

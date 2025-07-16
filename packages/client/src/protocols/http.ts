@@ -54,7 +54,8 @@ export default {
           } else if (
             params.body instanceof Blob ||
             params.body instanceof FormData ||
-            params.body instanceof ArrayBuffer
+            params.body instanceof ArrayBuffer ||
+            params.body instanceof Uint8Array
           ) {
             request.body = params.body
           } else {
