@@ -470,6 +470,7 @@ function processSourceFile(
       } else if (name === 'Record') {
         yield `Type.Record${args}`
       } else if (
+        name === 'ArrayBuffer' ||
         name === 'Blob' ||
         name === 'FormData' ||
         name === 'Function'
