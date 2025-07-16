@@ -42,9 +42,8 @@ async function* generateJsonTextSequence(
   let value: JSON
   do {
     try {
-      if (!iterator) {
-        iterator = (await route.handler.apply(route, args)) as RouteIterator
-      }
+      iterator ||= route.handler.apply(route, args) as RouteIterator
+
       const iteration = await iterator.next()
       if (iteration.done) {
         const links = iteration.value
