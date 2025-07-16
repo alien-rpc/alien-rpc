@@ -13,8 +13,9 @@ const responder: RouteResponder = (route, args, ctx) => {
     generateJsonTextSequence(route, args, ctx.url)
   )
 
-  // Don't use "application/json-seq" until it's been standardized.
-  ctx.setHeader('Content-Type', 'text/plain; charset=utf-8')
+  // Don't use "application/json-seq" until it's been standardized. Set the
+  // content type to octet-stream to prevent response buffering on iOS.
+  ctx.setHeader('Content-Type', 'application/octet-stream')
   ctx.setHeader('X-Content-Type', 'application/json-seq')
 
   return new Response(stream)
