@@ -58,10 +58,6 @@ export function compileRoute(route: Route, options: CompileRouteOptions = {}) {
      * Invokes the route handler and prepares the HTTP response according
      * to the route's result format. The caller is responsible for decoding
      * the request data beforehand.
-     *
-     * @param params - The path parameters (possibly empty).
-     * @param data - The decoded request data.
-     * @param ctx - The route context.
      */
     async responder(args: Parameters<RouteHandler>, ctx: RequestContext) {
       const def = await importRoute<RouteDefinition>(route)
