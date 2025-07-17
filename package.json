@@ -37,7 +37,8 @@
     "build": "pnpm --stream m run build",
     "lint": "tsc-lint",
     "format": "prettier --write .",
-    "test": "vitest"
+    "test": "vitest",
+    "bump": "pnpm --workspace-concurrency=1 --filter \"[$(git describe --tags --abbrev=0)]\" -c exec 'echo $PNPM_PACKAGE_NAME && bumpp'"
   },
   "pnpm": {
     "overrides": {
