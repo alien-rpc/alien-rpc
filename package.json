@@ -2,7 +2,8 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@sinclair/typebox": "^0.34.0",
+    "@sinclair/typebox": "^0.34",
+    "alien-ws": "*",
     "radashi": "^12.3.0"
   },
   "devDependencies": {

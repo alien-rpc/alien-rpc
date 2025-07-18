@@ -62,7 +62,7 @@
     "kleur": "^4.1.5"
   },
   "peerDependencies": {
-    "@sinclair/typebox": "*",
+    "@sinclair/typebox": "^0.34",
     "alien-middleware": "*",
     "alien-ws": "*",
     "typescript": "*"

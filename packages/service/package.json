@@ -38,7 +38,7 @@
     "pathic": "workspace:^"
   },
   "peerDependencies": {
-    "@sinclair/typebox": "*",
+    "@sinclair/typebox": "^0.34",
     "alien-middleware": "*",
     "alien-ws": "*"
   },
