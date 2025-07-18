@@ -5,15 +5,18 @@ settings:
   excludeLinksFromLockfile: false
 
 overrides:
-  '@sinclair/typebox': ^0.34.0
+  '@sinclair/typebox': ^0.34
 
 importers:
 
   .:
     dependencies:
       '@sinclair/typebox':
-        specifier: ^0.34.0
+        specifier: ^0.34
         version: 0.34.37
+      alien-ws:
+        specifier: '*'
+        version: 0.2.0-rc.2(@types/node@22.16.3)(alien-middleware@0.10.2(@hattip/core@0.0.49))
       radashi:
         specifier: ^12.3.0
         version: 12.6.0
@@ -45,9 +48,6 @@ importers:
       '@types/picomatch':
         specifier: ^3.0.1
         version: 3.0.2
-      alien-middleware:
-        specifier: ^0.10.0
-        version: 0.10.2(@hattip/core@0.0.49)
       picomatch:
         specifier: ^4.0.2
         version: 4.0.2
@@ -87,12 +87,24 @@ importers:
       '@alien-rpc/service':
         specifier: workspace:^
         version: link:../service
+      '@sinclair/typebox':
+        specifier: ^0.34
+        version: 0.34.37
+      alien-middleware:
+        specifier: ^0.10.0
+        version: 0.10.2(@hattip/core@0.0.49)
+      alien-ws:
+        specifier: '*'
+        version: 0.2.0-rc.2(@types/node@22.16.3)(alien-middleware@0.10.2(@hattip/core@0.0.49))
       cac:
         specifier: ^6.7.14
         version: 6.7.14
       kleur:
         specifier: ^4.1.5
         version: 4.1.5
+      typescript:
+        specifier: '*'
+        version: 5.8.3
 
   packages/client:
     dependencies:
@@ -116,7 +128,7 @@ importers:
         specifier: ^0.1.2
         version: 0.1.2
       '@sinclair/typebox':
-        specifier: ^0.34.0
+        specifier: ^0.34
         version: 0.34.37
       debug:
         specifier: ^4.3.7
@@ -169,10 +181,10 @@ importers:
         specifier: ^1.2.0
         version: 1.2.0
       '@sinclair/typebox':
-        specifier: ^0.34.0
+        specifier: ^0.34
         version: 0.34.37
       alien-middleware:
-        specifier: '*'
+        specifier: ^0.10.0
         version: 0.10.2(@hattip/core@0.0.49)
       alien-ws:
         specifier: '*'
