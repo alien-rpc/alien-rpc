@@ -26,6 +26,10 @@
       "types": "./dist/generator.d.ts",
       "import": "./dist/generator.js"
     },
+    "./middleware": {
+      "types": "./dist/middleware.d.ts",
+      "import": "./dist/middleware.js"
+    },
     "./service/formats": {
       "types": "./dist/service/formats.d.ts",
       "import": "./dist/service/formats.js"
