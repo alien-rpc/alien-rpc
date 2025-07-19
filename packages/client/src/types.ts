@@ -394,7 +394,7 @@ export type RouteFunctions<
         : never
     }
 
-export type RouteTypeInfo<TRoute> = {
+export type RouteTypeInfo<TRoute = Route> = {
   /** Type information for the route. Doesn't exist at runtime. */
   __route: TRoute
 }
