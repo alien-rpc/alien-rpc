@@ -22,6 +22,10 @@
       "types": "./dist/client.d.ts",
       "import": "./dist/client.js"
     },
+    "./config": {
+      "types": "./dist/config.d.ts",
+      "import": "./dist/config.js"
+    },
     "./generator": {
       "types": "./dist/generator.d.ts",
       "import": "./dist/generator.js"
@@ -79,5 +83,8 @@
     "postbuild:dev": "chmod +x dist/main.js",
     "clean": "rimraf dist",
     "prepublishOnly": "pnpm -w lint $PWD && pnpm build"
+  },
+  "devDependencies": {
+    "tsx": "^4.20.3"
   }
 }

@@ -1,18 +1,20 @@
 #!/usr/bin/env node
 import cac from 'cac'
 import path from 'node:path'
-import { isArray } from 'radashi'
+import { isArray, omit } from 'radashi'
+import { loadConfigFile } from './common/config.js'
 import { log } from './common/log.js'
 import {
+  Shortcut,
   printShortcutsHelp,
   registerConsoleShortcuts,
-  Shortcut,
 } from './common/stdin.js'
+import { UserConfig } from './config.js'
 
 const app = cac('alien-rpc')
 
 app
-  .command('<...include>', 'Generate route definitions for your API')
+  .command('[...include]', 'Generate route definitions for your API')
   .example(
     bin =>
       `${bin} './server/src/routes/**/*.ts' --watch --serverOutFile ./server/src/api.ts --clientOutFile ./client/src/api.ts`
@@ -44,6 +46,7 @@ app
     'The current version of your API, prefixed to each route path'
   )
   .option('--no-format', 'Do not format the generated files')
+  .option('--no-config-file', 'Do not load a config file')
   .option('--verbose', 'Print diagnostics for node_modules')
   .action(
     async (
@@ -52,19 +55,28 @@ app
         root,
         watch,
         ...options
-      }: {
+      }: UserConfig & {
         root: string
         watch?: boolean
-        outDir: string
-        tsConfigFile: string
-        serverOutFile: string
-        clientOutFile: string
-        versionPrefix?: string
-        noFormat?: boolean
+        noConfigFile?: boolean
         verbose?: boolean
       }
     ) => {
       const { default: create } = await import('@alien-rpc/generator')
+
+      if (!options.noConfigFile) {
+        const { config, configPath } = await loadConfigFile(process.cwd())
+        if (configPath) {
+          log.comment(
+            'Using config file:',
+            path.relative(process.cwd(), configPath)
+          )
+          Object.assign(options, omit(config, ['include']))
+          if (include.length === 0) {
+            include = config.include
+          }
+        }
+      }
 
       let shortcuts: Shortcut[]
       if (watch) {
