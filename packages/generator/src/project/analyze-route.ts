@@ -392,18 +392,18 @@ function resolveResultFormat(
   if (isAssignableTo(typeChecker, type, types.AsyncIterable)) {
     return 'json-seq'
   }
-  if (isAssignableTo(typeChecker, types.Response, type)) {
-    throw new InvalidResponseTypeError(
-      'Routes that return a `new Response()` cannot ever return anything else.',
-      declaration
-    )
-  }
-  if (isAssignableTo(typeChecker, types.AsyncIterable, type)) {
-    throw new InvalidResponseTypeError(
-      'Routes that return an iterator cannot ever return anything else.',
-      declaration
-    )
-  }
+  // if (isAssignableTo(typeChecker, types.Response, type)) {
+  //   throw new InvalidResponseTypeError(
+  //     'Routes that return a `new Response()` cannot ever return anything else.',
+  //     declaration
+  //   )
+  // }
+  // if (isAssignableTo(typeChecker, types.AsyncIterable, type)) {
+  //   throw new InvalidResponseTypeError(
+  //     'Routes that return an iterator cannot ever return anything else.',
+  //     declaration
+  //   )
+  // }
   if (!isAssignableTo(typeChecker, type, types.RouteResult)) {
     throw new InvalidResponseTypeError(
       'Your route returns an unsupported type: ' +
