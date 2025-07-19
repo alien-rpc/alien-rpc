@@ -3,10 +3,10 @@ import type { Client } from '../client.js'
 import { NetworkError } from '../error.js'
 import type { ClientOptions, HeadersInit, RouteProtocol, ws } from '../types.js'
 import { withRetry } from '../utils/retry.js'
-import { urlWithPathname } from '../utils/url.js'
+import { resolvePrefixUrl, urlWithPathname } from '../utils/url.js'
 
 function getWebSocketURL(options: ClientOptions) {
-  const url = urlWithPathname(options.prefixUrl ?? location.origin, 'ws')
+  const url = urlWithPathname(resolvePrefixUrl(options.prefixUrl), 'ws')
   url.protocol = url.protocol.replace('http', 'ws')
   return url.href
 }

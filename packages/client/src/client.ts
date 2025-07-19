@@ -22,7 +22,7 @@ import { iterateHooks } from './utils/callHook.js'
 import { mergeHeaders } from './utils/mergeHeaders.js'
 import { mergeOptions } from './utils/mergeOptions.js'
 import { getShouldRetry, type ShouldRetryFunction } from './utils/retry.js'
-import { urlWithPathname } from './utils/url.js'
+import { resolvePrefixUrl, urlWithPathname } from './utils/url.js'
 
 type Fetch = (path: string, options?: FetchOptions) => Promise<Response>
 
@@ -140,7 +140,7 @@ function createFetchFunction(client: Client): Fetch {
 
     const queryIndex = input.indexOf('?')
     const url = urlWithPathname(
-      prefixUrl || location.origin,
+      resolvePrefixUrl(prefixUrl),
       queryIndex === -1 ? input : input.slice(0, queryIndex)
     )
     if (query) {
@@ -247,7 +247,7 @@ export function buildRouteURL(routeFunction: Function, params?: object | null) {
   const route = getRouteFromFunction(routeFunction as any)
   const { options }: Client = (routeFunction as any)[kClientProperty]
   const url = urlWithPathname(
-    options.prefixUrl || location.origin,
+    resolvePrefixUrl(options.prefixUrl),
     route.pathParams ? buildPath(route.path, params ?? {}) : route.path
   )
   if (bodylessMethods.has(route.method) && params) {
