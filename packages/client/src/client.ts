@@ -70,11 +70,7 @@ export function defineClient<
 }
 
 function createFetchFunction(client: Client): Fetch {
-  const {
-    prefixUrl = location.origin,
-    fetch = globalThis.fetch,
-    hooks,
-  } = client.options
+  const { prefixUrl, fetch = globalThis.fetch, hooks } = client.options
 
   const tryRequest = async (
     request: Request,
@@ -144,7 +140,7 @@ function createFetchFunction(client: Client): Fetch {
 
     const queryIndex = input.indexOf('?')
     const url = urlWithPathname(
-      prefixUrl,
+      prefixUrl || location.origin,
       queryIndex === -1 ? input : input.slice(0, queryIndex)
     )
     if (query) {
@@ -250,9 +246,8 @@ export function buildRouteURL<TRoute>(
 export function buildRouteURL(routeFunction: Function, params?: object | null) {
   const route = getRouteFromFunction(routeFunction as any)
   const { options }: Client = (routeFunction as any)[kClientProperty]
-  const { prefixUrl = location.origin } = options
   const url = urlWithPathname(
-    prefixUrl,
+    options.prefixUrl || location.origin,
     route.pathParams ? buildPath(route.path, params ?? {}) : route.path
   )
   if (bodylessMethods.has(route.method) && params) {
