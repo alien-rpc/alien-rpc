@@ -4,7 +4,7 @@ import type ts from 'typescript'
 import { debug } from '../debug.js'
 import { Project } from '../project.js'
 import { SupportingTypes } from './supporting-types.js'
-import { ReferencedTypes } from './type-references.js'
+import { ReferencedTypes } from './type-printer.js'
 import { getArrayElementType, isAssignableTo } from './utils.js'
 
 export type ResolvedHttpRoute = {
@@ -67,9 +67,14 @@ export function analyzeRoute(
   }
 
   const resolveArguments = (callSignature: ts.Signature) => {
-    const resolvedArguments: { name: string; type: ts.Type }[] = []
+    const resolvedArguments: {
+      name: string
+      type: ts.Type
+      typeNode?: ts.TypeNode
+    }[] = []
 
     const [argumentSymbols] = typeChecker.getExpandedParameters(callSignature)
+
     for (const argumentSymbol of argumentSymbols) {
       const argumentType = typeChecker.getTypeOfSymbol(argumentSymbol)
 
@@ -127,8 +132,7 @@ export function analyzeRoute(
         resultType: resolveClientResultType(
           project,
           typeChecker.getTypeOfPropertyOfType(routeType, '__clientResult'),
-          types,
-          referencedTypes
+          types
         ),
       },
     }
@@ -214,7 +218,6 @@ export function analyzeRoute(
         .map((prop, index) => {
           const propSymbol = type.getProperty(String(index))
           const propType = propSymbol && typeChecker.getTypeOfSymbol(propSymbol)
-
           return `${prop}: ${propType ? project.printTypeLiteralToString(propType, referencedTypes) : 'unknown'}`
         })
         .join(', ')} }`
@@ -247,8 +250,7 @@ export function analyzeRoute(
       resultType: resolveClientResultType(
         project,
         typeChecker.getTypeOfPropertyOfType(routeType, '__clientResult'),
-        types,
-        referencedTypes
+        types
       ),
     },
   }
@@ -292,8 +294,7 @@ function extractDescription(
 function resolveClientResultType(
   project: Project,
   type: ts.Type | undefined,
-  types: SupportingTypes,
-  referencedTypes?: Map<ts.Symbol, string>
+  types: SupportingTypes
 ): string {
   const typeChecker = project.getTypeChecker()
   const ts = project.utils
@@ -318,10 +319,10 @@ function resolveClientResultType(
 
     // This will be wrapped with either the ResponseStream or
     // ReadableStream type at a later stage.
-    return resolveClientResultType(project, yieldType, types, referencedTypes)
+    return resolveClientResultType(project, yieldType, types)
   }
 
-  return project.printTypeLiteralToString(type, referencedTypes)
+  return project.printTypeLiteralToString(type)
 }
 
 function resolveWebSocketPattern(

@@ -7,7 +7,13 @@ import {
   InvalidResponseTypeError,
 } from './analyze-route.js'
 import { SupportingTypes } from './supporting-types.js'
-import { ReferencedTypes } from './type-references.js'
+import {
+  collectTypeDeclarations,
+  isTypeDeclaration,
+  TypeDeclaration,
+} from './type-nodes.js'
+import { ReferencedTypes } from './type-printer.js'
+import { printTypeDeclaration } from './type-references.js'
 
 export type AnalyzedFile = ReturnType<typeof analyzeFile>
 
@@ -17,6 +23,7 @@ export function analyzeFile(
   types: SupportingTypes
 ) {
   const routes: AnalyzedRoute[] = []
+  const exportedTypes: Set<TypeDeclaration> = new Set()
   const referencedTypes: ReferencedTypes = new Map()
   const warnings: string[] = []
 
@@ -29,6 +36,20 @@ export function analyzeFile(
   ): void => {
     if (!ts.isExportedNode(node)) {
       return // Only consider exported declarations.
+    }
+
+    if (isTypeDeclaration(ts, node)) {
+      collectTypeDeclarations(ts, node, project, exportedTypes)
+    } else if (
+      ts.isExportDeclaration(node) &&
+      node.exportClause &&
+      ts.isNamedExports(node.exportClause)
+    ) {
+      node.exportClause.elements.forEach(specifier => {
+        if (ts.isIdentifier(specifier.name)) {
+          collectTypeDeclarations(ts, specifier.name, project, exportedTypes)
+        }
+      })
     }
 
     if (ts.isModuleDeclaration(node) && node.body) {
@@ -79,6 +100,23 @@ export function analyzeFile(
   }
 
   ts.forEachChild(sourceFile, visitor)
+
+  for (const typeDeclaration of exportedTypes) {
+    const symbol = typeDeclaration.symbol
+    if (referencedTypes.has(symbol)) {
+      continue
+    }
+    const typeString = printTypeDeclaration(
+      ts,
+      typeDeclaration,
+      project,
+      referencedTypes,
+      [symbol.name]
+    )
+    if (typeString) {
+      referencedTypes.set(symbol, typeString)
+    }
+  }
 
   return { routes, referencedTypes, warnings }
 }

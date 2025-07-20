@@ -31,9 +31,10 @@ export function createUtils(ts: typeof import('typescript')) {
       node: ts.Node & { modifiers?: readonly ts.ModifierLike[] }
     ): boolean {
       return Boolean(
-        node.modifiers?.some(
-          modifier => modifier.kind === ts.SyntaxKind.ExportKeyword
-        )
+        ts.isExportDeclaration(node) ||
+          node.modifiers?.some(
+            modifier => modifier.kind === ts.SyntaxKind.ExportKeyword
+          )
       )
     },
 
@@ -71,12 +72,7 @@ export function createUtils(ts: typeof import('typescript')) {
 
     isLibSymbol(symbol: ts.Symbol): boolean {
       const declarations = symbol?.getDeclarations()
-      return Boolean(
-        declarations?.some(declaration => {
-          const fileName = declaration.getSourceFile().fileName
-          return fileName.includes('/node_modules/typescript/lib/')
-        })
-      )
+      return Boolean(declarations && isLibSymbol(declarations))
     },
 
     isUndefinedType(type: ts.Type): boolean {
@@ -111,6 +107,13 @@ export function createUtils(ts: typeof import('typescript')) {
       return (sourceFile.statements[0] as ts.TypeAliasDeclaration).type
     },
   }
+}
+
+export function isLibSymbol(declarations: ts.Declaration[]): boolean {
+  return declarations.some(declaration => {
+    const fileName = declaration.getSourceFile().fileName
+    return fileName.includes('/node_modules/typescript/lib/')
+  })
 }
 
 export function isAssignableTo(

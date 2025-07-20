@@ -1,6 +1,6 @@
 import type ts from 'typescript'
 import { Project } from '../project.js'
-import { getArrayElementType, getTupleElements } from './utils.js'
+import { getArrayElementType, getTupleElements, ProjectUtils } from './utils.js'
 
 const typeConstraintFileRegex = /\/@?alien-rpc\/.+?\/constraint\.d\.ts$/
 
@@ -29,7 +29,8 @@ export function collectReferencedTypes(
       return
     }
 
-    const referencedSymbol = declaration && getDeclarationSymbol(declaration)
+    const referencedSymbol =
+      declaration && getDeclarationSymbol(ts, declaration, typeChecker)
 
     const recursive = !(
       (instanceSymbol && symbolStack.includes(instanceSymbol.name)) ||
@@ -41,6 +42,7 @@ export function collectReferencedTypes(
 
       const symbol = referencedSymbol ?? instanceSymbol
       const pushed = pushSymbol(symbolStack, symbol)
+      if (!pushed) return
 
       for (const nestedType of visitNestedTypes(type)) {
         collect(nestedType)
@@ -62,62 +64,23 @@ export function collectReferencedTypes(
         !ts.isEnumMember(symbol) &&
         !referencedTypes.has(symbol)
       ) {
-        let typeString: string
-        if (ts.isRegularEnum(symbol)) {
-          if (!declaration) {
-            throw new Error('Enum declaration not found')
-          }
-          typeString =
-            (ts.isExportedNode(declaration) ? '' : 'export ') +
-            declaration.getText()
-        } else {
-          typeString = `export type ${symbol.name} = `
-          if (ts.isInterfaceType(symbol)) {
-            typeString += '{\n'
-            for (const propertySymbol of (
-              type as ts.InterfaceType
-            ).getProperties()) {
-              // Prefer using a type node if available, as it could have an
-              // aliasSymbol attached, which must be collected as a type
-              // reference.
-              const propertyTypeNode =
-                propertySymbol.valueDeclaration &&
-                ts.isPropertySignature(propertySymbol.valueDeclaration)
-                  ? propertySymbol.valueDeclaration
-                  : undefined
-
-              const propertyType = propertyTypeNode?.type
-                ? typeChecker.getTypeFromTypeNode(propertyTypeNode.type)
-                : typeChecker.getTypeOfSymbol(propertySymbol)
-
-              typeString +=
-                '  ' +
-                propertySymbol.name +
-                (propertyTypeNode?.questionToken ? '?' : '') +
-                ': ' +
-                project.printTypeLiteralToString(
-                  propertyType,
-                  referencedTypes,
-                  symbolStack
-                ) +
-                '\n'
-            }
-            typeString += '}'
-          } else {
-            typeString += project.printTypeLiteralToString(
-              type,
-              referencedTypes,
+        const typeString = declaration
+          ? printTypeDeclaration(
+              ts,
+              declaration,
+              project,
+              undefined,
               symbolStack
             )
-          }
+          : `export type ${symbol.name} = ` +
+            project.printTypeLiteralToString(type, undefined, symbolStack)
+
+        if (typeString) {
+          referencedTypes.set(symbol, typeString)
         }
-
-        referencedTypes.set(symbol, typeString)
       }
 
-      if (pushed) {
-        symbolStack.pop()
-      }
+      symbolStack.pop()
     }
   }
 
@@ -166,20 +129,90 @@ export function collectReferencedTypes(
       }
     }
   }
+}
 
-  function getDeclarationSymbol(decl: ts.Declaration) {
-    const id = ts.isInterfaceDeclaration(decl)
-      ? decl.name
-      : decl.forEachChild(child => (ts.isIdentifier(child) ? child : undefined))
+export function getDeclarationSymbol(
+  ts: ProjectUtils,
+  declaration: ts.Declaration,
+  typeChecker: ts.TypeChecker
+) {
+  const id = ts.isInterfaceDeclaration(declaration)
+    ? declaration.name
+    : declaration.forEachChild(child =>
+        ts.isIdentifier(child) ? child : undefined
+      )
 
-    return id && typeChecker.getSymbolAtLocation(id)
-  }
+  return id && typeChecker.getSymbolAtLocation(id)
+}
 
-  function pushSymbol(symbolStack: string[], symbol: ts.Symbol | undefined) {
-    if (symbol && symbol.name !== '__type') {
-      symbolStack.push(symbol.name)
-      return true
+export function printTypeDeclaration(
+  ts: ProjectUtils,
+  declaration: ts.Declaration,
+  project: Project,
+  referencedTypes: ReferencedTypes | undefined,
+  symbolStack: string[]
+) {
+  const typeChecker = project.getTypeChecker()
+
+  const symbol = getDeclarationSymbol(ts, declaration, typeChecker)
+  if (!symbol) return
+
+  const type = ts.isTypeAliasDeclaration(declaration)
+    ? typeChecker.getTypeAtLocation(declaration.name)
+    : typeChecker.getTypeOfSymbol(symbol)
+
+  let typeString: string
+  if (ts.isRegularEnum(symbol)) {
+    typeString =
+      (ts.isExportedNode(declaration) ? '' : 'export ') + declaration.getText()
+  } else {
+    typeString = `export type ${symbol.name} = `
+
+    if (ts.isInterfaceType(symbol)) {
+      typeString += '{\n'
+      for (const propertySymbol of (type as ts.InterfaceType).getProperties()) {
+        // Prefer using a type node if available, as it could have an
+        // aliasSymbol attached, which must be collected as a type
+        // reference.
+        const propertyTypeNode =
+          propertySymbol.valueDeclaration &&
+          ts.isPropertySignature(propertySymbol.valueDeclaration)
+            ? propertySymbol.valueDeclaration
+            : undefined
+
+        const propertyType = propertyTypeNode?.type
+          ? typeChecker.getTypeFromTypeNode(propertyTypeNode.type)
+          : typeChecker.getTypeOfSymbol(propertySymbol)
+
+        typeString +=
+          '  ' +
+          propertySymbol.name +
+          (propertyTypeNode?.questionToken ? '?' : '') +
+          ': ' +
+          project.printTypeLiteralToString(
+            propertyType,
+            referencedTypes,
+            symbolStack
+          ) +
+          '\n'
+      }
+      typeString += '}'
+    } else {
+      typeString += project.printTypeLiteralToString(
+        type,
+        referencedTypes,
+        symbolStack
+      )
     }
-    return false
   }
+
+  return typeString
+}
+
+function pushSymbol(symbolStack: string[], symbol: ts.Symbol | undefined) {
+  if (symbol && symbol.name !== '__type') {
+    symbolStack.push(symbol.name)
+    return true
+  }
+  return false
 }

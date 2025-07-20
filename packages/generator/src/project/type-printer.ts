@@ -1,11 +1,14 @@
 import type * as tscExtra from 'tsc-extra'
 import type ts from 'typescript'
-import { collectReferencedTypes, ReferencedTypes } from './type-references.js'
-import { ProjectUtils } from './utils.js'
+import type { Project } from '../project.js'
+import { collectReferencedTypes } from './type-references.js'
+import type { ProjectUtils } from './utils.js'
+
+export type ReferencedTypes = Map<ts.Symbol, string>
 
 export const createTypePrinter = (
   project: tscExtra.Project,
-  utils: ProjectUtils
+  ts: ProjectUtils
 ) =>
   function printTypeLiteralToString(
     type: ts.Type,
@@ -13,17 +16,22 @@ export const createTypePrinter = (
     symbolStack: string[] = []
   ): string {
     if (referencedTypes) {
-      collectReferencedTypes(type, project as any, referencedTypes, symbolStack)
+      collectReferencedTypes(
+        type,
+        project as Project,
+        referencedTypes,
+        symbolStack
+      )
     }
 
     const typeChecker = project.getTypeChecker()
 
-    if (utils.isTypeReference(type)) {
+    if (ts.isTypeReference(type)) {
       let typeArguments = typeChecker.getTypeArguments(type)
 
       // Lib symbols should be preserved, instead of expanding them. But
       // their type arguments should still be expanded.
-      if (utils.isLibSymbol(type.symbol)) {
+      if (ts.isLibSymbol(type.symbol)) {
         if (!typeArguments.length) {
           return type.symbol.name
         }
@@ -46,7 +54,7 @@ export const createTypePrinter = (
       }
     }
 
-    if (utils.isLibSymbol(type.symbol)) {
+    if (ts.isLibSymbol(type.symbol)) {
       return typeChecker.typeToString(type)
     }
 
@@ -54,7 +62,7 @@ export const createTypePrinter = (
       return type.aliasSymbol.name
     }
 
-    const { TypeFormatFlags } = utils
+    const { TypeFormatFlags } = ts
 
     return typeChecker.typeToString(
       type,
