@@ -38,7 +38,7 @@
     "lint": "tsc-lint",
     "format": "prettier --write .",
     "test": "vitest",
-    "bump": "pnpm --workspace-concurrency=1 --filter \"[$(git describe --tags --abbrev=0)]\" -c exec 'echo $PNPM_PACKAGE_NAME && bumpp'"
+    "bump": "pnpm --workspace-concurrency=1 --filter !. --filter alien-rpc --filter \"[$(git describe --tags --abbrev=0)]\" -c exec 'echo $PNPM_PACKAGE_NAME && bumpp' && pnpm publish -r"
   },
   "pnpm": {
     "overrides": {
