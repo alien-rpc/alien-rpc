@@ -218,7 +218,7 @@ function processSourceFile(
       !options.emitConstOnly &&
       `${exports}type ${staticTypeName} = Static<${staticReference}>`
 
-    const typeDeclaration = `${exports}const ${typeName} = ${type}`
+    const typeDeclaration = `${exports}const ${typeName} = /* @__PURE__ */ ${type}`
 
     return join(staticDeclaration, typeDeclaration)
   }
@@ -264,7 +264,7 @@ function processSourceFile(
         !options.emitConstOnly &&
         `${exports}type ${node.name.getText()} = Static<typeof ${node.name.getText()}>`
 
-      const type = `${exports}const ${node.name.getText()} = Type.Enum(Enum${node.name.getText()})`
+      const type = `${exports}const ${node.name.getText()} = /* @__PURE__ */ Type.Enum(Enum${node.name.getText()})`
 
       yield join(enumType, '', staticType, type)
     }
