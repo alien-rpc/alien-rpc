@@ -27,7 +27,7 @@ export function collectTypeDeclarations(
   ts: ProjectUtils,
   typeNode: ts.TypeNode | ts.NamedDeclaration | ts.EntityName,
   project: Project,
-  out = new Set<TypeDeclaration>()
+  onTypeDeclaration: (typeDeclaration: TypeDeclaration) => void
 ) {
   const typeChecker = project.getTypeChecker()
   const seen = new Set<ts.Symbol>()
@@ -104,7 +104,7 @@ export function collectTypeDeclarations(
       crawlTypeParameters(declaration)
       crawlTypeNode(declaration.type)
 
-      out.add(declaration)
+      onTypeDeclaration(declaration)
     }
 
     // INTERFACE
@@ -116,12 +116,12 @@ export function collectTypeDeclarations(
         heritage.types.forEach(crawlTypeNode)
       })
 
-      out.add(declaration)
+      onTypeDeclaration(declaration)
     }
 
     // ENUM
     else if (ts.isEnumDeclaration(declaration)) {
-      out.add(declaration)
+      onTypeDeclaration(declaration)
     }
   }
 
@@ -160,6 +160,4 @@ export function collectTypeDeclarations(
   } else {
     resolveTypeName(typeNode)
   }
-
-  return out
 }

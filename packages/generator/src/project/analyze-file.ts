@@ -23,12 +23,28 @@ export function analyzeFile(
   types: SupportingTypes
 ) {
   const routes: AnalyzedRoute[] = []
-  const exportedTypes: Set<TypeDeclaration> = new Set()
   const referencedTypes: ReferencedTypes = new Map()
   const warnings: string[] = []
 
   const typeChecker = project.getTypeChecker()
   const ts = project.utils
+
+  const onTypeDeclaration = (typeDeclaration: TypeDeclaration) => {
+    const symbol = typeDeclaration.symbol
+    if (referencedTypes.has(symbol)) {
+      return
+    }
+    const typeString = printTypeDeclaration(
+      ts,
+      typeDeclaration,
+      project,
+      referencedTypes,
+      [symbol.name]
+    )
+    if (typeString) {
+      referencedTypes.set(symbol, typeString)
+    }
+  }
 
   const visitor = (
     node: ts.Node,
@@ -39,7 +55,7 @@ export function analyzeFile(
     }
 
     if (isTypeDeclaration(ts, node)) {
-      collectTypeDeclarations(ts, node, project, exportedTypes)
+      collectTypeDeclarations(ts, node, project, onTypeDeclaration)
     } else if (
       ts.isExportDeclaration(node) &&
       node.exportClause &&
@@ -47,7 +63,12 @@ export function analyzeFile(
     ) {
       node.exportClause.elements.forEach(specifier => {
         if (ts.isIdentifier(specifier.name)) {
-          collectTypeDeclarations(ts, specifier.name, project, exportedTypes)
+          collectTypeDeclarations(
+            ts,
+            specifier.name,
+            project,
+            onTypeDeclaration
+          )
         }
       })
     }
@@ -100,23 +121,6 @@ export function analyzeFile(
   }
 
   ts.forEachChild(sourceFile, visitor)
-
-  for (const typeDeclaration of exportedTypes) {
-    const symbol = typeDeclaration.symbol
-    if (referencedTypes.has(symbol)) {
-      continue
-    }
-    const typeString = printTypeDeclaration(
-      ts,
-      typeDeclaration,
-      project,
-      referencedTypes,
-      [symbol.name]
-    )
-    if (typeString) {
-      referencedTypes.set(symbol, typeString)
-    }
-  }
 
   return { routes, referencedTypes, warnings }
 }
