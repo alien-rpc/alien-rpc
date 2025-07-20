@@ -16,7 +16,7 @@
     "@hattip/adapter-test": "^0.0.49",
     "@types/node": "^22.7.4",
     "@types/picomatch": "^3.0.1",
-    "picomatch": "^4.0.2",
+    "picomatch": "^4.0.3",
     "prettier": "^3.2.5",
     "tinyglobby": "^0.2.9",
     "tinyrun": "^1.0.1",
