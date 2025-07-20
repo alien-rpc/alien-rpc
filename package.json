@@ -42,7 +42,8 @@
   },
   "pnpm": {
     "overrides": {
-      "@sinclair/typebox": "$@sinclair/typebox"
+      "@sinclair/typebox": "$@sinclair/typebox",
+      "picomatch": "$picomatch"
     }
   }
 }
