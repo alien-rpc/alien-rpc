@@ -42,6 +42,23 @@ Each client also has the following methods:
 - `extend(options: ClientOptions)`: Create a client with the given options, using the current client as a source of default options.
 - `fetch(input, init?)`: Send an non-typed request with the `fetch` API extended by the client's `options` object.
 
+### Streaming responses
+
+When calling routes that return streaming responses (async generators), the client automatically handles the JSON Text Sequence format. If an error occurs during streaming on the server side, it will be automatically forwarded to the client and thrown as a proper Error instance.
+
+```ts
+const client = defineClient(API)
+
+try {
+  for await (const post of client.streamPosts()) {
+    console.log(post)
+  }
+} catch (error) {
+  // Errors from the server stream are caught here
+  console.error('Stream error:', error.message)
+}
+```
+
 ## Example
 
 An end-to-end example does not currently exist.

@@ -237,6 +237,19 @@ export const streamPosts = route.get('/posts', async function* () {
 
 This takes advantage of the [JSON Text Sequence](https://www.rfc-editor.org/rfc/rfc7464.html) format. Any JSON-compatible data can be yielded by your route handler. This allows the client to start receiving data before the route handler has finished executing.
 
+### Error handling in streams
+
+When errors occur during streaming (after response headers have been sent), they are automatically forwarded to the client as part of the JSON sequence. The error will be wrapped in a special `$error` object and sent to the client, where it will be thrown as a proper Error instance.
+
+```ts
+export const streamPosts = route.get('/posts', async function* () {
+  yield { id: 1, title: 'First post' }
+  // If an error occurs here, it will be sent to the client
+  throw new Error('Something went wrong')
+  // This becomes: { $error: { message: 'Something went wrong', ... } }
+})
+```
+
 ### Reserved keys
 
 For generator-based routes, you must never yield objects of the following shape:
@@ -244,7 +257,7 @@ For generator-based routes, you must never yield objects of the following shape:
 - `{ $error: any }`
 - `{ $prev: any; $next: any }`
 
-These yield types are reserved for pagination and error handling.
+These yield types are reserved for error handling and pagination respectively.
 
 ### Pagination
 
