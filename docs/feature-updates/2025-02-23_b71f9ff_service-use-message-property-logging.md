@@ -7,328 +7,76 @@
 
 ## Summary
 
-This commit refactors error logging for thrown Response objects by using the `message` property from JsonResponse bodies when available, providing more meaningful error messages in development logs.
+Refactored error logging to use `message` property from JsonResponse bodies for more meaningful development error messages.
 
-## User Impact
+## User-Visible Changes
 
-**Audience:** Developers debugging JSON streaming routes in development
-**Breaking Change:** No - logging improvement only
-**Migration Required:** No - existing code continues to work unchanged
+- **Enhanced error logging**: Custom messages from JsonResponse bodies now appear in development logs instead of generic "Thrown response"
+- **Better debugging experience**: Error logs show contextual messages like "User authentication failed" or "Invalid request parameters"
+- **Preserved functionality**: All existing error handling behavior remains unchanged
+- **Development-only improvement**: Changes only affect development environment logging
+- **Automatic message extraction**: JsonResponse bodies with `message` property automatically used for log output
+- **Fallback behavior**: Non-JsonResponse objects or those without `message` property still show "Thrown response"
+- **Stack trace preservation**: Original Response stack traces maintained in error logs
+- **Property copying**: All Response properties still copied to Error object for debugging
 
-## Key Changes
+## Examples
 
-### Refactored Error Creation Utility
+### Error Logging Enhancement
 
 **Before:**
 ```ts
-// In errorUtils.ts
-export function createError(message: string, props: any) {
-  const error = new Error(message)
-  Object.assign(error, props)
-  if ('stack' in props) {
-    error.stack = 'Error: ' + message + '\n' + props.stack
-  }
-  return error
-}
-
-// Usage
-console.error(createError('Thrown response', error))
+// All errors showed generic message
+throw new JsonResponse({ message: 'User not found', code: 'USER_404' })
+// Log: "Error: Thrown response"
 ```
 
 **After:**
 ```ts
-// In errorUtils.ts
-export function getErrorFromResponse(response: Response) {
-  const { message = 'Thrown response', ...props } =
-    response instanceof JsonResponse ? response.decodedBody : {}
-  const error = new Error(message)
-  Object.assign(error, props)
-  if ('stack' in response) {
-    error.stack = 'Error: ' + message + '\n' + response.stack
-  }
-  return error
-}
-
-// Usage
-console.error(getErrorFromResponse(error))
+// Custom messages now appear in logs
+throw new JsonResponse({ message: 'User not found', code: 'USER_404' })
+// Log: "Error: User not found"
 ```
 
-### Enhanced Message Extraction
+### Function Refactoring
 
 ```ts
-// Extracts custom message from JsonResponse body
-const { message = 'Thrown response', ...props } =
-  response instanceof JsonResponse ? response.decodedBody : {}
-```
-
-### Updated JSON-Seq Logging
-
-```ts
-// In packages/service/src/responders/json-seq.ts
-if (error instanceof Response) {
-  if (!process.env.TEST && process.env.NODE_ENV !== 'production') {
-    console.error(getErrorFromResponse(error))
-  }
-  // ... rest of error handling
-}
-```
-
-## Implementation Details
-
-### Message Priority Logic
-
-1. **JsonResponse with message:** Uses `decodedBody.message`
-2. **JsonResponse without message:** Falls back to `'Thrown response'`
-3. **Other Response types:** Uses `'Thrown response'` default
-4. **Property preservation:** All other properties copied to Error object
-
-### Stack Trace Handling
-
-```ts
-// Stack trace comes from Response object, not props
-if ('stack' in response) {
-  error.stack = 'Error: ' + message + '\n' + response.stack
-}
-```
-
-### Function Naming Improvement
-
-- **Old:** `createError(message, props)` - generic error creation
-- **New:** `getErrorFromResponse(response)` - specific to Response objects
-- **Purpose clarity:** Function name clearly indicates its specific use case
-
-## Usage Examples
-
-### Custom JsonResponse with Message
-
-```ts
-import { route } from '@alien-rpc/service'
-import { JsonResponse } from '@alien-rpc/service/response'
-
-export const streamData = route.get('/stream', async function* () {
-  yield { status: 'starting' }
-  
-  // Custom error with meaningful message
-  throw new JsonResponse({
-    message: 'User authentication failed',
-    code: 'AUTH_ERROR',
-    userId: 12345
-  }, { status: 401 })
-})
-```
-
-**Development Console Output:**
-```
-Error: User authentication failed
-    at streamData (/path/to/route.ts:6:9)
-    at ...
-{
-  code: 'AUTH_ERROR',
-  userId: 12345,
-  status: 401,
-  statusText: 'Unauthorized',
-  headers: Headers { ... }
-}
-```
-
-### JsonResponse without Custom Message
-
-```ts
-export const streamData = route.get('/stream', async function* () {
-  yield { status: 'starting' }
-  
-  // No custom message in body
-  throw new JsonResponse({
-    code: 'VALIDATION_ERROR',
-    field: 'email'
-  }, { status: 400 })
-})
-```
-
-**Development Console Output:**
-```
-Error: Thrown response
-    at streamData (/path/to/route.ts:6:9)
-    at ...
-{
-  code: 'VALIDATION_ERROR',
-  field: 'email',
-  status: 400,
-  statusText: 'Bad Request',
-  headers: Headers { ... }
-}
-```
-
-### Standard Response Object
-
-```ts
-import { NotFoundError } from '@alien-rpc/service/response'
-
-export const streamData = route.get('/stream', async function* () {
-  yield { status: 'starting' }
-  
-  // Standard response class (no decodedBody)
-  throw new NotFoundError()
-})
-```
-
-**Development Console Output:**
-```
-Error: Thrown response
-    at streamData (/path/to/route.ts:6:9)
-    at ...
-{
-  status: 404,
-  statusText: 'Not Found',
-  headers: Headers { ... },
-  stack: 'Error\n    at new NotFoundError (/path/to/response.ts:123:5)\n    at ...'
-}
-```
-
-## Error Message Improvements
-
-### Before: Generic Messages
-
-```
-// All thrown responses logged with same message
-Error: Thrown response
-    at routeHandler (/path/to/route.ts:15:9)
-```
-
-### After: Contextual Messages
-
-```
-// Custom messages from JsonResponse bodies
-Error: User authentication failed
-    at routeHandler (/path/to/route.ts:15:9)
-
-Error: Invalid request parameters
-    at routeHandler (/path/to/route.ts:22:9)
-
-Error: Database connection timeout
-    at routeHandler (/path/to/route.ts:30:9)
-```
-
-## JsonResponse Body Structure
-
-### Recommended Pattern
-
-```ts
-// Structure for meaningful error logging
-throw new JsonResponse({
-  message: 'Human-readable error description',  // Used in logs
-  code: 'ERROR_CODE',                         // Application error code
-  details: 'Additional context information',   // Extra debugging info
-  timestamp: new Date().toISOString(),        // Error occurrence time
-  requestId: 'req-12345'                      // Request correlation ID
-}, { status: 400 })
-```
-
-### Message Property Benefits
-
-1. **Log clarity:** Descriptive error messages in development logs
-2. **Debugging efficiency:** Quickly identify error types from logs
-3. **Context preservation:** Custom messages provide business context
-4. **Consistency:** Standardized approach to error message extraction
-
-## Development Workflow Improvements
-
-### Error Identification
-
-```ts
-// Multiple different errors in same route
-export const processData = route.get('/process', async function* () {
-  if (!user.authenticated) {
-    throw new JsonResponse({ 
-      message: 'Authentication required' 
-    }, { status: 401 })
-  }
-  
-  if (!user.hasPermission('read')) {
-    throw new JsonResponse({ 
-      message: 'Insufficient permissions' 
-    }, { status: 403 })
-  }
-  
-  if (!data.isValid) {
-    throw new JsonResponse({ 
-      message: 'Invalid data format' 
-    }, { status: 400 })
-  }
-  
-  yield { result: processedData }
-})
-```
-
-**Log Output Differentiation:**
-```
-Error: Authentication required
-Error: Insufficient permissions  
-Error: Invalid data format
-```
-
-### Stack Trace Preservation
-
-- **Response stack:** Original Response creation stack trace preserved
-- **Error stack:** Combined with custom message for full context
-- **Source mapping:** Points to exact location where Response was thrown
-
-## Function Signature Changes
-
-### Removed Function
-
-```ts
-// No longer available
+// Old utility (removed)
 export function createError(message: string, props: any)
-```
 
-### New Function
-
-```ts
-// Specialized for Response objects
+// New utility (specialized for Response objects)
 export function getErrorFromResponse(response: Response): Error
 ```
 
-### Migration Guide
+## Config/Flags
 
-If you were using `createError` directly (unlikely as it was internal):
+- No configuration changes
+- Development environment logging only
+- Automatic message extraction from JsonResponse bodies
 
-```ts
-// Before
-const error = createError('Custom message', responseObject)
+## Breaking/Migration
 
-// After  
-const error = getErrorFromResponse(responseObject)
-// Note: message now comes from response.decodedBody.message
-```
+- **Breaking**: Internal `createError` function removed (unlikely to affect users)
+- **Migration**: Replace `createError` calls with `getErrorFromResponse` if used directly
+- **Non-breaking**: All existing error handling behavior preserved
 
-## Performance Considerations
+## Tags
 
-- **Development only:** Function only called in development environments
-- **Error path optimization:** Minimal overhead on error handling paths
-- **Memory efficiency:** Reuses existing Error objects and properties
-- **Property copying:** Efficient object spread and assignment
+`logging` `error-handling` `development` `json-response` `debugging`
 
-## Security Implications
+## Evidence
 
-- **Message exposure:** Custom messages only in development logs
-- **Property isolation:** Response properties copied to Error for logging
-- **Stack trace handling:** Preserves original Response stack traces
-- **Production safety:** No changes to production error handling
-
-## Files Modified
-
+**Modified Files:**
 - `packages/service/src/errorUtils.ts` - Replaced `createError` with `getErrorFromResponse`
-- `packages/service/src/responders/json-seq.ts` - Updated to use new error function
+- `packages/service/src/responders/json-seq.ts` - Updated error logging to use new function
 
-## Related Features
+**Message Extraction Logic:**
+- JsonResponse with `message` property: Uses custom message in logs
+- JsonResponse without `message`: Falls back to "Thrown response"
+- Other Response types: Uses "Thrown response" default
+- Stack trace preservation: Original Response stack traces maintained
 
-- JSON Text Sequence streaming (RFC 7464)
-- JsonResponse error handling
-- Development debugging tools
-- Error logging utilities
-- Response object stack traces
-
-## Open Questions
-
-No unanswered questions
+**Development Benefits:**
+- Contextual error messages like "User authentication failed" instead of generic "Thrown response"
+- Better debugging experience with meaningful log output
+- Automatic property copying from Response to Error object

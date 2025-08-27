@@ -1,36 +1,26 @@
 # Support Thrown Response Objects
 
-**Commit:** 73a13d8388f6e762f608e93f35db0704bf0cb1aa  
-**Author:** Alec Larson  
-**Date:** Thu Jan 2 14:23:01 2025 -0500  
-**Short SHA:** 73a13d8
+**Commit:** `73a13d8` (2025-01-02)
 
 ## Summary
 
-This is a **breaking change** that replaces the old `HttpError` class system with Response subclasses that can be thrown directly from route handlers. The new system provides better integration with web standards and more flexible error handling.
+**Breaking change** that replaces the old `HttpError` class system with Response subclasses that can be thrown directly from route handlers, providing better integration with web standards.
 
-## User Impact
+## User-visible Changes
 
-**Audience:** All users who throw errors in their route handlers  
-**Breaking Change:** Yes - existing `HttpError` usage must be migrated  
-**Migration Required:** Yes - update error throwing code
-
-## Key Changes
-
-### Removed
-- `HttpError` abstract class and all its subclasses
-- Old constructor signatures for error classes
-
-### Added
-- `JsonResponse` class for JSON responses with automatic Content-Type header
-- `InternalServerError` class (extends JsonResponse)
+- Removed `HttpError` abstract class and all its subclasses
+- Added `JsonResponse` class for JSON responses with automatic Content-Type header
+- Added `InternalServerError` class (extends JsonResponse)
 - All HTTP error classes now extend `Response` instead of `HttpError`
-- New constructor signatures for all error classes
+- Updated constructor signatures for error classes
+- New dependency: `option-types: ^1.1.0`
 
-## Migration Guide
+## Examples
 
-### Before (Old HttpError System)
-```ts
+### Migration from HttpError to Response
+
+```typescript
+// Before (Old HttpError System)
 import { BadRequestError, UnauthorizedError } from '@alien-rpc/service'
 
 export const getUser = route.get('/users/:id', async (id) => {
@@ -44,12 +34,8 @@ export const getUser = route.get('/users/:id', async (id) => {
   
   return await getUserById(id)
 })
-```
 
-### After (New Response System)
-```ts
-import { BadRequestError, UnauthorizedError } from '@alien-rpc/service'
-
+// After (New Response System)
 export const getUser = route.get('/users/:id', async (id) => {
   if (!id) {
     throw new BadRequestError({ message: 'User ID is required' })
@@ -63,85 +49,53 @@ export const getUser = route.get('/users/:id', async (id) => {
 })
 ```
 
-### Constructor Changes
+### JsonResponse Usage
 
-**BadRequestError:**
-- Old: `new BadRequestError(message: string, headers?: Headers)`
-- New: `new BadRequestError(error: { message: string } & Record<string, unknown>, headers?: Headers)`
-
-**InternalServerError:**
-- Old: `new InternalServerErrorError(message: string, headers?: Headers)`
-- New: `new InternalServerError(error: { message: string } & Record<string, unknown>, headers?: Headers)`
-
-**Other Error Classes:**
-- Old: `new UnauthorizedError(message?: string, headers?: Headers)`
-- New: `new UnauthorizedError(headers?: Headers)`
-
-## New Response Classes
-
-### JsonResponse
-Base class for JSON responses with automatic Content-Type header:
-```ts
+```typescript
 import { JsonResponse } from '@alien-rpc/service'
 
 // Automatically sets Content-Type: application/json
 throw new JsonResponse({ error: 'Custom error' }, { status: 422 })
 ```
 
-### Available Error Classes
-All error classes now extend `Response` and can be thrown directly:
+### Constructor Changes
 
-- `BadRequestError` (400) - extends JsonResponse
-- `UnauthorizedError` (401)
-- `ForbiddenError` (403)
-- `ConflictError` (409)
-- `GoneError` (410)
-- `LengthRequiredError` (411)
-- `PreconditionFailedError` (412)
-- `RangeNotSatisfiableError` (416)
-- `ExpectationFailedError` (417)
-- `MisdirectedRequestError` (421)
-- `UnprocessableContentError` (422)
-- `PreconditionRequiredError` (428)
-- `TooManyRequestsError` (429)
-- `UnavailableForLegalReasonsError` (451)
-- `InternalServerError` (500) - extends JsonResponse
+```typescript
+// BadRequestError
+// Old: new BadRequestError(message: string, headers?: Headers)
+// New: new BadRequestError(error: { message: string } & Record<string, unknown>, headers?: Headers)
 
-### Redirect Classes
-- `TemporaryRedirect` (307)
-- `PermanentRedirect` (308)
+// InternalServerError
+// Old: new InternalServerError(message: string, headers?: Headers)
+// New: new InternalServerError(error: { message: string } & Record<string, unknown>, headers?: Headers)
 
-## Configuration
+// Other Error Classes (e.g., UnauthorizedError)
+// Old: new UnauthorizedError(message?: string, headers?: Headers)
+// New: new UnauthorizedError(headers?: Headers)
+```
 
-No configuration changes required. The new system works with existing `compileRoutes` setup.
+## Config/Flags
 
-## Dependencies
+No configuration changes required. Works with existing `compileRoutes` setup.
 
-Adds new dependency:
-- `option-types: ^1.1.0`
+## Breaking/Migration
 
-## References
+**Breaking change**: All `HttpError` usage must be migrated to new Response-based error classes with updated constructor signatures.
 
-**Files Modified:**
-- `packages/service/src/compileRoutes.ts` - Updated error handling
-- `packages/service/src/error.ts` - Removed (deleted)
-- `packages/service/src/response.ts` - Added (new Response classes)
-- `packages/service/src/headers.ts` - Added
-- `packages/service/src/index.ts` - Updated exports
-- `packages/service/package.json` - Added option-types dependency
+## Tags
 
-**Related Documentation:**
-- [HTTP Errors Documentation](../packages/service/docs/http-errors.md)
+- service
+- breaking-change
+- error-handling
+- response-objects
+- web-standards
+- http-errors
 
-## Open Questions
+## Evidence
 
-**High**
-- Are there any edge cases where the old HttpError.isHttpError() method was used that need migration guidance?
-- Do any existing middleware or error handling patterns need updates for the new Response-based system?
-
-**Medium**
-- Should there be a compatibility layer or migration helper for the breaking constructor changes?
-- Are there performance implications of using Response objects vs the old HttpError classes?
-
-**Low**
-- Should the JsonResponse class support additional JSON serialization options beyond JSON.stringify()?
+- Removed `packages/service/src/error.ts` (deleted HttpError classes)
+- Added `packages/service/src/response.ts` (new Response classes)
+- Updated `packages/service/src/compileRoutes.ts` for new error handling
+- Added `packages/service/src/headers.ts`
+- Updated exports in `packages/service/src/index.ts`
+- Added `option-types: ^1.1.0` dependency

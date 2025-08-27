@@ -1,25 +1,19 @@
 # Add `errorMode` Option to Client
 
-## Commit Metadata
-
-- **Full SHA**: 58ca1cc15f184914ec600201a4ef2406c1108bdb
-- **Author**: Alec Larson <1925840+aleclarson@users.noreply.github.com>
-- **Date**: Mon Nov 11 08:30:02 2024 -0500
-- **Short SHA**: 58ca1cc
+**Commit:** `58ca1cc` (2024-11-11)
 
 ## Summary
 
 Adds a new `errorMode` option to the client that controls how errors are handled - either by rejecting promises (default) or returning error tuples.
 
-## User Impact
+## User-visible Changes
 
-**Audience**: All alien-rpc client users
+- New `errorMode` client option with values `'reject'` (default) or `'return'`
+- When `errorMode: 'return'`, route functions return `[error, undefined]` on failure and `[undefined, result]` on success
+- When `errorMode: 'reject'` (default), route functions throw errors and return results directly
+- Provides alternative to try/catch error handling for functional programming patterns
 
-**Default Behavior**: Errors continue to reject promises (`errorMode: 'reject'`)
-
-**Opt-in/Opt-out**: Optional configuration - set `errorMode: 'return'` to receive errors as tuple values instead of promise rejections
-
-## How to Use
+## Examples
 
 ### Default Behavior (Promise Rejection)
 
@@ -52,76 +46,28 @@ if (error) {
 }
 ```
 
-## Configuration and Defaults
+## Config/Flags
 
 - **Option**: `errorMode`
 - **Type**: `'return' | 'reject'`
 - **Default**: `'reject'`
-- **Description**: Controls error handling behavior
-  - `'reject'`: Errors reject the promise (traditional behavior)
-  - `'return'`: Errors are returned as `[error, undefined]` tuples
+- **Scope**: Client-wide configuration
 
-## API/CLI Specifics
+## Breaking/Migration
 
-**Client Options Interface**:
+**Non-breaking**: Default behavior remains unchanged. Existing code continues to work without modification.
 
-```typescript
-export type ClientOptions = {
-  errorMode?: ErrorMode
-  // ... other options
-}
+## Tags
 
-export type ErrorMode = 'return' | 'reject'
-```
+- client
+- error-handling
+- functional-programming
+- tuples
+- promise-rejection
 
-**Behavior**:
+## Evidence
 
-- When `errorMode: 'return'`, route functions return `[error, undefined]` on failure
-- When `errorMode: 'return'`, route functions return `[undefined, result]` on success
-- When `errorMode: 'reject'` (default), route functions throw errors and return results directly
-
-## Migration/Upgrade Notes
-
-- **No breaking changes**: Default behavior remains unchanged
-- **Backward compatible**: Existing code continues to work without modification
-- **New option**: Teams can opt into tuple-based error handling for better error management patterns
-
-## Security/Permissions
-
-No security implications - this only changes how errors are returned to the caller.
-
-## Performance/Limits
-
-Minimal performance impact - adds a conditional check and tuple wrapping when `errorMode: 'return'` is used.
-
-## References
-
-**Files Modified**:
-
-- `packages/client/src/client.ts` - Core client logic and error handling
-- `packages/client/src/types.ts` - Type definitions for `ErrorMode` and `ClientOptions`
-
-**Related**: This feature provides an alternative to try/catch error handling, useful for functional programming patterns and explicit error handling.
-
-## Open Questions
-
-### Critical
-
-- How do I configure errorMode in ClientOptions; is it `{ errorMode: 'return' | 'reject' }`?
-- What is the exact return type difference: does 'return' mode return `Result<T, Error>` or `T | Error`?
-- Can I mix error modes within the same client instance, or is it global per client?
-- Does errorMode affect TypeScript inference; do I need different type assertions?
-
-### High
-
-- How do I handle errors in 'return' mode: check `result instanceof Error` or use a discriminated union?
-- What happens to existing try/catch blocks when switching from 'reject' to 'return' mode?
-- Does retry logic in RequestOptions work the same way in both error modes?
-- How does errorMode interact with streaming responses and ResponseStream.toArray()?
-
-### Medium
-
-- Can I override errorMode per individual request using RequestOptions?
-- How do I migrate existing error handling code when changing errorMode?
-- What debugging patterns work best for each error mode in development?
-- Does errorMode affect how ConnectionError vs RequestError are handled?
+- Updated `ClientOptions` interface with `errorMode?: ErrorMode` property
+- Modified core client logic in `packages/client/src/client.ts`
+- Added `ErrorMode` type definition as `'return' | 'reject'`
+- Conditional error handling based on mode selection

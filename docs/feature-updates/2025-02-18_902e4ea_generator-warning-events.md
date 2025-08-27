@@ -2,66 +2,22 @@
 
 **Commit:** `902e4ea` - feat(generator): add "warning" event
 
-## Overview
+## Summary
 
-The generator now emits "warning" events when routes are skipped due to invalid response types. This provides better visibility into why certain routes might not be included in the generated client code.
+The generator now emits "warning" events when routes are skipped due to invalid response types, providing better visibility into route processing issues while continuing to generate client code for valid routes.
 
-## What Changed
+## User-Visible Changes
 
-### Warning Event Emission
+- **Warning Events**: Generator emits "warning" events for skipped routes with invalid response types
+- **Non-blocking Processing**: Generator continues processing other routes when encountering errors
+- **Better Error Visibility**: Clear messages indicate which routes were skipped and why
+- **Graceful Degradation**: Client code generated for valid routes even if some routes fail
+- **Optional Monitoring**: Warning events can be listened to for debugging purposes
+- **No Breaking Changes**: Existing generator behavior unchanged for valid routes
 
-When the generator encounters a route with an `InvalidResponseTypeError`, it now:
+## Examples
 
-1. **Catches the error** instead of failing completely
-2. **Emits a "warning" event** with details about the skipped route
-3. **Continues processing** other routes in the file
-
-### Error Handling Flow
-
-The generator follows this process when analyzing routes:
-
-```typescript
-try {
-  // Analyze route for type safety and supported response types
-  const route = analyzeRoute(routeFunction)
-  routes.push(route)
-} catch (error) {
-  if (error instanceof InvalidResponseTypeError) {
-    // Emit warning instead of failing
-    generator.emit('warning', {
-      message: `Route skipped: ${error.message}`,
-      route: routeFunction.name,
-      file: currentFile,
-    })
-  } else {
-    throw error // Re-throw other errors
-  }
-}
-```
-
-## When Warnings Are Generated
-
-Warnings are emitted when routes have:
-
-- **Unsupported response types** that can't be serialized/deserialized safely
-- **Non-type-safe return values** that would break client-server communication
-- **Complex types** that the static analysis can't properly handle
-
-## Benefits
-
-### Better Developer Experience
-
-- **Non-blocking**: Generator continues processing even when some routes fail
-- **Visibility**: Developers can see which routes were skipped and why
-- **Debugging**: Clear error messages help identify and fix problematic routes
-
-### Improved Reliability
-
-- **Partial success**: Generate client code for valid routes even if some routes fail
-- **Graceful degradation**: Application remains functional with subset of routes
-
-## Usage Example
-
+**Basic Warning Listener:**
 ```typescript
 import { generateClient } from '@alien-rpc/generator'
 
@@ -80,13 +36,45 @@ generator.on('warning', warning => {
 await generator.generate()
 ```
 
-## Migration Notes
+**Error Handling Flow:**
+```typescript
+try {
+  const route = analyzeRoute(routeFunction)
+  routes.push(route)
+} catch (error) {
+  if (error instanceof InvalidResponseTypeError) {
+    generator.emit('warning', {
+      message: `Route skipped: ${error.message}`,
+      route: routeFunction.name,
+      file: currentFile,
+    })
+  } else {
+    throw error
+  }
+}
+```
 
-- **No breaking changes**: Existing code continues to work unchanged
-- **Optional monitoring**: Warning events are optional to listen to
-- **Backward compatible**: Generator behavior remains the same for valid routes
+## Config/Flags
 
-## Related
+- **Warning event properties**: `message`, `route`, `file` for debugging context
+- **Trigger conditions**: Unsupported response types, non-serializable returns
+- **Optional monitoring**: Listen to warning events for debugging
 
-- See [Route Analysis](../generator/route-analysis.md) for details on supported response types
-- See [Error Handling](../generator/error-handling.md) for other generator error scenarios
+## Breaking/Migration
+
+- **Non-breaking**: Existing generator behavior unchanged
+- **No migration**: Code continues to work without changes
+- **Graceful degradation**: Valid routes still generate successfully
+
+## Tags
+
+- **Generator enhancement**: Better error visibility
+- **Developer experience**: Clear warning messages
+- **Error handling**: Non-blocking route processing
+
+## Evidence
+
+- **Implementation**: Generator emits warning events for invalid routes
+- **Error handling**: Enhanced flow for `InvalidResponseTypeError`
+- **Behavior**: Continues processing valid routes when some fail
+- **Monitoring**: Optional warning event listeners for debugging

@@ -1,27 +1,21 @@
 # Improved tsconfig.json Handling
 
-## Commit Metadata
-
-- **Full SHA**: da22743614dcd6296ca8d75643c47f78aa647d35
-- **Author**: Alec Larson <1925840+aleclarson@users.noreply.github.com>
-- **Date**: Mon Dec 9 18:43:45 2024 -0500
-- **Short SHA**: da22743
+**Commit:** `da22743` (2024-12-09)
 
 ## Summary
 
-Enhances tsconfig.json handling with automatic reloading, improved change detection, better dependency tracking, and verification that tsconfig files target the correct directories.
+Enhances tsconfig.json handling with automatic reloading, improved change detection, better dependency tracking, and verification that tsconfig files target the correct directories. Provides a more responsive development experience with complex TypeScript configurations.
 
-## User Impact
+## User-visible Changes
 
-**Audience**: All alien-rpc users, especially those with complex TypeScript configurations
+- Automatic tsconfig.json reloading when files change
+- Better change propagation to affected route modules
+- Directory verification ensures configs apply to correct scope
+- Improved dependency tracking between configs and modules
+- More efficient caching and config resolution
+- Upgraded to jumpgen@0.2.0 for better file watching
 
-**Default Behavior**: More reliable and responsive handling of TypeScript configuration changes
-
-**Opt-in/Opt-out**: Automatic - no user configuration required
-
-## How to Use
-
-This improvement works automatically and provides better developer experience:
+## Examples
 
 ### Automatic tsconfig Reloading
 
@@ -65,26 +59,10 @@ This improvement works automatically and provides better developer experience:
 // and doesn't incorrectly use configs from parent directories
 ```
 
-## Configuration and Defaults
-
-- **No configuration required**: Improvements work automatically
-- **Automatic discovery**: Uses `fs.findUp` to locate tsconfig files
-- **Directory verification**: Ensures tsconfig files target the correct directories
-- **Dependency tracking**: Tracks which modules depend on which tsconfig files
-
-## API/CLI Specifics
-
-**Enhanced Features**:
-
-1. **Automatic Reloading**: tsconfig files are watched and reloaded when changed
-2. **Change Propagation**: Route modules are notified when their tsconfig changes
-3. **Directory Verification**: Ensures tsconfig files apply to the correct scope
-4. **Dependency Tracking**: Tracks relationships between configs and modules
-
-**Internal Improvements**:
+### Enhanced Directory Handling
 
 ```typescript
-// Enhanced directory handling
+// Enhanced directory structure with better config association
 interface Directory {
   files: Set<ts.SourceFile>
   resolutionCache: Map<string, ResolvedModuleWithFailedLookupLocations>
@@ -98,86 +76,28 @@ fs.watch(directory.tsConfig.fileName, {
 })
 ```
 
-## Migration/Upgrade Notes
+## Config/Flags
 
-- **No breaking changes**: All existing functionality preserved
-- **Better reliability**: More consistent behavior with complex tsconfig setups
-- **Automatic benefits**: Users get improvements without any changes
-- **Dependency upgrade**: Includes jumpgen@0.2.0 for better file watching
+No configuration required. All improvements work automatically with existing tsconfig.json files.
 
-## Performance/Limits
+## Breaking/Migration
 
-**Performance Improvements**:
+No breaking changes. All existing functionality preserved with automatic reliability improvements.
 
-- **Smarter reloading**: Only reloads what's actually affected by config changes
-- **Better caching**: More efficient tsconfig resolution and caching
-- **Reduced redundancy**: Avoids processing files with incorrect config associations
-- **Optimized watching**: More targeted file watching for config changes
+## Tags
 
-**Reliability Improvements**:
+- generator
+- typescript
+- tsconfig
+- file-watching
+- performance
+- developer-experience
+- non-breaking
 
-- **Accurate targeting**: Ensures configs apply to the right directories
-- **Proper invalidation**: Clears caches when configs change
-- **Dependency awareness**: Understands which modules depend on which configs
+## Evidence
 
-## Security/Permissions
-
-No security implications - this is a configuration handling improvement.
-
-## References
-
-**Files Modified**:
-
-- `packages/generator/src/generator.ts` - Enhanced config change handling
-- `packages/generator/src/generator-types.ts` - Updated type definitions
-- `packages/generator/src/typescript/tsconfig.ts` - Improved config resolution
-- `packages/generator/src/typescript/wrap.ts` - Better config integration
-- `packages/generator/package.json` - Upgraded to jumpgen@0.2.0
-
-**Key Improvements**:
-
-1. **Automatic Reloading**: tsconfig files are watched and reloaded on change
-2. **Change Events**: Route modules receive notifications when their tsconfig changes
-3. **Directory Verification**: Ensures tsconfig files target the correct directories
-4. **Dependency Tracking**: Tracks which modules depend on which configurations
-5. **Better Caching**: More efficient config resolution and caching
-
-**Technical Benefits**:
-
-- More responsive development experience
-- Better handling of monorepo setups
-- Improved reliability with complex TypeScript configurations
-- Reduced need for manual restarts
-- More accurate config application
-
-**Use Cases**:
-
-- Projects with multiple tsconfig files
-- Monorepos with different TypeScript configurations
-- Development workflows with frequent config changes
-- Complex TypeScript setups with path mapping and custom configurations
-
-**Related**: This enhancement builds on the import resolution caching from the previous commit and provides a more robust foundation for TypeScript configuration management.
-
-## Open Questions
-
-### Critical
-
-- Does alien-rpc automatically reload when I modify tsconfig.json, or do I need to restart?
-- Which tsconfig.json settings are most relevant for alien-rpc route generation?
-- How do I configure tsconfig.json for monorepos with multiple packages?
-- What happens if my tsconfig.json has syntax errors or invalid settings?
-
-### High
-
-- How does alien-rpc handle TypeScript project references in tsconfig.json?
-- Can I use a separate tsconfig.json specifically for alien-rpc generation?
-- How do I debug tsconfig-related issues during route generation?
-- What TypeScript path mapping features work with alien-rpc?
-
-### Medium
-
-- How does tsconfig.json inheritance (extends) work with alien-rpc?
-- What happens when different directories have conflicting tsconfig.json settings?
-- Can I override specific tsconfig settings for alien-rpc without affecting my build?
-- What's the performance impact of watching multiple tsconfig.json files?
+- Updated `packages/generator/src/generator.ts` (enhanced config change handling)
+- Updated `packages/generator/src/generator-types.ts` (updated type definitions)
+- Updated `packages/generator/src/typescript/tsconfig.ts` (improved config resolution)
+- Updated `packages/generator/src/typescript/wrap.ts` (better config integration)
+- Updated `packages/generator/package.json` (upgraded to jumpgen@0.2.0)

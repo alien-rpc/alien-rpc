@@ -7,29 +7,18 @@
 
 ## Summary
 
-This is a **breaking change** that removes automatic response validation from the alien-rpc service layer. Previously, all route responses were validated against their TypeScript-generated schemas using TypeBox's `Value.Encode()`. This validation step has been completely removed to improve performance and reduce bundle size.
+Removed automatic response validation from the alien-rpc service layer. Previously, all route responses were validated against their TypeScript-generated schemas using TypeBox's `Value.Encode()`. This validation step has been completely removed to improve performance and reduce bundle size.
 
-## User Impact
+## User-Visible Changes
 
-**Audience:** All users with existing alien-rpc services  
-**Breaking Change:** Yes - response validation no longer occurs  
-**Migration Required:** Minimal - existing code continues to work but without validation
+- **Faster Response Times:** No validation overhead
+- **Smaller Bundle Size:** Reduced TypeBox usage
+- **Lower Memory Usage:** No schema compilation for responses
+- **Reduced CPU Usage:** No schema compilation and validation
+- **Lower Latency:** Direct JSON serialization
+- **Breaking Change:** Response validation no longer occurs
 
-## Key Changes
-
-### Removed
-- `responseSchema` property from Route interface
-- `Value.Encode()` calls in JSON and JSON-seq responders
-- Runtime response validation against TypeScript schemas
-- TypeBox dependency usage for response validation
-- Response schema generation in the generator
-
-### Performance Impact
-- **Faster response times** - no validation overhead
-- **Smaller bundle size** - reduced TypeBox usage
-- **Lower memory usage** - no schema compilation for responses
-
-## Before and After
+## Examples
 
 ### Before (With Response Validation)
 ```ts
@@ -68,31 +57,11 @@ const result = await handler(request)
 return JSON.stringify(result) // ← Direct serialization
 ```
 
-## Migration Guide
-
-### No Code Changes Required
-Existing route handlers continue to work without modification:
-
-```ts
-// This code works exactly the same before and after
-export const getUser = route.get('/users/:id', async (id: string) => {
-  const user = await getUserById(id)
-  return {
-    id: user.id,
-    name: user.name,
-    email: user.email
-  }
-})
-```
-
 ### Manual Validation (If Needed)
-If you need response validation for debugging or data integrity, implement it manually:
-
 ```ts
 import { Value } from '@sinclair/typebox/value'
 import { Type } from '@sinclair/typebox'
 
-// Define your response schema
 const UserResponseSchema = Type.Object({
   id: Type.String(),
   name: Type.String(),
@@ -119,67 +88,39 @@ export const getUser = route.get('/users/:id', async (id: string) => {
 })
 ```
 
-## Benefits of This Change
+### No Code Changes Required
+```ts
+// This code works exactly the same before and after
+export const getUser = route.get('/users/:id', async (id: string) => {
+  const user = await getUserById(id)
+  return {
+    id: user.id,
+    name: user.name,
+    email: user.email
+  }
+})
+```
 
-### Performance Improvements
-- **Faster API responses** - eliminates validation overhead
-- **Reduced CPU usage** - no schema compilation and validation
-- **Lower latency** - direct JSON serialization
+## Config/Flags
 
-### Bundle Size Reduction
-- **Smaller generated code** - no response schema definitions
-- **Reduced TypeBox usage** - only used for request validation
-- **Cleaner route definitions** - simpler generated code
+No configuration changes required - removal is automatic when upgrading.
 
-### Simplified Architecture
-- **Trust TypeScript** - compile-time type safety is sufficient
-- **Fewer runtime dependencies** - reduced complexity
-- **Better performance characteristics** - especially for high-throughput APIs
+## Breaking/Migration
 
-## Considerations
+**Breaking Change:** Yes - response validation no longer occurs  
+**Migration Required:** Minimal - existing code continues to work but without validation
 
-### When Response Validation Was Useful
-- **Development debugging** - catching type mismatches at runtime
-- **Data integrity** - ensuring responses match expected format
-- **API contract enforcement** - validating against OpenAPI specs
+## Tags
 
-### Alternative Approaches
-- **TypeScript strict mode** - catch type errors at compile time
-- **Unit testing** - validate response shapes in tests
-- **Integration testing** - test full request/response cycles
-- **Manual validation** - add validation where specifically needed
+- Breaking change
+- Performance improvement
+- Bundle size reduction
+- Response validation
+- TypeBox removal
 
-## Configuration
+## Evidence
 
-No configuration changes required. The removal is automatic when upgrading.
-
-## Dependencies
-
-No dependency changes. TypeBox is still used for request validation.
-
-## References
-
-**Files Modified:**
-- `packages/generator/src/generator.ts` - Removed response schema generation
-- `packages/service/src/responders/json.ts` - Removed Value.Encode() call
-- `packages/service/src/responders/json-seq.ts` - Removed validation for streaming responses
-- `packages/service/src/types.ts` - Removed responseSchema from Route interface
-
-**Related Documentation:**
-- [Performance Guide](../packages/service/docs/performance.md)
-- [Validation Documentation](../packages/service/docs/validation.md)
-- [Migration Guide](../packages/service/docs/migration.md)
-
-## Open Questions
-
-**High**
-- Should there be an opt-in flag to re-enable response validation for development environments?
-- Are there any edge cases where the lack of response validation could cause issues?
-
-**Medium**
-- Should the documentation provide more guidance on when and how to implement manual validation?
-- Would it be helpful to provide a development-only validation middleware?
-
-**Low**
-- Should there be performance benchmarks showing the improvement from removing validation?
-- Are there any tools or utilities that could help developers validate responses during development?
+**Files Modified:** 4 files (generator, json responder, json-seq responder, types)  
+**Dependencies:** TypeBox still used for request validation  
+**Performance:** Faster responses, reduced CPU usage, lower latency  
+**Bundle Size:** Smaller generated code, reduced TypeBox usage

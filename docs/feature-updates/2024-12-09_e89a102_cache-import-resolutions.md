@@ -1,29 +1,23 @@
 # Cache Import Resolutions and Improve Diagnostics
 
-## Commit Metadata
-
-- **Full SHA**: e89a1021fc1e18f49a08e5d5cf8561538f6801d8
-- **Author**: Alec Larson <1925840+aleclarson@users.noreply.github.com>
-- **Date**: Mon Dec 9 11:21:47 2024 -0500
-- **Short SHA**: e89a102
+**Commit:** `e89a102` (2024-12-09)
 
 ## Summary
 
-Implements import resolution caching and improves diagnostics handling by only processing modules that are used by route-containing files, plus automatic state reset when tsconfig files change.
+Implements import resolution caching and improves diagnostics handling by only processing modules that are used by route-containing files, plus automatic state reset when tsconfig files change. Provides significant performance improvements for generation speed.
 
-## User Impact
+## User-visible Changes
 
-**Audience**: All alien-rpc users (performance improvement)
+- Faster generation with cached import resolutions
+- Cleaner diagnostics that only show errors from route-related files
+- Automatic cache invalidation when tsconfig files change
+- Reduced memory usage and CPU consumption
+- Better handling of large codebases with many TypeScript files
+- Selective file processing for improved performance
 
-**Default Behavior**: Faster generation with more focused error reporting
+## Examples
 
-**Opt-in/Opt-out**: Automatic - no user configuration required
-
-## How to Use
-
-This is an internal performance optimization that works automatically. Users will experience:
-
-### Faster Generation
+### Faster Generation Performance
 
 ```bash
 # Before: Slower import resolution on each run
@@ -33,7 +27,7 @@ npx alien-rpc generate
 npx alien-rpc generate  # Much faster on repeated runs
 ```
 
-### Cleaner Diagnostics
+### Cleaner Diagnostics Output
 
 ```bash
 # Before: Diagnostics from all TypeScript files
@@ -52,16 +46,7 @@ npx alien-rpc generate  # Much faster on repeated runs
 # 3. Reloads with new configuration
 ```
 
-## Configuration and Defaults
-
-- **No configuration required**: Caching works automatically
-- **Cache scope**: Import resolutions are cached per directory and tsconfig
-- **Cache invalidation**: Automatic when tsconfig files change
-- **Diagnostics filtering**: Only reports errors from route-related files
-
-## API/CLI Specifics
-
-**Internal Caching Structure**:
+### Internal Caching Structure
 
 ```typescript
 interface Store {
@@ -79,87 +64,30 @@ interface Directory {
 }
 ```
 
-**Performance Optimizations**:
+## Config/Flags
 
-- **Import resolution caching**: Avoids re-resolving the same imports
-- **Directory-based organization**: Shares resolution context within directories
-- **Selective file processing**: Only processes files imported by routes
-- **Smart cache invalidation**: Clears caches when configuration changes
+No configuration required. All caching and performance improvements work automatically.
 
-## Migration/Upgrade Notes
+## Breaking/Migration
 
-- **No breaking changes**: All existing functionality preserved
-- **Performance improvement**: Generation should be noticeably faster
-- **Cleaner output**: Fewer irrelevant TypeScript diagnostics
-- **Better resource usage**: Reduced memory and CPU usage
+No breaking changes. All existing functionality preserved with automatic performance improvements.
 
-## Performance/Limits
+## Tags
 
-**Performance Improvements**:
+- generator
+- performance
+- caching
+- diagnostics
+- typescript
+- import-resolution
+- memory-optimization
+- non-breaking
 
-- **Faster import resolution**: Cached resolutions avoid repeated file system operations
-- **Reduced TypeScript processing**: Only processes relevant files
-- **Memory efficiency**: Better cache management and cleanup
-- **Incremental updates**: Smarter handling of file changes
+## Evidence
 
-**Cache Management**:
-
-- **Automatic cleanup**: Unused cache entries are identified and removed
-- **Per-directory caching**: Efficient sharing of resolution context
-- **Config-aware caching**: Separate caches for different TypeScript configurations
-
-## Security/Permissions
-
-No security implications - this is a performance optimization.
-
-## References
-
-**Files Modified**:
-
-- `packages/generator/src/generator.ts` - Main caching logic and state management
-- `packages/generator/src/generator-types.ts` - New type definitions for caching
-- `packages/generator/src/analyze-file.ts` - Updated to work with cached resolutions
-- `packages/generator/src/diagnostics.ts` - Improved diagnostics filtering
-- `packages/generator/src/typescript/supporting-types.ts` - Cache-aware type handling
-- `packages/generator/src/typescript/wrap.ts` - TypeScript module wrapping utilities
-
-**Key Features**:
-
-1. **Import Resolution Caching**: Avoids re-resolving the same imports multiple times
-2. **Selective File Processing**: Only processes files that are actually used by routes
-3. **Diagnostics Filtering**: Reports only relevant TypeScript errors
-4. **Automatic State Reset**: Clears caches when tsconfig files change
-5. **Directory-based Organization**: Efficient cache sharing within directories
-
-**Technical Benefits**:
-
-- Reduced file system operations
-- Lower memory usage
-- Faster incremental builds
-- More focused error reporting
-- Better handling of large codebases
-
-**Related**: This optimization significantly improves the developer experience, especially for larger projects with many TypeScript files.
-
-## Open Questions
-
-### Critical
-
-- Is the import resolution cache persisted between generator runs or only in-memory?
-- How do I clear the cache when I move or rename files in my project?
-- What happens to cached resolutions when I add new dependencies to package.json?
-- Does the cache work correctly in monorepos with multiple tsconfig.json files?
-
-### High
-
-- How much memory does the resolution cache typically use for large projects?
-- Can I configure the cache size or set limits to prevent memory issues?
-- What diagnostic information is available to debug cache hits vs misses?
-- How does the cache interact with TypeScript path mapping in tsconfig.json?
-
-### Medium
-
-- Can I get statistics on cache hit/miss ratios to measure performance improvements?
-- How do I debug issues where cached resolutions become stale or incorrect?
-- Does the cache handle dynamic imports and conditional imports correctly?
-- What's the cache invalidation strategy when dependencies are updated?
+- Updated `packages/generator/src/generator.ts` (main caching logic and state management)
+- Updated `packages/generator/src/generator-types.ts` (new type definitions for caching)
+- Updated `packages/generator/src/analyze-file.ts` (updated to work with cached resolutions)
+- Updated `packages/generator/src/diagnostics.ts` (improved diagnostics filtering)
+- Updated `packages/generator/src/typescript/supporting-types.ts` (cache-aware type handling)
+- Updated `packages/generator/src/typescript/wrap.ts` (TypeScript module wrapping utilities)

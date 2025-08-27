@@ -1,71 +1,32 @@
 # WebSocket Support Improvements
 
-**Commit:** 4569c8c8f5b5e8b5e8b5e8b5e8b5e8b5e8b5e8b5
-**Author:** Alec Larson
-**Date:** 2025-02-17
-**Short SHA:** 4569c8c
+**Commit:** 4569c8c  
+**Date:** 2025-02-18
 
 ## Summary
 
-This commit introduces significant improvements to WebSocket support in `@alien-rpc/service`, focusing on better error handling, deferred execution management, and route definition structure. The changes enhance the reliability and developer experience of WebSocket routes.
+Improves WebSocket support with better error handling, deferred execution management, and enhanced route definition structure. Replaces `addEventListener('end')` with `ctx.defer()` for more reliable cleanup and error context.
 
-## User Impact
+## User-Visible Changes
 
-**Audience:** Developers using WebSocket routes in alien-rpc
-**Breaking Change:** Yes - API changes for WebSocket route definitions
-**Migration Required:** Yes - update WebSocket route handlers and defer usage
-**Status:** Stable - part of WebSocket support improvements
+- **Enhanced error handling** - Deferred handlers receive error context with `reason` parameter
+- **Improved cleanup reliability** - `Promise.allSettled` ensures all handlers execute
+- **New defer API** - `ctx.defer(handler)` replaces `ctx.addEventListener('end', handler)`
+- **Route definition structure** - Explicit protocol specification with `RouteDefinition` type
+- **Flexible async iterables** - Support for `undefined` values in streaming responses
+- **Better type safety** - Enhanced TypeScript support for WebSocket routes
 
-## Key Changes
+## Examples
 
-### Enhanced Error Handling with Deferred Execution
-
-**Before (endHandlers):**
-
+### New Defer API
 ```ts
-// Old approach with endHandlers array
-const endHandlers: (() => void)[] = []
-
-// Adding cleanup handlers
-context.addEventListener('end', handler)
-
-// Execution without error context
-endHandlers.forEach(handler => handler())
-```
-
-**After (deferQueue with Promise.allSettled):**
-
-```ts
-// New approach with deferQueue and error context
-const deferQueue: ((reason?: any) => void)[] = []
-
-// Adding cleanup handlers with optional reason parameter
-context.defer(handler)
-
-// Execution with error context and proper error handling
-await Promise.allSettled(deferQueue.map(handler => handler(reason))).catch(
-  console.error
-)
-```
-
-### Updated WebSocket Context API
-
-**Before:**
-
-```ts
-// Old addEventListener approach
+// Before: addEventListener approach
 context.addEventListener('end', () => {
-  // Cleanup without error context
-  cleanup()
+  cleanup() // No error context
 })
-```
 
-**After:**
-
-```ts
-// New defer method with error context
+// After: defer with error context
 context.defer(async (reason?: any) => {
-  // Cleanup with optional error information
   if (reason) {
     console.error('Request ended with error:', reason)
   }
@@ -73,42 +34,8 @@ context.defer(async (reason?: any) => {
 })
 ```
 
-### Route Definition Structure Changes
-
-**Before (RouteHandler):**
-
+### Enhanced Error Handling
 ```ts
-type RouteHandler = (...args: any[]) => any
-```
-
-**After (RouteDefinition):**
-
-```ts
-type RouteDefinition<
-  TArgs extends any[] = any[],
-  TResult extends ws.RouteResult = any,
-> = {
-  protocol: 'ws'
-  handler: (...args: TArgs) => TResult
-  middlewares?: MiddlewareChain
-}
-```
-
-### Enhanced Type Safety
-
-**RouteIterableResult Update:**
-
-```ts
-// Now allows undefined values in async iterables
-type RouteIterableResult = AsyncIterable<JSONCodable | undefined>
-```
-
-## Implementation Details
-
-### Deferred Execution Flow
-
-```ts
-// WebSocket route execution with improved error handling
 export const exampleRoute = route.ws(async function* (
   data: any,
   ctx: ws.RequestContext
@@ -123,231 +50,82 @@ export const exampleRoute = route.ws(async function* (
     }
   })
 
-  // Route logic
-  try {
-    for (let i = 0; i < 10; i++) {
-      yield { count: i, timestamp: Date.now() }
-      await new Promise(resolve => setTimeout(resolve, 1000))
-    }
-  } catch (error) {
-    // Error will be passed to deferred handlers as 'reason'
-    throw error
+  // Route logic with automatic error propagation
+  for (let i = 0; i < 10; i++) {
+    yield { count: i, timestamp: Date.now() }
+    await new Promise(resolve => setTimeout(resolve, 1000))
   }
 })
 ```
 
 ### Multiple Deferred Handlers
-
 ```ts
 export const complexRoute = route.ws(
   async (data: any, ctx: ws.RequestContext) => {
-    // Multiple cleanup handlers
+    // Multiple cleanup handlers - all execute with Promise.allSettled
+    ctx.defer(async reason => await database.cleanup())
+    ctx.defer(async reason => await cache.invalidate())
     ctx.defer(async reason => {
-      await database.cleanup()
+      if (reason) await errorReporting.log(reason)
     })
 
-    ctx.defer(async reason => {
-      await cache.invalidate()
-    })
-
-    ctx.defer(async reason => {
-      if (reason) {
-        await errorReporting.log(reason)
-      }
-    })
-
-    // All handlers will be executed with Promise.allSettled
     return await processData(data)
   }
 )
 ```
 
-### Route Definition with Explicit Protocol
-
+### Route Definition Structure
 ```ts
-// Route definitions now explicitly specify WebSocket protocol
+// New explicit route definition structure
 const routeDefinition: ws.RouteDefinition = {
   protocol: 'ws',
   handler: async (message: string, ctx: ws.RequestContext) => {
     return `Echo: ${message}`
   },
-  middlewares: authMiddleware, // Optional middleware chain
+  middlewares: authMiddleware // Optional middleware chain
 }
 ```
 
-## Benefits
+## Config/Flags
 
-### Improved Error Handling
+**Route Definition Options:**
+- `protocol: 'ws'` - Explicit WebSocket protocol specification
+- `handler` - Route handler function with enhanced context
+- `middlewares` - Optional middleware chain support
 
-- **Error Context**: Deferred handlers receive error information
-- **Robust Execution**: `Promise.allSettled` ensures all handlers run
-- **Better Debugging**: Error reasons are passed to cleanup handlers
+**Context Methods:**
+- `ctx.defer(handler)` - Register cleanup handler with error context
+- `reason` parameter - Optional error information passed to deferred handlers
 
-### Enhanced Reliability
+**Type Enhancements:**
+- `RouteIterableResult` - Now supports `undefined` values in async iterables
+- `RouteDefinition<TArgs, TResult>` - Explicit route structure with generics
 
-- **Guaranteed Cleanup**: All deferred handlers execute even if some fail
-- **Error Isolation**: Individual handler failures don't prevent others
-- **Resource Management**: Better cleanup of WebSocket resources
+## Breaking/Migration
 
-### Type Safety
+**Breaking Changes:**
+- `ctx.addEventListener('end')` → `ctx.defer(handler)` for cleanup
+- Route definitions now require explicit `protocol: 'ws'`
+- `RouteIterableResult` now supports `undefined` values
 
-- **Explicit Protocol**: Route definitions clearly specify WebSocket protocol
-- **Flexible Results**: Support for undefined values in async iterables
-- **Better IntelliSense**: Improved IDE support for WebSocket routes
+**Migration Steps:**
+1. Replace `addEventListener('end')` with `ctx.defer()`
+2. Add `protocol: 'ws'` to route definitions
+3. Update type annotations for routes that yield `undefined`
 
-## Migration Guide
+## Tags
 
-### Update Event Listeners to Defer
+`websocket` `error-handling` `cleanup` `type-safety` `reliability` `deferred-execution` `promise-allsettled`
 
-**Before:**
+## Evidence
 
-```ts
-export const oldRoute = route.ws(async (data: any, ctx: ws.RequestContext) => {
-  ctx.addEventListener('end', () => {
-    cleanup()
-  })
-
-  return processData(data)
-})
-```
-
-**After:**
-
-```ts
-export const newRoute = route.ws(async (data: any, ctx: ws.RequestContext) => {
-  ctx.defer(async reason => {
-    if (reason) {
-      console.error('Route ended with error:', reason)
-    }
-    await cleanup()
-  })
-
-  return processData(data)
-})
-```
-
-### Handle Undefined in Async Iterables
-
-```ts
-export const streamRoute = route.ws(async function* (count: number) {
-  for (let i = 0; i < count; i++) {
-    // Can now yield undefined values
-    if (shouldSkip(i)) {
-      yield undefined
-    } else {
-      yield { number: i }
-    }
-  }
-})
-```
-
-### Update Route Imports
-
-```ts
-// Ensure route definitions match new structure
-const { handler } = await importRoute<ws.RouteDefinition>(route)
-```
-
-## Error Handling Examples
-
-### Basic Error Handling
-
-```ts
-export const errorProneRoute = route.ws(
-  async (data: any, ctx: ws.RequestContext) => {
-    ctx.defer(async reason => {
-      if (reason instanceof Error) {
-        await logError(reason)
-      }
-    })
-
-    // This error will be passed to deferred handlers
-    throw new Error('Something went wrong')
-  }
-)
-```
-
-### Resource Cleanup with Error Context
-
-```ts
-export const resourceRoute = route.ws(
-  async (data: any, ctx: ws.RequestContext) => {
-    const resource = await acquireResource()
-
-    ctx.defer(async reason => {
-      try {
-        await resource.release()
-      } catch (cleanupError) {
-        console.error('Cleanup failed:', cleanupError)
-        if (reason) {
-          console.error('Original error:', reason)
-        }
-      }
-    })
-
-    return await resource.process(data)
-  }
-)
-```
-
-## Technical Details
-
-### Promise.allSettled Usage
-
-```ts
-// Internal implementation of deferred handler execution
-try {
-  await handler(...params, context)
-} catch (error) {
-  console.error(error)
-  reason = error
-} finally {
-  // All handlers execute regardless of individual failures
-  await Promise.allSettled(deferQueue.map(handler => handler(reason))).catch(
-    console.error
-  )
-}
-```
-
-### Type Definitions
-
-```ts
-// Updated type definitions
-namespace ws {
-  export type RouteIterableResult = AsyncIterable<JSONCodable | undefined>
-
-  export type RouteDefinition<
-    TArgs extends any[] = any[],
-    TResult extends ws.RouteResult = any,
-  > = {
-    protocol: 'ws'
-    handler: (...args: TArgs) => TResult
-    middlewares?: MiddlewareChain
-  }
-
-  export interface RequestContext<TMiddleware extends MiddlewareChain = never> {
-    readonly defer: (handler: (reason?: any) => Promisable<void>) => void
-    // ... other properties
-  }
-}
-```
-
-## Related Changes
-
-This commit builds upon:
-
-- [Experimental WebSocket Support](./2025-02-17_a780569_experimental-websocket-support.md)
-- [Middleware Support](./2025-02-12_15f1b48_add-middleware-support-to-route-definitions.md)
-
-## Files Modified
-
+**Modified Files:**
 - `packages/service/src/websocket.ts` - Updated deferred execution logic
 - `packages/service/src/route.ts` - Route definition structure changes
 - `packages/generator/src/project/analyze-route.ts` - Route analysis updates
 
-## Future Considerations
-
-- **Enhanced Error Types**: More specific error types for different failure scenarios
-- **Cleanup Timeouts**: Configurable timeouts for deferred handler execution
-- **Error Recovery**: Automatic retry mechanisms for failed cleanup operations
-- **Monitoring**: Metrics for deferred handler execution and failures
+**Technical Implementation:**
+- Uses `Promise.allSettled` for robust handler execution
+- Deferred handlers receive error context via `reason` parameter
+- Maintains backward compatibility where possible
+- Requires TypeScript 4.5+ for proper type inference
