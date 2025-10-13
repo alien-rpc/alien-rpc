@@ -67,6 +67,8 @@ app
 
       const configs: any[] = []
       if (args.noConfigFile) {
+        configs.push({})
+      } else {
         const result = await loadConfigFile(process.cwd())
         if (result.configPath) {
           log.comment(
@@ -81,8 +83,6 @@ app
         } else {
           configs.push({})
         }
-      } else {
-        configs.push({})
       }
 
       root = path.resolve(root)
