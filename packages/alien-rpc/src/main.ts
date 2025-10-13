@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 import cac from 'cac'
+import { compose } from 'jumpgen'
 import path from 'node:path'
-import { isArray, omit } from 'radashi'
+import { isArray, shake } from 'radashi'
 import { loadConfigFile } from './common/config.js'
 import { log } from './common/log.js'
 import {
@@ -54,7 +55,7 @@ app
       {
         root,
         watch,
-        ...options
+        ...args
       }: UserConfig & {
         root: string
         watch?: boolean
@@ -64,39 +65,40 @@ app
     ) => {
       const { default: create } = await import('@alien-rpc/generator')
 
-      if (!options.noConfigFile) {
-        const { config, configPath } = await loadConfigFile(process.cwd())
-        if (configPath) {
+      const configs: any[] = []
+      if (args.noConfigFile) {
+        const result = await loadConfigFile(process.cwd())
+        if (result.configPath) {
           log.comment(
             'Using config file:',
-            path.relative(process.cwd(), configPath)
+            path.relative(process.cwd(), result.configPath)
           )
-          Object.assign(options, omit(config, ['include']))
-          if (include.length === 0) {
-            include = config.include
+          if (isArray(result.config)) {
+            result.config.forEach(config => configs.push(config))
+          } else {
+            configs.push(result.config)
           }
+        } else {
+          configs.push({})
         }
-      }
-
-      let shortcuts: Shortcut[]
-      if (watch) {
-        log.enableTimestamps(true)
-        registerConsoleShortcuts(
-          (shortcuts = [
-            [['return'], 'regenerate files', () => generator.rerun()],
-          ])
-        )
+      } else {
+        configs.push({})
       }
 
       root = path.resolve(root)
       log('Using directory:', root)
       log.setRootDirectory(root)
 
-      const generate = create({
-        ...options,
-        include,
-        outDir: options.outDir ?? './',
-      })
+      const generate = compose(
+        ...configs.map(config =>
+          create({
+            ...args,
+            ...shake(config),
+            include: include.length ? include : config.include,
+            outDir: args.outDir ?? './',
+          })
+        )
+      )
 
       const generator = generate({
         root,
@@ -135,6 +137,16 @@ app
         .on('abort', () => {
           log.warn('Ending prematurely...')
         })
+
+      let shortcuts: Shortcut[]
+      if (watch) {
+        log.enableTimestamps(true)
+        registerConsoleShortcuts(
+          (shortcuts = [
+            [['return'], 'regenerate files', () => generator.rerun()],
+          ])
+        )
+      }
 
       await generator
       if (watch) {

@@ -47,6 +47,6 @@ export type UserConfig = {
  * })
  * ```
  */
-export function defineConfig(config: UserConfig) {
+export function defineConfig(config: UserConfig | readonly UserConfig[]) {
   return config
 }
