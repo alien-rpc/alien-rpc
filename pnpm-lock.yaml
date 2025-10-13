@@ -103,6 +103,9 @@ importers:
       cac:
         specifier: ^6.7.14
         version: 6.7.14
+      jumpgen:
+        specifier: ^0.2.7
+        version: 0.2.7
       kleur:
         specifier: ^4.1.5
         version: 4.1.5
