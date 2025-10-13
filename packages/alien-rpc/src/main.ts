@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 import cac from 'cac'
-import { compose } from 'jumpgen'
+import { compose, JumpgenStatus } from 'jumpgen'
 import path from 'node:path'
 import { isArray, shake } from 'radashi'
 import { loadConfigFile } from './common/config.js'
 import { log } from './common/log.js'
 import {
-  Shortcut,
   printShortcutsHelp,
   registerConsoleShortcuts,
+  Shortcut,
 } from './common/stdin.js'
 import { UserConfig } from './config.js'
 
@@ -108,9 +108,20 @@ app
         watch,
       })
 
+      let generating = false
+
       generator.events
         .on('start', () => {
-          log('Generating...')
+          if (!generating) {
+            log('Generating...')
+            generating = true
+          }
+        })
+        .on('finish', () => {
+          if (generating && generator.status === JumpgenStatus.Finished) {
+            log.success('Your files are now up to date!')
+            generating = false
+          }
         })
         .on('custom', event => {
           if (event.type === 'route') {
@@ -133,9 +144,6 @@ app
         })
         .on('write', file => {
           log('Writing file:', path.relative(process.cwd(), file))
-        })
-        .on('finish', () => {
-          log.success('Your files are now up to date!')
         })
         .on('abort', () => {
           log.warn('Ending prematurely...')
