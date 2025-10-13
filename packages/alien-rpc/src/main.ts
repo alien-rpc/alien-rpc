@@ -66,9 +66,7 @@ app
       const { default: create } = await import('@alien-rpc/generator')
 
       const configs: any[] = []
-      if (args.noConfigFile) {
-        configs.push({})
-      } else {
+      if (!args.noConfigFile) {
         const result = await loadConfigFile(process.cwd())
         if (result.configPath) {
           log.comment(
@@ -80,9 +78,14 @@ app
           } else {
             configs.push(result.config)
           }
-        } else {
-          configs.push({})
         }
+      }
+      if (!configs.length) {
+        if (!include.length) {
+          log.error('Must provide at least one glob')
+          process.exit(1)
+        }
+        configs.push({})
       }
 
       root = path.resolve(root)
