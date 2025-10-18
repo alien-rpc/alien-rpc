@@ -1,4 +1,4 @@
-import { isString } from 'radashi'
+import { assert, isString } from 'radashi'
 
 export function urlWithPathname(prefixUrl: string | URL, path: string) {
   const newUrl = new URL(prefixUrl)
@@ -10,6 +10,13 @@ export function urlWithPathname(prefixUrl: string | URL, path: string) {
 }
 
 export function resolvePrefixUrl(prefixUrl: string | URL | undefined) {
+  if (typeof location === 'undefined') {
+    assert(prefixUrl, 'prefixUrl is required when location is undefined')
+    if (isString(prefixUrl)) {
+      assert(URL.canParse(prefixUrl), 'prefixUrl must be a valid URL')
+    }
+    return prefixUrl
+  }
   return prefixUrl
     ? isString(prefixUrl) && prefixUrl[0] === '/'
       ? location.origin + prefixUrl
