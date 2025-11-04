@@ -1,3 +1,4 @@
+import { Readable } from 'node:stream'
 import { getErrorFromResponse, getStackTrace } from '../errorUtils.js'
 import type { JSON } from '../json/types.js'
 import { resolvePaginationLink } from '../pagination.js'
@@ -9,16 +10,15 @@ import type {
 } from '../types.js'
 
 const responder: RouteResponder = (route, args, ctx) => {
-  const stream = ReadableStream.from(
-    generateJsonTextSequence(route, args, ctx.url)
-  )
+  const generator = generateJsonTextSequence(route, args, ctx.url)
+  const stream = (ctx.jsonSeqStream = new JsonSeqStream(generator))
 
   // Don't use "application/json-seq" until it's been standardized. Set the
   // content type to octet-stream to prevent response buffering on iOS.
   ctx.setHeader('Content-Type', 'application/octet-stream')
   ctx.setHeader('X-Content-Type', 'application/json-seq')
 
-  return new Response(stream)
+  return new Response(Readable.toWeb(stream))
 }
 
 export default responder
@@ -82,4 +82,26 @@ async function* generateJsonTextSequence(
     yield encoder.encode(JSON.stringify(value))
     yield lineFeed
   } while (!done)
+}
+
+class JsonSeqStream extends Readable {
+  #generator: AsyncGenerator<Uint8Array>
+  constructor(generator: AsyncGenerator<Uint8Array>) {
+    super({ objectMode: true })
+    this.#generator = generator
+  }
+  override _read(): void {
+    try {
+      this.#generator
+        .next()
+        .then(result => {
+          this.push(result.done ? null : result.value)
+        })
+        .catch(error => {
+          this.emit('error', error)
+        })
+    } catch (error) {
+      this.emit('error', error)
+    }
+  }
 }
