@@ -1,5 +1,4 @@
 import type { Client } from '../client.js'
-import { resolveStackTrace } from '../node/sourcemap.js'
 import type {
   RequestOptions,
   ResponseFormat,
@@ -19,9 +18,6 @@ const parseResponse = ((promisedResponse, client) => {
       if (value != null && isRoutePagination(value)) {
         attachPageMethods(responseStream, value, client)
       } else if (value != null && isRouteError(value)) {
-        if (process.env.NODE_ENV !== 'production') {
-          value.$error.stack = await resolveStackTrace(value.$error.stack)
-        }
         throw Object.assign(new Error(), value.$error)
       } else {
         yield value
