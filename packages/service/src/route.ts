@@ -23,25 +23,6 @@ import type { ws } from './websocket.js'
 
 /**
  * The default route factory.
- *
- * ```ts
- * // A simple GET route.
- * export const myFunc = route('/path/to/func').GET(async (ctx) => {
- *   return 'Hello, world!'
- * })
- *
- * // Share middlewares between routes.
- * const myMiddleware: RequestHandler = (ctx) => {
- *   ctx.foo = 'bar'
- *   return ctx.next()
- * }
- *
- * const enhancedRoute = route.use([myMiddleware])
- *
- * export const myEnhancedFunc = enhancedRoute('/path/to/func').GET(async (ctx) => {
- *   return ctx.foo
- * })
- * ```
  */
 export const route = create()
 
