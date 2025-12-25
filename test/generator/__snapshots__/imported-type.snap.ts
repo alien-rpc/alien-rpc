@@ -18,8 +18,11 @@ export type Post = {
   author: import("./author").Author;
 };
 
+export type Rect = [x: number, y: number, width: number, height: number];
+
 export type ImagePost = Post & {
   image: string;
+  cropRect: Rect;
 };
 
 /**
@@ -56,7 +59,8 @@ export type { ImagePost };
 import type { Route } from "@alien-rpc/client";
 
 export type Post = { id: string; title: string; body: string; author: Author };
-export type ImagePost = Post & { image: string };
+export type Rect = [x: number, y: number, width: number, height: number];
+export type ImagePost = Post & { image: string; cropRect: Rect };
 
 export default {
   getPost: {
@@ -105,12 +109,15 @@ export const Post = /* @__PURE__ */ Type.Object(
   { additionalProperties: false },
 );
 
+export const Rect = /* @__PURE__ */ Type.Tuple([Type.Number(), Type.Number(), Type.Number(), Type.Number()]);
+
 export const ImagePost = /* @__PURE__ */ Type.Composite(
   [
     Post,
     Type.Object(
       {
         image: Type.String(),
+        cropRect: Rect,
       },
       { additionalProperties: false },
     ),

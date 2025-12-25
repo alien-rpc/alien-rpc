@@ -5,6 +5,9 @@ export type Post = {
   author: import('./author').Author
 }
 
+export type Rect = [x: number, y: number, width: number, height: number]
+
 export type ImagePost = Post & {
   image: string
+  cropRect: Rect
 }
