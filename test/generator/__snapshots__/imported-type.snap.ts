@@ -18,11 +18,15 @@ export type Post = {
   author: import("./author").Author;
 };
 
+export type ImagePost = Post & {
+  image: string;
+};
+
 /**
  * routes.ts
  */
 import { route } from "@alien-rpc/service";
-import type { Post } from "./post";
+import type { ImagePost, Post } from "./post";
 
 export const getPost = route("/posts/:id").get(async (id): Promise<Post> => {
   return {
@@ -36,10 +40,23 @@ export const getPost = route("/posts/:id").get(async (id): Promise<Post> => {
   };
 });
 
+export const createImagePost = route("/image-posts").post(
+  async ({ post }: { post: ImagePost }) => {
+    console.log(post);
+  },
+);
+
+// HACK: Types used explicitly in parameters or implicitly in return types
+// must be manually exported or the generator will produce broken code.
+export type { ImagePost };
+
 /**
  * client/generated/api.ts
  */
 import type { Route } from "@alien-rpc/client";
+
+export type Post = { id: string; title: string; body: string; author: Author };
+export type ImagePost = Post & { image: string };
 
 export default {
   getPost: {
@@ -58,12 +75,48 @@ export default {
       author: { id: string; name: string };
     }>
   >,
+
+  createImagePost: {
+    path: "image-posts",
+    method: "POST",
+    arity: 2,
+    format: "json",
+  } as Route<
+    (
+      pathParams: unknown,
+      searchParams: unknown,
+      body: { post: ImagePost },
+    ) => Promise<undefined>
+  >,
 };
 
 /**
  * server/generated/api.ts
  */
 import * as Type from "@sinclair/typebox/type";
+
+export const Post = /* @__PURE__ */ Type.Object(
+  {
+    id: Type.String(),
+    title: Type.String(),
+    body: Type.String(),
+    author: Author,
+  },
+  { additionalProperties: false },
+);
+
+export const ImagePost = /* @__PURE__ */ Type.Composite(
+  [
+    Post,
+    Type.Object(
+      {
+        image: Type.String(),
+      },
+      { additionalProperties: false },
+    ),
+  ],
+  { additionalProperties: false },
+);
 
 export default [
   {
@@ -74,5 +127,18 @@ export default [
     import: () => import("../../routes.js"),
     format: "json",
     requestSchema: Type.Record(Type.String(), Type.Never()),
+  },
+  {
+    path: "/image-posts",
+    method: "POST",
+    name: "createImagePost",
+    import: () => import("../../routes.js"),
+    format: "json",
+    requestSchema: Type.Object(
+      {
+        post: ImagePost,
+      },
+      { additionalProperties: false },
+    ),
   },
 ] as const;

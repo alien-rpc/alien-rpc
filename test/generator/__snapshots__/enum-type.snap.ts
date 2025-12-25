@@ -24,6 +24,10 @@ export const createShape = route("/shapes").post(
   },
 );
 
+// HACK: Types used explicitly in parameters or implicitly in return types
+// must be manually exported or the generator will produce broken code.
+export type { ShapeType, SingleMember };
+
 /**
  * client/generated/api.ts
  */
@@ -65,12 +69,12 @@ enum EnumShapeType {
   Rectangle = "rectangle",
   Circle = "circle",
 }
-export const ShapeType = Type.Enum(EnumShapeType);
+export const ShapeType = /* @__PURE__ */ Type.Enum(EnumShapeType);
 
 enum EnumSingleMember {
   justThis,
 }
-export const SingleMember = Type.Enum(EnumSingleMember);
+export const SingleMember = /* @__PURE__ */ Type.Enum(EnumSingleMember);
 
 export default [
   {

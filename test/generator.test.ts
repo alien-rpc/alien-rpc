@@ -177,7 +177,7 @@ describe.concurrent('generator', () => {
 
       addStringFormat("uuid", UuidFormat)
 
-      export const UUID = Type.String({ format: "uuid" })
+      export const UUID = /* @__PURE__ */ Type.String({format: "uuid"})
 
       export default [{path: "/authors/:id", method: "GET", pathParams: ["id"], name: "getAuthor", import: () => import("./api/authors.js"), format: "json", pathSchema: Type.Object({
       id: UUID
@@ -220,7 +220,7 @@ describe.concurrent('generator', () => {
 
       addStringFormat("uuid", UuidFormat)
 
-      export const UUID = Type.String({ format: "uuid" })
+      export const UUID = /* @__PURE__ */ Type.String({format: "uuid"})
 
       export default [{path: "/authors/:id", method: "GET", pathParams: ["id"], name: "getAuthor", import: () => import("./api/authors.js"), format: "json", pathSchema: Type.Object({
       id: UUID
@@ -264,7 +264,7 @@ describe.concurrent('generator', () => {
 
       addStringFormat("uuid", UuidFormat)
 
-      export const UUID = Type.String({ format: "uuid" })
+      export const UUID = /* @__PURE__ */ Type.String({format: "uuid"})
 
       export default [{path: "/authors/:id", method: "GET", pathParams: ["id"], name: "getAuthor", import: () => import("./api/authors.js"), format: "json", pathSchema: Type.Object({
       id: UUID

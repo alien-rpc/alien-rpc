@@ -1,4 +1,3 @@
-import os from 'node:os'
 import path from 'node:path'
 import { defineConfig } from 'vitest/config'
 
@@ -26,9 +25,10 @@ export default defineConfig({
     env: {
       TEST: 'alien-rpc',
     },
-    isolate: false,
+    isolate: true,
+    fileParallelism: false,
     testTimeout: 0,
-    maxConcurrency: os.cpus().length - 1,
+    maxConcurrency: 1, // os.cpus().length - 1,
     forceRerunTriggers: ['**/__fixtures__/**/routes.ts'],
     alias,
   },

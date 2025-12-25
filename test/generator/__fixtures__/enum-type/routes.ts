@@ -18,3 +18,7 @@ export const createShape = route('/shapes').post(
     }
   }
 )
+
+// HACK: Types used explicitly in parameters or implicitly in return types
+// must be manually exported or the generator will produce broken code.
+export type { ShapeType, SingleMember }

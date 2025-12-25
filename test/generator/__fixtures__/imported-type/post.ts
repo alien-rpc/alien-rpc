@@ -4,3 +4,7 @@ export type Post = {
   body: string
   author: import('./author').Author
 }
+
+export type ImagePost = Post & {
+  image: string
+}
