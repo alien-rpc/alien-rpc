@@ -1,6 +1,7 @@
 import type * as tscExtra from 'tsc-extra'
 import type ts from 'typescript'
 import type { Project } from '../project.js'
+import { SymbolStack } from './symbol-stack.js'
 import { collectReferencedTypes } from './type-references.js'
 import type { ProjectUtils } from './utils.js'
 
@@ -13,7 +14,7 @@ export const createTypePrinter = (
   function printTypeLiteralToString(
     type: ts.Type,
     referencedTypes?: ReferencedTypes,
-    symbolStack: string[] = []
+    symbolStack: SymbolStack = new SymbolStack()
   ): string {
     if (referencedTypes) {
       collectReferencedTypes(
@@ -58,7 +59,7 @@ export const createTypePrinter = (
       return typeChecker.typeToString(type)
     }
 
-    if (type.aliasSymbol && !symbolStack.includes(type.aliasSymbol.name)) {
+    if (type.aliasSymbol && !symbolStack.includes(type.aliasSymbol)) {
       return type.aliasSymbol.name
     }
 

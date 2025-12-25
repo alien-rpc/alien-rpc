@@ -7,6 +7,7 @@ import {
   InvalidResponseTypeError,
 } from './analyze-route.js'
 import { SupportingTypes } from './supporting-types.js'
+import { SymbolStack } from './symbol-stack.js'
 import {
   collectTypeDeclarations,
   isTypeDeclaration,
@@ -39,7 +40,7 @@ export function analyzeFile(
       typeDeclaration,
       project,
       referencedTypes,
-      [symbol.name]
+      new SymbolStack(symbol)
     )
     if (typeString) {
       referencedTypes.set(symbol, typeString)

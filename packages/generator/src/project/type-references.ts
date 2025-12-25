@@ -1,5 +1,6 @@
 import type ts from 'typescript'
 import { Project } from '../project.js'
+import { SymbolStack } from './symbol-stack.js'
 import { getArrayElementType, getTupleElements, ProjectUtils } from './utils.js'
 
 const typeConstraintFileRegex = /\/@?alien-rpc\/.+?\/constraint\.d\.ts$/
@@ -10,7 +11,7 @@ export function collectReferencedTypes(
   type: ts.Type,
   project: Project,
   referencedTypes: ReferencedTypes,
-  symbolStack: string[]
+  symbolStack: SymbolStack
 ) {
   const ts = project.utils
   const typeChecker = project.getTypeChecker()
@@ -32,56 +33,52 @@ export function collectReferencedTypes(
     const referencedSymbol =
       declaration && getDeclarationSymbol(ts, declaration, typeChecker)
 
-    const recursive = !(
-      (instanceSymbol && symbolStack.includes(instanceSymbol.name)) ||
-      (referencedSymbol && symbolStack.includes(referencedSymbol.name))
-    )
-
-    if (recursive) {
-      const ts = project.utils
-
-      const symbol = referencedSymbol ?? instanceSymbol
-      const pushed = pushSymbol(symbolStack, symbol)
-      if (!pushed) return
-
-      for (const nestedType of visitNestedTypes(type)) {
-        collect(nestedType)
-      }
-
-      if (symbol && ts.isEnumMember(symbol) && declaration) {
-        const enumDeclaration = declaration.parent as ts.EnumDeclaration
-        if (!referencedTypes.has(enumDeclaration.symbol)) {
-          const enumType = typeChecker.getTypeOfSymbol(enumDeclaration.symbol)
-          collect(enumType)
-        }
-      }
-
-      if (
-        symbol &&
-        symbol === referencedSymbol &&
-        ts.isType(symbol) &&
-        !ts.isLibSymbol(symbol) &&
-        !ts.isEnumMember(symbol) &&
-        !referencedTypes.has(symbol)
-      ) {
-        const typeString = declaration
-          ? printTypeDeclaration(
-              ts,
-              declaration,
-              project,
-              undefined,
-              symbolStack
-            )
-          : `export type ${symbol.name} = ` +
-            project.printTypeLiteralToString(type, undefined, symbolStack)
-
-        if (typeString) {
-          referencedTypes.set(symbol, typeString)
-        }
-      }
-
-      symbolStack.pop()
+    const symbol = referencedSymbol ?? instanceSymbol
+    if (!symbol) {
+      return
     }
+    if (symbolStack.includes(symbol)) {
+      return
+    }
+    if (!symbolStack.push(symbol)) {
+      return
+    }
+
+    for (const nestedType of visitNestedTypes(type)) {
+      collect(nestedType)
+    }
+
+    if (symbol && ts.isEnumMember(symbol) && declaration) {
+      const enumDeclaration = declaration.parent as ts.EnumDeclaration
+      if (!referencedTypes.has(enumDeclaration.symbol)) {
+        const enumType = typeChecker.getTypeOfSymbol(enumDeclaration.symbol)
+        collect(enumType)
+      }
+    }
+
+    if (
+      symbol &&
+      symbol === referencedSymbol &&
+      ts.isType(symbol) &&
+      !ts.isLibSymbol(symbol) &&
+      !ts.isEnumMember(symbol) &&
+      !referencedTypes.has(symbol)
+    ) {
+      const typeString = declaration
+        ? printTypeDeclaration(ts, declaration, project, undefined, symbolStack)
+        : `export type ${symbol.name} = ` +
+          project.printTypeLiteralToString(type, undefined, symbolStack)
+
+      if (typeString) {
+        if (typeString === `export type ${symbol.name} = ${symbol.name}`) {
+          throw new Error(`Printed type string is malformed: ${symbol.name}`)
+        }
+
+        referencedTypes.set(symbol, typeString)
+      }
+    }
+
+    symbolStack.pop(symbol)
   }
 
   function* visitNestedTypes(type: ts.Type) {
@@ -150,7 +147,7 @@ export function printTypeDeclaration(
   declaration: ts.Declaration,
   project: Project,
   referencedTypes: ReferencedTypes | undefined,
-  symbolStack: string[]
+  symbolStack: SymbolStack
 ) {
   const typeChecker = project.getTypeChecker()
 
@@ -207,12 +204,4 @@ export function printTypeDeclaration(
   }
 
   return typeString
-}
-
-function pushSymbol(symbolStack: string[], symbol: ts.Symbol | undefined) {
-  if (symbol && symbol.name !== '__type') {
-    symbolStack.push(symbol.name)
-    return true
-  }
-  return false
 }
