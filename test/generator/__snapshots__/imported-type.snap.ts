@@ -109,7 +109,12 @@ export const Post = /* @__PURE__ */ Type.Object(
   { additionalProperties: false },
 );
 
-export const Rect = /* @__PURE__ */ Type.Tuple([Type.Number(), Type.Number(), Type.Number(), Type.Number()]);
+export const Rect = /* @__PURE__ */ Type.Tuple([
+  Type.Number(),
+  Type.Number(),
+  Type.Number(),
+  Type.Number(),
+]);
 
 export const ImagePost = /* @__PURE__ */ Type.Composite(
   [

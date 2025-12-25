@@ -27,7 +27,10 @@ export const createTypePrinter = (
 
     const typeChecker = project.getTypeChecker()
 
-    if (ts.isTypeReference(type)) {
+    // Skip this branch for tuple types, as the getTypeArguments method
+    // returns an array containing each element type, which would be a
+    // false positive in this case.
+    if (ts.isTypeReference(type) && !typeChecker.isTupleType(type)) {
       let typeArguments = typeChecker.getTypeArguments(type)
 
       // Lib symbols should be preserved, instead of expanding them. But
