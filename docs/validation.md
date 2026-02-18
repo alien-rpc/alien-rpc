@@ -1,6 +1,6 @@
 # Validation and Coercion
 
-`alien-rpc` provides two ways to validate incoming data: TypeScript-native constraints and explicit TypeBox schemas.
+`alien-rpc` uses your TypeScript type definitions to automatically generate runtime validation and coercion. This ensures that the data your handlers receive matches the types you've defined.
 
 ## Type-based Constraints
 
@@ -36,41 +36,37 @@ type UserProfile = {
 - `t.MaxItems<N>`
 - `t.UniqueItems<boolean>`
 
-## Path Parameter Coercion
+## Request Body and Query Parameters
 
-By default, path parameters are strings. To coerce them to other types, you must provide a `pathSchema` to the route definition using helpers from `alien-rpc/service/typebox`.
+The second argument of your route handler is also automatically validated and coerced based on its TypeScript type.
+
+- For **GET** requests, this argument represents the **query parameters**.
+- For **other** methods (POST, PUT, etc.), it represents the **JSON request body**.
 
 ```typescript
-import { NumberParam, DateString } from 'alien-rpc/service/typebox'
-import * as Type from '@sinclair/typebox'
+// Query parameter validation
+export const search = route('/search').get(
+  async ({ query, limit = 10 }: { query: string; limit?: number }) => {
+    // query is a string, limit is a number
+  }
+)
 
-export const getPost = route('/post/:id').get(
-  {
-    pathSchema: Type.Object({
-      id: NumberParam()
-    })
-  },
-  async (id: number) => {
-    // id is guaranteed to be a number
+// Request body validation
+export const createPost = route('/posts').post(
+  async ({ title, content }: { title: string; content: string }) => {
+    // title and content are validated at runtime
   }
 )
 ```
 
-## Manual Schemas
+## Path Parameter Coercion
 
-For more complex validation, you can provide an explicit `requestSchema` (for the request body/search params) or `pathSchema` (for path parameters) using TypeBox.
+Path parameters are automatically coerced based on the types defined in your handler's signature. Supported types include `string`, `number`, `boolean`, and `Date`.
 
 ```typescript
-import * as Type from '@sinclair/typebox'
-
-export const updateItems = route('/items').post(
-  {
-    requestSchema: Type.Object({
-      ids: Type.Array(Type.String())
-    })
-  },
-  async ({ ids }) => {
-    // ...
+export const getPost = route('/post/:id').get(
+  async (id: number) => {
+    // id is guaranteed to be a number
   }
 )
 ```

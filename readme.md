@@ -126,19 +126,12 @@ export const updateBio = route('/bio').post(
 
 ### Path Parameter Coercion
 
-Coerce path parameters to types like `number` or `Date` using `alien-rpc/service/typebox`:
+Path parameters are automatically coerced based on the types defined in your handler's signature. Supported types include `string`, `number`, `boolean`, and `Date`.
 
 ```typescript
-import { NumberParam } from 'alien-rpc/service/typebox'
-import * as Type from '@sinclair/typebox'
-
 export const getById = route('/item/:id').get(
-  // The pathSchema must be defined for coercion to work
-  {
-    pathSchema: Type.Object({ id: NumberParam() })
-  },
   async (id: number) => {
-    // id is now a number!
+    // id is guaranteed to be a number!
   }
 )
 ```
