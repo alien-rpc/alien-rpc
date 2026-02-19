@@ -2,6 +2,10 @@
 
 `alien-rpc` provides a high-level API for websockets, allowing you to define websocket routes that share a single connection.
 
+> [!WARNING]
+> This documentation is a work in progress. There may be inaccuracies or missing information.
+> Please [report any issues](https://github.com/alien-rpc/alien-rpc/issues) you find.
+
 ## Defining a Websocket Route
 
 All websocket routes are funneled through the same `/ws` endpoint by default. You define them using `route.ws()`.
@@ -9,11 +13,11 @@ All websocket routes are funneled through the same `/ws` endpoint by default. Yo
 ```typescript
 import { route } from 'alien-rpc/service'
 
-export const chat = route.ws((ctx) => {
+export const chat = route.ws(ctx => {
   // Access middleware context just like HTTP routes
   const { user } = ctx
 
-  ctx.on('message', (msg) => {
+  ctx.on('message', msg => {
     // Broadcast or reply
     ctx.send({ from: user.name, text: msg })
   })
@@ -44,7 +48,7 @@ const socket = client.chat()
 
 socket.send('Hello!')
 
-socket.on('message', (data) => {
+socket.on('message', data => {
   console.log('Received:', data)
 })
 ```
@@ -56,7 +60,7 @@ Websocket routes can also benefit from middlewares. The middleware runs when the
 ```typescript
 const authenticatedRoute = route.use(requireSession)
 
-export const privateChat = authenticatedRoute.ws((ctx) => {
+export const privateChat = authenticatedRoute.ws(ctx => {
   // ctx.user is available here
 })
 ```
