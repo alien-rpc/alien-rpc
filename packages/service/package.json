@@ -34,7 +34,7 @@
   },
   "dependencies": {
     "@json-qs/json-qs": "^1.2.0",
-    "alien-middleware": "^0.11.5",
+    "alien-middleware": "^0.10.0",
     "option-types": "^1.1.0",
     "pathic": "workspace:^"
   },

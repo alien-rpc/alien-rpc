@@ -2,30 +2,30 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@sinclair/typebox": "^0.34.48",
-    "alien-ws": "0.2.0-rc.2",
-    "radashi": "^12.7.1"
+    "@sinclair/typebox": "^0.34",
+    "alien-ws": "*",
+    "radashi": "^12.3.0"
   },
   "devDependencies": {
-    "@aleclarson/watchlist": "^0.3.5",
+    "@aleclarson/watchlist": "^0.3.3",
     "@alien-rpc/client": "workspace:*",
     "@alien-rpc/generator": "workspace:*",
     "@alien-rpc/service": "workspace:*",
     "@alloc/fast-rimraf": "^1.0.8",
     "@alloc/prettier-config": "^1.0.0",
     "@hattip/adapter-test": "^0.0.49",
-    "@types/node": "^25.3.0",
-    "@types/picomatch": "^4.0.2",
-    "alien-middleware": "^0.11.5",
+    "@types/node": "^22.7.4",
+    "@types/picomatch": "^3.0.1",
+    "alien-middleware": "^0.10.2",
     "picomatch": "^4.0.3",
-    "prettier": "^3.8.1",
-    "tinyglobby": "^0.2.15",
-    "tinyrun": "^1.0.8",
-    "tinyspawn": "^1.5.5",
-    "tsc-lint": "^0.1.9",
-    "tsup": "^8.5.1",
-    "typescript": "^5.9.3",
-    "vitest": "^4.0.18"
+    "prettier": "^3.2.5",
+    "tinyglobby": "^0.2.9",
+    "tinyrun": "^1.0.1",
+    "tinyspawn": "^1.3.3",
+    "tsc-lint": "^0.1.8",
+    "tsup": "^8.0.2",
+    "typescript": "^5.7.2",
+    "vitest": "^3.1.1"
   },
   "files": [
     "dist",
@@ -45,11 +45,6 @@
     "overrides": {
       "@sinclair/typebox": "$@sinclair/typebox",
       "picomatch": "$picomatch"
-    },
-    "onlyBuiltDependencies": [
-      "esbuild",
-      "sharp",
-      "workerd"
-    ]
+    }
   }
 }
