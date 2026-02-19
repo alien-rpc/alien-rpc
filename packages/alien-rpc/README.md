@@ -53,7 +53,7 @@ npx alien-rpc './server/api/**/*.ts' --clientOutFile ./client/api.ts --serverOut
 ```
 
 > [!TIP]
-> See [CLI and Configuration](../../docs/cli-config.md) for more details.
+> See [CLI and Configuration](https://github.com/alien-rpc/alien-rpc/tree/master/docs/cli-config.md) for more details.
 
 ### 3. Use the client
 
@@ -116,7 +116,7 @@ export const getProfile = userRoute('/me').get(async (_, ctx) => {
 ```
 
 > [!TIP]
-> See [Middlewares and Context](../../docs/middleware.md) for more details.
+> See [Middlewares and Context](https://github.com/alien-rpc/alien-rpc/tree/master/docs/middleware.md) for more details.
 
 ### Validation Constraints
 
@@ -143,7 +143,7 @@ export const getById = route('/item/:id').get(async (id: number) => {
 ```
 
 > [!TIP]
-> See [Validation and Coercion](../../docs/validation.md) for more details.
+> See [Validation and Coercion](https://github.com/alien-rpc/alien-rpc/tree/master/docs/validation.md) for more details.
 
 ### Websockets
 
@@ -158,7 +158,7 @@ export const chat = route.ws(ctx => {
 ```
 
 > [!TIP]
-> See [Websockets](../../docs/websockets.md) for more details.
+> See [Websockets](https://github.com/alien-rpc/alien-rpc/tree/master/docs/websockets.md) for more details.
 
 ### Pagination and Streaming
 
@@ -175,15 +175,15 @@ export const listItems = route('/items').get(async function* ({ offset = 0 }) {
 ```
 
 > [!TIP]
-> See [Pagination and Streaming](../../docs/pagination.md) for more details.
+> See [Pagination and Streaming](https://github.com/alien-rpc/alien-rpc/tree/master/docs/pagination.md) for more details.
 
 ## Examples
 
-Check out the [examples](../../examples) directory for minimal, ready-to-run projects using different stacks:
+Check out the [examples](https://github.com/alien-rpc/alien-rpc/tree/master/examples) directory for minimal, ready-to-run projects using different stacks:
 
-- [**Astro**](../../examples/astro): Integration with Astro's server-side routes and client-side components.
-- [**Vite + Node.js**](../../examples/vite-node): A full-stack setup with a Node.js backend proxied through Vite.
-- [**Vite + Cloudflare Workers**](../../examples/vite-cloudflare-workers): Deploying to Cloudflare Workers using Vite and `@cloudflare/vite-plugin`.
+- [**Astro**](https://github.com/alien-rpc/alien-rpc/tree/master/examples/astro): Integration with Astro's server-side routes and client-side components.
+- [**Vite + Node.js**](https://github.com/alien-rpc/alien-rpc/tree/master/examples/vite-node): A full-stack setup with a Node.js backend proxied through Vite.
+- [**Vite + Cloudflare Workers**](https://github.com/alien-rpc/alien-rpc/tree/master/examples/vite-cloudflare-workers): Deploying to Cloudflare Workers using Vite and `@cloudflare/vite-plugin`.
 
 ## Configuration
 
@@ -201,7 +201,7 @@ export default defineConfig({
 ```
 
 > [!TIP]
-> See [CLI and Configuration](../../docs/cli-config.md) for more details.
+> See [CLI and Configuration](https://github.com/alien-rpc/alien-rpc/tree/master/docs/cli-config.md) for more details.
 
 ## License
 
