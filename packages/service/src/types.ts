@@ -70,7 +70,7 @@ export interface RouteDefinition<
   method: TMethod
   path: TPath
   handler: (...args: TArgs) => TResult
-  middleware: MiddlewareChain | null
+  middleware?: MiddlewareChain | null
 }
 
 /**
