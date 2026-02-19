@@ -126,7 +126,7 @@ export const updateBio = route('/bio').post(
 
 ### Path Parameter Coercion
 
-Path parameters are automatically coerced based on the types defined in your handler's signature. Supported types include `string`, `number`, `boolean`, and `Date`.
+Path parameters are automatically coerced based on the types defined in your handler's signature. Supported types include `string` and `number`.
 
 ```typescript
 export const getById = route('/item/:id').get(
