@@ -1,5 +1,6 @@
 node_modules
 dist
-vendor
-.indo.json
 /test/.tmp/
+/examples/**/api-{client,server}.ts
+.wrangler/
+.astro/

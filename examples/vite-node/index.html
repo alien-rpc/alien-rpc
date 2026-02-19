@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+  <body>
+    <div id="result">Loading...</div>
+    <script type="module">
+      import { defineClient } from '@alien-rpc/client'
+      import routes from './src/api-client.ts'
+
+      const client = defineClient(routes, { prefixUrl: '/api/' })
+      const { message } = await client.hello('Vite-Node')
+      document.getElementById('result').innerText = message
+    </script>
+  </body>
+</html>

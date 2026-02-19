@@ -16,5 +16,9 @@
   "files.exclude": {
     "**/dist": true,
     "**/node_modules": true,
+    "examples/**/api-{client,server}.ts": true
+  },
+  "files.readonlyInclude": {
+    "examples/**/api-{client,server}.ts": true
   }
 }

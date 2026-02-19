@@ -1,0 +1,23 @@
+---
+// See the <script> below for the client code.
+---
+
+<!doctype html>
+<html>
+  <body>
+    <div id="result">Loading...</div>
+    <script>
+      import { defineClient } from '@alien-rpc/client'
+      import routes from '../api-client'
+
+      const apiClient = defineClient(routes, { prefixUrl: '/api/' })
+
+      apiClient.hello('Astro').then(({ message }) => {
+        const resultEl = document.getElementById('result')
+        if (resultEl) {
+          resultEl.innerText = message
+        }
+      })
+    </script>
+  </body>
+</html>
