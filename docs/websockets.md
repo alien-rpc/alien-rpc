@@ -3,7 +3,7 @@
 `alien-rpc` provides a high-level API for websockets, allowing you to define websocket routes that share a single connection.
 
 > [!WARNING]
-> This documentation is a work in progress. There may be inaccuracies or missing information.
+> This documentation is a work in progress. There may be inaccuracies or missing information. \
 > Please [report any issues](https://github.com/alien-rpc/alien-rpc/issues) you find.
 
 ## Defining a Websocket Route
