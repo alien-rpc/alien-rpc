@@ -72,18 +72,22 @@ console.log(result.message) // "Hello, World!"
 
 ### 4. Setup the server
 
-Use the generated server manifest to handle incoming requests:
+Use the generated server manifest with any [Hattip-compatible adapter][hattip]. For example, using `@hattip/adapter-node`:
 
 ```typescript
+import { createServer } from '@hattip/adapter-node'
 import { compileRoutes } from 'alien-rpc/service'
+import { chain } from 'alien-rpc/middleware'
 import routes from './server/api.ts'
 
-const handler = compileRoutes(routes, {
+const handler = chain(compileRoutes(routes, {
   prefix: '/api/'
-})
+}))
 
-// The handler is a standard middleware function: (ctx: RequestContext) => Promise<Response | undefined>
+createServer(handler).listen(3000)
 ```
+
+[hattip]: https://github.com/hattipjs/hattip
 
 ## Core Concepts
 
