@@ -4,17 +4,12 @@ This example demonstrates how to use Alien RPC with [Vite](https://vitejs.dev/) 
 
 ## Setup
 
-1. From the **project root**, build the workspace:
+1. From the **project root**, install and build the workspace:
    ```bash
-   pnpm build
+   pnpm install && pnpm build
    ```
 
-2. Inside this directory, install dependencies:
-   ```bash
-   pnpm install
-   ```
-
-3. Start the development server:
+2. From this directory, start the development server:
    ```bash
    pnpm start
    ```
