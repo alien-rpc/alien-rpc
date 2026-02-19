@@ -54,10 +54,11 @@ export default {
           } else if (
             params.body instanceof Blob ||
             params.body instanceof FormData ||
-            params.body instanceof ArrayBuffer ||
-            params.body instanceof Uint8Array
+            params.body instanceof ArrayBuffer
           ) {
             request.body = params.body
+          } else if (params.body instanceof Uint8Array) {
+            request.body = params.body.buffer as ArrayBuffer
           } else {
             request.json = route.pathParams
               ? omit(params, route.pathParams)

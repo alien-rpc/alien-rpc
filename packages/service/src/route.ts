@@ -1,10 +1,13 @@
 import type { RouteMethod } from '@alien-rpc/route'
 import {
+  AnyMiddleware,
+  AnyMiddlewareChain,
   type ApplyMiddleware,
+  ApplyMiddlewares,
   chain,
   type ExtractMiddleware,
   type Middleware,
-  type MiddlewareChain,
+  MiddlewareChain,
   type MiddlewareContext,
 } from 'alien-middleware'
 import type { InferParamsArray } from 'pathic'
@@ -26,7 +29,7 @@ import type { ws } from './websocket.js'
  */
 export const route = create()
 
-function defineRoute(path: string, middleware?: MiddlewareChain): RouteBuilder {
+function defineRoute(path: string, middleware?: AnyMiddleware): RouteBuilder {
   return new Proxy({} as RouteBuilder, {
     get(_, key: string) {
       const method = key.toUpperCase() as RouteMethod
@@ -34,7 +37,7 @@ function defineRoute(path: string, middleware?: MiddlewareChain): RouteBuilder {
         method,
         path,
         handler,
-        middleware,
+        middleware: middleware ? chain(middleware as Middleware) : null,
       })
     },
   })
@@ -46,15 +49,15 @@ function defineWebSocketRoute(
   return { protocol: 'ws', handler }
 }
 
-function create<T extends MiddlewareChain = never>(
-  middlewares?: T
-): RouteFactory<T> {
-  function route(path: string, middleware?: Middleware) {
+function create<T extends AnyMiddleware = never>(middlewares: T | null = null) {
+  type TMiddleware = MiddlewareChain<ApplyMiddlewares<[T]>>
+
+  function route(path: string, middleware: AnyMiddleware | null = null) {
     return defineRoute(
       path,
-      middleware
-        ? (middlewares?.use(middleware) ?? chain(middleware))
-        : middlewares
+      chain(middlewares as Middleware | null).use(
+        middleware as Middleware | null
+      )
     )
   }
 
@@ -62,19 +65,21 @@ function create<T extends MiddlewareChain = never>(
     return defineWebSocketRoute(handler) as any
   }
 
-  route.use = (middleware: Middleware) => {
-    return create(middlewares?.use(middleware) ?? chain(middleware))
+  route.use = (middleware: AnyMiddleware) => {
+    return create(
+      chain(middlewares as Middleware | null).use(middleware as Middleware)
+    )
   }
 
-  return route as any
+  return route as unknown as RouteFactory<TMiddleware>
 }
 
 export type RouteContext<T extends RouteFactory<any>> =
   T extends RouteFactory<infer TMiddleware>
-    ? MiddlewareContext<TMiddleware>
+    ? MiddlewareContext<[TMiddleware]>
     : never
 
-export interface RouteFactory<T extends MiddlewareChain> {
+export interface RouteFactory<T extends AnyMiddlewareChain> {
   /**
    * Define a new HTTP route, optionally with a set of middlewares.
    */
@@ -82,7 +87,7 @@ export interface RouteFactory<T extends MiddlewareChain> {
   <TPath extends string, TMiddleware extends ExtractMiddleware<T>>(
     path: TPath,
     middleware: TMiddleware
-  ): RouteBuilder<TPath, ApplyMiddleware<T, TMiddleware>>
+  ): RouteBuilder<TPath, Extract<ApplyMiddleware<T, TMiddleware>, Middleware>>
 
   /**
    * Define a websocket route powered by [crossws].
@@ -110,13 +115,13 @@ export interface RouteFactory<T extends MiddlewareChain> {
    */
   use: <TMiddleware extends ExtractMiddleware<T>>(
     middleware: TMiddleware
-  ) => RouteFactory<ApplyMiddleware<T, TMiddleware>>
+  ) => RouteFactory<MiddlewareChain<ApplyMiddleware<T, TMiddleware>>>
 }
 
 type MultiParamRouteBuilder<
   TPath extends MultiParamRoutePath,
   TMethod extends RouteMethod,
-  TMiddleware extends MiddlewareChain,
+  TMiddleware extends AnyMiddleware,
 > = <
   TPathParams extends InferParamsArray<TPath, PathParam> = InferParamsArray<
     TPath,
@@ -129,7 +134,7 @@ type MultiParamRouteBuilder<
     TPath,
     TPathParams,
     TData,
-    MiddlewareContext<TMiddleware>,
+    MiddlewareContext<[TMiddleware]>,
     TResult
   >
 ) => {
@@ -144,7 +149,7 @@ type MultiParamRouteBuilder<
 type SingleParamRouteBuilder<
   TPath extends SingleParamRoutePath,
   TMethod extends RouteMethod,
-  TMiddleware extends MiddlewareChain,
+  TMiddleware extends AnyMiddleware,
 > = <
   TPathParam extends PathParam = string,
   TData extends object = Record<string, never>,
@@ -154,7 +159,7 @@ type SingleParamRouteBuilder<
     TPath,
     TPathParam,
     TData,
-    MiddlewareContext<TMiddleware>,
+    MiddlewareContext<[TMiddleware]>,
     TResult
   >
 ) => {
@@ -169,7 +174,7 @@ type SingleParamRouteBuilder<
 type FixedRouteBuilder<
   TPath extends string,
   TMethod extends RouteMethod,
-  TMiddleware extends MiddlewareChain,
+  TMiddleware extends AnyMiddleware,
 > = <
   TData extends object = Record<string, never>,
   const TResult extends RouteResult = any,
@@ -177,7 +182,7 @@ type FixedRouteBuilder<
   handler: FixedRouteHandler<
     TPath,
     TData,
-    MiddlewareContext<TMiddleware>,
+    MiddlewareContext<[TMiddleware]>,
     TResult
   >
 ) => {
@@ -191,7 +196,7 @@ type FixedRouteBuilder<
 
 export type RouteBuilder<
   TPath extends string = any,
-  TMiddleware extends MiddlewareChain = any,
+  TMiddleware extends AnyMiddleware = any,
 > = {
   [TMethod in
     | RouteMethod

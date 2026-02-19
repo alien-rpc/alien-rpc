@@ -1,6 +1,6 @@
 import type { TSchema } from '@sinclair/typebox'
 import { Decode } from '@sinclair/typebox/value'
-import { MiddlewareChain } from 'alien-middleware'
+import { AnyMiddlewareChain, MiddlewareChain } from 'alien-middleware'
 import type {
   ExtractHooks,
   Peer,
@@ -260,7 +260,7 @@ export namespace ws {
    * from the `alien-middleware`-provided `RequestContext`. Therefore, any
    * properties you add to the latter will also be available on the former.
    */
-  export type RequestContext<TMiddleware extends MiddlewareChain = never> =
+  export type RequestContext<TMiddleware extends AnyMiddlewareChain = never> =
     Omit<PeerContext<TMiddleware>, 'request'> & {
       /**
        * The IP address of the client.
