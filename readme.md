@@ -175,6 +175,14 @@ export const listItems = route('/items').get(async function* ({ offset = 0 }) {
 > [!TIP]
 > See [Pagination and Streaming](./docs/pagination.md) for more details.
 
+## Examples
+
+Check out the [examples](./examples) directory for minimal, ready-to-run projects using different stacks:
+
+- [**Astro**](./examples/astro): Integration with Astro's server-side routes and client-side components.
+- [**Vite + Node.js**](./examples/vite-node): A full-stack setup with a Node.js backend proxied through Vite.
+- [**Vite + Cloudflare Workers**](./examples/vite-cloudflare-workers): Deploying to Cloudflare Workers using Vite and `@cloudflare/vite-plugin`.
+
 ## Configuration
 
 For larger projects, use an `alien-rpc.config.ts` file:
