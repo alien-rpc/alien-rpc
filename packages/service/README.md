@@ -5,8 +5,10 @@ Service-side route definition and request handling runtime for alien-rpc.
 ## Installation
 
 ```sh
-npm install @alien-rpc/service @sinclair/typebox alien-middleware
+npm install @alien-rpc/service @sinclair/typebox@0.34 alien-middleware
 ```
+
+Use TypeBox v0.34.x with the service runtime.
 
 Install `alien-ws` as well when compiling websocket routes.
 

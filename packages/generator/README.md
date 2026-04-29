@@ -5,8 +5,10 @@ Programmatic generator for alien-rpc client and server manifests.
 ## Installation
 
 ```sh
-npm install -D @alien-rpc/generator typescript @sinclair/typebox
+npm install -D @alien-rpc/generator typescript @sinclair/typebox@0.34
 ```
+
+Use TypeBox v0.34.x with the generator.
 
 ## Minimal Use
 

@@ -14,8 +14,10 @@ A type-safe RPC library for TypeScript that bridges the gap between your server 
 ## Installation
 
 ```bash
-npm install alien-rpc
+npm install alien-rpc @sinclair/typebox@0.34
 ```
+
+Use TypeBox v0.34.x with alien-rpc.
 
 ## Quick Start
 
