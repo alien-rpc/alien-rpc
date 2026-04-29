@@ -23,6 +23,7 @@ const type = checker.getTypeAtLocation(sourceFile)
 ## Documentation
 
 - Concepts and lifecycle: [docs/context.md](docs/context.md)
+- Runnable example: [examples/inspect-project.ts](examples/inspect-project.ts)
 - Exact public signatures: generated `dist/index.d.ts`
 - Source-owned API behavior: `src/Project.ts`, `src/TsConfigLoader.ts`, and
   `src/errors.ts`

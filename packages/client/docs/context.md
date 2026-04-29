@@ -41,6 +41,11 @@ routes may receive an abort signal as their final argument.
 JSON text sequence routes return a stream with `toArray()`, `nextPage()`, and
 `previousPage()` support when the server sends pagination directives.
 
+# Examples
+
+- `examples/generated-client.ts`: runs a small generated-route shape with a
+  mock fetch function and a typed client call.
+
 # Entry Points
 
 - `@alien-rpc/client`: `defineClient`, `defineClientFactory`, error classes,

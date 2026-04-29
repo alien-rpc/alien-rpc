@@ -28,6 +28,7 @@ route entry into a typed call function.
 ## Documentation
 
 - Concepts and selection guidance: [docs/context.md](docs/context.md)
+- Runnable example: [examples/generated-client.ts](examples/generated-client.ts)
 - Exact public signatures: generated `dist/index.d.ts`
 - Source-owned API behavior: `src/client.ts`, `src/types.ts`,
   `src/factory.ts`, and `src/error.ts`

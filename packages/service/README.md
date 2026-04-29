@@ -41,6 +41,7 @@ export default chain(
 ## Documentation
 
 - Concepts and lifecycle: [docs/context.md](docs/context.md)
+- Runnable example: [examples/route-handler.ts](examples/route-handler.ts)
 - Exact public signatures: generated `dist/index.d.ts`
 - Optional entrypoint signatures: generated `dist/typebox.d.ts` and
   `dist/formats.d.ts`

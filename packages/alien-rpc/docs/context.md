@@ -56,6 +56,11 @@ the underlying scoped packages.
 - `alien-rpc/generator`: programmatic route-manifest generator.
 - `alien-rpc/middleware`: re-export of `alien-middleware`.
 
+# Examples
+
+- `examples/full-stack.ts`: runs a minimal in-memory route, generated-client
+  shape, service handler, and client call using `alien-rpc/*` subpath imports.
+
 # API Reference
 
 Exact exported signatures are emitted during package builds into `dist/**/*.d.ts`.

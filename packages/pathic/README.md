@@ -29,6 +29,7 @@ const params = parsePathParams('/users/:id')
 ## Documentation
 
 - Concepts and pattern rules: [docs/context.md](docs/context.md)
+- Runnable example: [examples/match-and-build.ts](examples/match-and-build.ts)
 - Exact public signatures: generated `dist/index.d.ts`
 - Source-owned API behavior: `src/buildPath.ts`, `src/compilePaths.ts`,
   `src/parsePathParams.ts`, and `src/types.ts`

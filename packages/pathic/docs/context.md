@@ -38,6 +38,11 @@ invokes the callback with the original pattern index and captured parameters.
 such as `InferParams`, `InferParamsArray`, `InferParamNames`, and
 `PathTemplate` perform equivalent compile-time work for path string literals.
 
+# Examples
+
+- `examples/match-and-build.ts`: matches a path, builds a path from typed
+  parameters, and parses parameter names.
+
 # API Reference
 
 Exact signatures are emitted to `dist/index.d.ts` during the package build.

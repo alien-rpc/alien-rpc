@@ -35,6 +35,11 @@ path, or predicate. Programs and language services are created lazily; call
 `TsConfig` extends TypeScript's parsed command line with discovered directories
 so tools can track configuration and file-system inputs.
 
+# Examples
+
+- `examples/inspect-project.ts`: loads this package as a TypeScript project and
+  reads semantic diagnostics for its public entrypoint.
+
 # API Reference
 
 Exact signatures are emitted to `dist/index.d.ts` during the package build.

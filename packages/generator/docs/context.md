@@ -37,6 +37,12 @@ loaded on the server side.
 When watch mode is enabled by the caller, the generator tracks files that can
 affect route analysis, import resolution, and diagnostics.
 
+# Examples
+
+- `examples/generate-manifests.ts`: runs the generator against
+  `examples/routes.ts` with `examples/tsconfig.json` and writes temporary
+  client/server manifests.
+
 # Options
 
 The primary options are `include`, `outDir`, `tsConfigFile`, `serverOutFile`,

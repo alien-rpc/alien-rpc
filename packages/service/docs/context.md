@@ -56,6 +56,11 @@ validation schemas and exports bundled format regular expressions.
 generated websocket manifest is compiled by `ws.compileRoutes()` with an
 `alien-ws` adapter.
 
+# Examples
+
+- `examples/route-handler.ts`: compiles an in-memory generated route manifest
+  and dispatches a request through the service handler.
+
 # API Reference
 
 Exact signatures are emitted to `dist/index.d.ts`, `dist/typebox.d.ts`, and

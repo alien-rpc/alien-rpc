@@ -187,6 +187,9 @@ Check out the [examples](https://github.com/alien-rpc/alien-rpc/tree/master/exam
 - [**Vite + Node.js**](https://github.com/alien-rpc/alien-rpc/tree/master/examples/vite-node): A full-stack setup with a Node.js backend proxied through Vite.
 - [**Vite + Cloudflare Workers**](https://github.com/alien-rpc/alien-rpc/tree/master/examples/vite-cloudflare-workers): Deploying to Cloudflare Workers using Vite and `@cloudflare/vite-plugin`.
 
+For a package-local example of the umbrella subpath imports, see
+[`examples/full-stack.ts`](examples/full-stack.ts).
+
 ## Configuration
 
 For larger projects, use an `alien-rpc.config.ts` file:

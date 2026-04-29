@@ -32,6 +32,8 @@ when you need to embed generation into another tool.
 ## Documentation
 
 - Concepts and lifecycle: [docs/context.md](docs/context.md)
+- Runnable example:
+  [examples/generate-manifests.ts](examples/generate-manifests.ts)
 - Exact public signatures: generated `dist/generator.d.ts`
 - Source-owned API behavior: `src/generator.ts` and `src/generator-types.ts`
 
