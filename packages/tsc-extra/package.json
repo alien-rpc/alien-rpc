@@ -4,7 +4,9 @@
   "description": "A minimal wrapper around TypeScript's compiler API",
   "type": "module",
   "files": [
-    "dist"
+    "dist",
+    "docs",
+    "examples"
   ],
   "exports": {
     ".": {

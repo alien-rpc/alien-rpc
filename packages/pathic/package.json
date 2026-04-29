@@ -4,7 +4,9 @@
   "description": "TypeScript library for URI path matching",
   "type": "module",
   "files": [
-    "dist"
+    "dist",
+    "docs",
+    "examples"
   ],
   "exports": {
     ".": {

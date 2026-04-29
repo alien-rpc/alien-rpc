@@ -7,7 +7,9 @@
     "alien-rpc": "./dist/main.js"
   },
   "files": [
-    "dist"
+    "dist",
+    "docs",
+    "examples"
   ],
   "exports": {
     "./client/formats/*": {

@@ -5,7 +5,9 @@
   "type": "module",
   "files": [
     "dist",
-    "constraint.d.ts"
+    "constraint.d.ts",
+    "docs",
+    "examples"
   ],
   "exports": {
     ".": {

@@ -4,7 +4,9 @@
   "description": "Client library for alien-rpc",
   "type": "module",
   "files": [
-    "dist"
+    "dist",
+    "docs",
+    "examples"
   ],
   "exports": {
     ".": {
